@@ -87,13 +87,6 @@
       font-weight: 800;
       letter-spacing: .2px;
     }
-    .brand small {
-      display: block;
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 600;
-      margin-top: 2px;
-    }
     .top-actions {
       display: flex;
       align-items: center;
@@ -141,10 +134,45 @@
       border-radius: 12px;
       padding: 10px;
     }
-    .meta {
-      color: var(--muted);
-      font-size: 13px;
+    .energy-heading {
+      margin: 0 0 6px;
+      font-size: 34px;
+      line-height: .95;
+      letter-spacing: .4px;
+      color: #fef2ff;
+      font-weight: 900;
+    }
+    .energy-line {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      align-items: center;
       margin-bottom: 8px;
+    }
+    .energy-date {
+      font-size: 30px;
+      font-weight: 800;
+      color: #f9d8ff;
+      line-height: 1;
+    }
+    .energy-canchi {
+      font-size: 30px;
+      font-weight: 700;
+      color: #d9b0ff;
+      line-height: 1;
+    }
+    .energy-profile {
+      font-size: 22px;
+      font-weight: 600;
+      color: #f3e8ff;
+      line-height: 1.15;
+    }
+    .energy-body {
+      font-size: 18px;
+      line-height: 1.32;
+      color: #f4dfff;
+      margin: 0 0 8px;
+      max-width: 95%;
     }
     .seal {
       display: inline-block;
@@ -311,6 +339,10 @@
       .energy { grid-template-columns: 1fr; }
       .form-grid { grid-template-columns: 1fr; }
       .date-inline { grid-template-columns: auto 1fr auto 1fr auto 1fr; }
+      .energy-heading { font-size: 28px; }
+      .energy-date, .energy-canchi { font-size: 24px; }
+      .energy-profile { font-size: 18px; }
+      .energy-body { font-size: 16px; }
     }
     @media (max-width: 680px) {
       .date-inline { grid-template-columns: auto 1fr; }
@@ -320,9 +352,8 @@
 <body>
   <div class="shell">
     <div class="topbar">
-      <div class="brand">Daily fortune<small>Bản giao diện tím tối giản</small></div>
+      <div class="brand">Daily fortune</div>
       <div class="top-actions">
-        <span id="headerDate"></span>
         <a href="/profile.html">Quản lý Profile</a>
       </div>
     </div>
@@ -331,7 +362,13 @@
       <h2 class="title">Năng Lượng Ngày</h2>
       <div class="energy">
         <div class="left">
-          <div class="meta"><span id="todayDate">09/04/2026</span> · <span id="todayCanChi">Nhâm Thìn</span></div>
+          <h3 class="energy-heading">NĂNG LƯỢNG NGÀY</h3>
+          <div class="energy-line">
+            <div class="energy-date" id="todayDate">09/04/2026</div>
+            <div class="energy-canchi" id="todayCanChi">Nhâm Thìn</div>
+            <div class="energy-profile">Bản mệnh: <span id="ownerProfileLabel">Vượng Thế Đạt (Đại Lâm Mộc)</span></div>
+          </div>
+          <p class="energy-body" id="energyMessage">Hôm nay hợp mở đầu việc mới, đàm phán ngắn gọn và chốt hạng mục quan trọng. Hạn chế tranh luận kéo dài và quyết định nóng vội.</p>
           <div><span class="seal" id="ownerSeal">Gia chủ</span> Điểm dự báo theo hồ sơ hiện tại</div>
         </div>
         <div class="score">
@@ -451,6 +488,7 @@
         document.getElementById("ownerMonth").value = p.birthMonth || "";
         document.getElementById("ownerYear").value = p.birthYear || "";
         document.getElementById("ownerSeal").textContent = (p.name || "Gia chủ").split(" ").slice(-1)[0];
+        document.getElementById("ownerProfileLabel").textContent = (p.name || "Gia chủ") + " (tham chiếu hồ sơ)";
       } catch (_) {}
     }
 
@@ -497,6 +535,7 @@
       setProfiles(profiles);
       setActiveProfileId(id);
       document.getElementById("ownerSeal").textContent = (next.name || "Gia chủ").split(" ").slice(-1)[0];
+      document.getElementById("ownerProfileLabel").textContent = (next.name || "Gia chủ") + " (tham chiếu hồ sơ)";
       return true;
     }
 
@@ -536,9 +575,6 @@
     document.getElementById("day").addEventListener("input", renderHours);
 
     var now = new Date();
-    var d = String(now.getDate()).padStart(2, "0");
-    var m = String(now.getMonth() + 1).padStart(2, "0");
-    document.getElementById("headerDate").textContent = d + "/" + m;
     document.getElementById("todayDate").textContent = now.toLocaleDateString("vi-VN");
     loadActiveProfileToForm();
     syncParticipantUI();
