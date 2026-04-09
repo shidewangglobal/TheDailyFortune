@@ -10,16 +10,23 @@
     background:radial-gradient(circle at 20% 10%, rgba(122,52,23,.18), transparent 40%),linear-gradient(135deg,var(--paper),var(--paper2),#e9d7ba)}
     body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.32;background-image:repeating-linear-gradient(45deg, rgba(120,70,35,.08) 0, rgba(120,70,35,.08) 2px, transparent 2px, transparent 14px)}
     .topbar{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#b34122,#8e2d18);border-bottom:2px solid #742413;color:#fff7e6;box-shadow:0 4px 12px rgba(0,0,0,.2)}
-    .topbar .inner{max-width:1180px;margin:0 auto;padding:10px 14px;display:flex;gap:18px;flex-wrap:wrap;font-size:12px;font-weight:700}
+    .topbar .inner{max-width:1180px;margin:0 auto;padding:10px 14px;display:flex;gap:18px;align-items:center;font-size:12px;font-weight:700}
     .wrap{max-width:1180px;margin:16px auto;padding:0 12px 18px;position:relative}
     .wrap::before,.wrap::after{content:"";position:absolute;top:8px;bottom:8px;width:5px;border-radius:8px;background:repeating-linear-gradient(180deg, rgba(150,92,45,.2) 0, rgba(150,92,45,.2) 8px, rgba(120,64,30,.08) 8px, rgba(120,64,30,.08) 16px);opacity:.55}
     .wrap::before{left:2px}.wrap::after{right:2px}
     .surface{margin:0 16px;border:1px solid rgba(139,85,47,.34);border-radius:16px;background:rgba(255,250,240,.8);box-shadow:inset 0 0 0 2px rgba(255,255,255,.36),0 10px 24px rgba(76,42,18,.15);padding:12px;position:relative;overflow:hidden}
     .surface::before{content:"";position:absolute;right:-40px;top:80px;width:220px;height:220px;border-radius:50%;opacity:.18;background:radial-gradient(circle, rgba(139,85,47,.6) 2px, transparent 2px) center/16px 16px,radial-gradient(circle, transparent 58%, rgba(139,85,47,.45) 59%, rgba(139,85,47,.45) 61%, transparent 62%),radial-gradient(circle, transparent 72%, rgba(139,85,47,.35) 73%, rgba(139,85,47,.35) 75%, transparent 76%)}
     .title{font-size:24px;color:var(--brown);font-weight:700;margin-bottom:8px}
-    .heritage{position:relative;margin-bottom:10px;border-radius:12px;overflow:hidden;border:1px solid rgba(139,85,47,.4);padding:9px 10px 11px;font-size:12px;color:var(--muted);background:repeating-linear-gradient(90deg, rgba(139,85,47,.18) 0, rgba(139,85,47,.18) 8px, transparent 8px, transparent 16px)}
-    .heritage::before{content:"◌ ◍ ◌ ◍ ◌ ◍ ◌ ◍ ◌ ◍ ◌ ◍";position:absolute;top:-2px;left:8px;right:8px;white-space:nowrap;letter-spacing:3px;font-size:11px;color:rgba(139,85,47,.6)}
-    .sub{font-size:13px;color:var(--muted);margin-bottom:12px}
+    .heritage{
+      position:relative;margin-bottom:10px;border-radius:12px;overflow:hidden;border:1px solid rgba(139,85,47,.35);
+      padding:11px 10px;min-height:38px;
+      background:
+        radial-gradient(circle at 20% 50%, rgba(139,85,47,.10) 0 16px, transparent 17px),
+        radial-gradient(circle at 50% 50%, rgba(139,85,47,.10) 0 16px, transparent 17px),
+        radial-gradient(circle at 80% 50%, rgba(139,85,47,.10) 0 16px, transparent 17px),
+        linear-gradient(180deg, rgba(255,248,232,.85), rgba(245,231,208,.7));
+    }
+    .sub{font-size:13px;color:var(--muted);margin-bottom:12px;display:none}
     .card{border:1px solid rgba(139,85,47,.28);border-radius:14px;padding:12px;margin-bottom:12px;background:linear-gradient(180deg, rgba(255,254,250,.98), rgba(247,236,217,.95));box-shadow:0 5px 16px rgba(78,44,20,.12)}
     h3{margin:0 0 10px;color:var(--brown);font-size:15px}
     label{display:block;font-size:12px;color:var(--muted);margin:0 0 5px}
@@ -28,6 +35,35 @@
     .date-inline,.birth-inline{display:grid;grid-template-columns:auto 1fr auto 1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px}
     .date-inline label,.birth-inline label{margin:0;white-space:nowrap;font-size:12px}
     .target-buttons{display:flex;gap:8px;margin-bottom:10px}
+    .participant-toggle{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:8px;
+      font-size:13px;
+      color:var(--text);
+    }
+    .participant-toggle input{width:auto; transform: scale(1.15);}
+    .participant-box{
+      border:1px solid rgba(139,85,47,.24);
+      border-radius:12px;
+      padding:8px;
+      transition: opacity .2s ease;
+      margin-bottom:8px;
+    }
+    .participant-box.disabled{
+      opacity:.45;
+      background:#f4ede1;
+      pointer-events:none;
+    }
+    .profile-card{
+      border:1px solid rgba(139,85,47,.28);
+      border-radius:14px;
+      padding:12px;
+      margin-bottom:12px;
+      background:linear-gradient(180deg, rgba(255,254,250,.98), rgba(247,236,217,.95));
+      box-shadow:0 5px 16px rgba(78,44,20,.12);
+    }
     .target-btn{border:1px solid rgba(90,33,182,.24);color:var(--purple);background:#fff;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer}
     .target-btn.active{background:var(--purple);color:#fff}
     .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
@@ -44,11 +80,22 @@
   </style>
 </head>
 <body>
-  <div class="topbar"><div class="inner"><span>TRANG CHỦ</span><span>XEM NGÀY</span><span>PHONG THỦY</span><span>XEM TUỔI</span><span>GIA ĐẠO</span></div></div>
+  <div class="topbar"><div class="inner"><span>🪷 Daily fortune</span><span>Quản lý Profile</span></div></div>
   <div class="wrap"><div class="surface">
     <div class="title">🪷 Daily fortune</div>
-    <div class="heritage">Hoạ tiết trống đồng và nếp lịch âm Việt · Ưu tiên sự an hòa, gia đạo, hương hỏa</div>
-    <div class="sub">Bản tách riêng hoàn toàn, không liên quan Joy.</div>
+    <div class="heritage"></div>
+
+    <section class="profile-card">
+      <h3>👤 Profile Gia chủ</h3>
+      <div class="row2">
+        <div><label for="ownerName">Họ và tên</label><input id="ownerName" placeholder="Nhập tên gia chủ" /></div>
+        <div><label for="ownerPhone">Liên hệ</label><input id="ownerPhone" placeholder="SĐT hoặc email (tuỳ chọn)" /></div>
+      </div>
+      <div class="actions">
+        <button class="btn soft" id="saveProfileBtn" type="button">Lưu profile</button>
+        <button class="btn soft" id="loadProfileBtn" type="button">Nạp profile đã lưu</button>
+      </div>
+    </section>
 
     <section class="card">
       <h3>📜 Lịch Lục Nhâm trong ngày</h3>
@@ -74,19 +121,25 @@
         <label for="ownerMonth">Tháng</label><input id="ownerMonth" type="number" min="1" max="12" />
         <label for="ownerYear">Năm (*)</label><input id="ownerYear" type="number" required />
       </div>
-      <div class="row2">
-        <div><label for="hasParticipant">Có người tham gia?</label><select id="hasParticipant"><option value="no">Không</option><option value="yes">Có</option></select></div>
-        <div><label for="participantRole">Vai trò</label><input id="participantRole" placeholder="Ví dụ: khách hàng" /></div>
+      <div class="participant-toggle">
+        <input id="hasParticipant" type="checkbox" />
+        <label for="hasParticipant" style="margin:0">Có người tham gia</label>
       </div>
-      <label>Ngày sinh người tham gia</label>
-      <div class="birth-inline">
-        <label for="pDay">Ngày</label><input id="pDay" type="number" min="1" max="31" />
-        <label for="pMonth">Tháng</label><input id="pMonth" type="number" min="1" max="12" />
-        <label for="pYear">Năm (*)</label><input id="pYear" type="number" />
+      <div id="participantBox" class="participant-box disabled">
+        <div class="row2">
+          <div><label for="participantRole">Vai trò</label><input id="participantRole" placeholder="Ví dụ: khách hàng" /></div>
+          <div></div>
+        </div>
+        <label>Ngày sinh người tham gia</label>
+        <div class="birth-inline">
+          <label for="pDay">Ngày</label><input id="pDay" type="number" min="1" max="31" />
+          <label for="pMonth">Tháng</label><input id="pMonth" type="number" min="1" max="12" />
+          <label for="pYear">Năm (*)</label><input id="pYear" type="number" />
+        </div>
       </div>
       <label for="topic">Chủ đề</label>
       <textarea id="topic" placeholder="Ví dụ: mai nên nhắn khách lúc nào để tăng phản hồi tích cực?"></textarea>
-      <div class="actions"><button class="btn primary" id="previewBtn" type="button">Xem nhanh trong ngày</button><button class="btn soft" type="button">Hỏi thêm với Bot (sample)</button></div>
+      <div class="actions"><button class="btn primary" id="previewBtn" type="button">Khám phá</button><button class="btn soft" type="button">Hỏi thêm với Bot (sample)</button></div>
       <div class="result" id="dailyResult">Nhập chủ đề và bấm "Xem nhanh trong ngày".</div>
     </section>
   </div></div>
@@ -117,7 +170,7 @@
 
     function renderSummary() {
       var ownerYear = (document.getElementById("ownerYear").value || "").trim();
-      var hasParticipant = document.getElementById("hasParticipant").value === "yes";
+      var hasParticipant = document.getElementById("hasParticipant").checked;
       var pYear = (document.getElementById("pYear").value || "").trim();
       var role = (document.getElementById("participantRole").value || "").trim();
       var topic = (document.getElementById("topic").value || "").trim();
@@ -126,6 +179,39 @@
       var who = selectedTarget === "owner" ? "gia chủ" : "người khác";
       var p = hasParticipant ? ", người tham gia (" + (role || "chưa ghi vai trò") + "), năm sinh " + pYear : ", không có người tham gia";
       document.getElementById("dailyResult").textContent = "Sample: xem cho " + who + ", năm sinh gia chủ " + ownerYear + p + ". Chủ đề: " + (topic || "chưa nhập");
+    }
+
+    function syncParticipantUI() {
+      var checked = document.getElementById("hasParticipant").checked;
+      var box = document.getElementById("participantBox");
+      if (!box) return;
+      if (checked) box.classList.remove("disabled");
+      else box.classList.add("disabled");
+    }
+
+    function saveProfile() {
+      var payload = {
+        ownerName: document.getElementById("ownerName").value || "",
+        ownerPhone: document.getElementById("ownerPhone").value || "",
+        ownerDay: document.getElementById("ownerDay").value || "",
+        ownerMonth: document.getElementById("ownerMonth").value || "",
+        ownerYear: document.getElementById("ownerYear").value || ""
+      };
+      localStorage.setItem("daily_fortune_owner_profile", JSON.stringify(payload));
+      document.getElementById("dailyResult").textContent = "Đã lưu profile Gia chủ.";
+    }
+
+    function loadProfile() {
+      var raw = localStorage.getItem("daily_fortune_owner_profile");
+      if (!raw) return;
+      try {
+        var p = JSON.parse(raw);
+        document.getElementById("ownerName").value = p.ownerName || "";
+        document.getElementById("ownerPhone").value = p.ownerPhone || "";
+        document.getElementById("ownerDay").value = p.ownerDay || "";
+        document.getElementById("ownerMonth").value = p.ownerMonth || "";
+        document.getElementById("ownerYear").value = p.ownerYear || "";
+      } catch (_) {}
     }
 
     document.querySelectorAll(".target-btn").forEach(function(btn){
@@ -137,8 +223,13 @@
       });
     });
     document.getElementById("previewBtn").addEventListener("click", renderSummary);
+    document.getElementById("hasParticipant").addEventListener("change", syncParticipantUI);
+    document.getElementById("saveProfileBtn").addEventListener("click", saveProfile);
+    document.getElementById("loadProfileBtn").addEventListener("click", loadProfile);
     document.getElementById("month").addEventListener("input", renderHours);
     document.getElementById("day").addEventListener("input", renderHours);
+    loadProfile();
+    syncParticipantUI();
     renderHours();
   </script>
 </body>
