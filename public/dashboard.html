@@ -108,23 +108,6 @@
     </section>
 
     <section class="card cloud">
-      <h3 class="section-title">Profile Gia Chủ</h3>
-      <div class="profile-grid">
-        <div><label for="ownerName">Họ và tên</label><input id="ownerName" placeholder="Nhập tên gia chủ" /></div>
-        <div><label for="ownerPhone">Liên hệ</label><input id="ownerPhone" placeholder="SĐT hoặc email (tuỳ chọn)" /></div>
-      </div>
-      <div class="date-inline">
-        <label for="ownerDay">Ngày sinh</label><input id="ownerDay" type="number" min="1" max="31" />
-        <label for="ownerMonth">Tháng sinh</label><input id="ownerMonth" type="number" min="1" max="12" />
-        <label for="ownerYear">Năm sinh (*)</label><input id="ownerYear" type="number" required />
-      </div>
-      <div class="btn-row">
-        <button class="seal-btn soft-btn" id="saveProfileBtn" type="button">Lưu profile</button>
-        <button class="seal-btn soft-btn" id="loadProfileBtn" type="button">Nạp profile</button>
-      </div>
-    </section>
-
-    <section class="card cloud">
       <h3 class="section-title">Dự Báo 6 Cung</h3>
       <div class="date-inline">
         <label for="month">Tháng dương</label><input id="month" type="number" min="1" max="12" value="1" />
@@ -142,6 +125,15 @@
       <div class="toggle-row">
         <div class="pill active" data-target="owner">Gia chủ</div>
         <div class="pill" data-target="other">Cho người khác</div>
+      </div>
+      <div class="profile-grid">
+        <div><label for="ownerName">Họ và tên Gia chủ</label><input id="ownerName" placeholder="Nhập tên gia chủ" /></div>
+        <div><label for="ownerPhone">Liên hệ</label><input id="ownerPhone" placeholder="SĐT hoặc email (tuỳ chọn)" /></div>
+      </div>
+      <div class="date-inline">
+        <label for="ownerDay">Ngày sinh</label><input id="ownerDay" type="number" min="1" max="31" />
+        <label for="ownerMonth">Tháng sinh</label><input id="ownerMonth" type="number" min="1" max="12" />
+        <label for="ownerYear">Năm sinh (*)</label><input id="ownerYear" type="number" required />
       </div>
       <div class="check-row">
         <input id="hasParticipant" type="checkbox" />
@@ -162,6 +154,8 @@
       <textarea id="topic" placeholder="Ví dụ: mai nên nhắn khách lúc nào để tăng phản hồi tích cực?"></textarea>
       <div class="btn-row">
         <button class="seal-btn" id="previewBtn" type="button">Khám phá</button>
+        <button class="seal-btn soft-btn" id="saveProfileBtn" type="button">Lưu profile</button>
+        <button class="seal-btn soft-btn" id="loadProfileBtn" type="button">Nạp profile</button>
       </div>
       <div class="status" id="dailyResult">Nhập chủ đề và bấm "Khám phá".</div>
     </section>
