@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily fortune</title>
+  <style>
+    :root{--brown:#7a3417;--paper:#f6eddc;--paper2:#efe1c8;--text:#3a2a1f;--muted:#7d5e46;--purple:#5b21b6}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text);
+    background:radial-gradient(circle at 20% 10%, rgba(122,52,23,.18), transparent 40%),linear-gradient(135deg,var(--paper),var(--paper2),#e9d7ba)}
+    body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.32;background-image:repeating-linear-gradient(45deg, rgba(120,70,35,.08) 0, rgba(120,70,35,.08) 2px, transparent 2px, transparent 14px)}
+    .topbar{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#b34122,#8e2d18);border-bottom:2px solid #742413;color:#fff7e6;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+    .topbar .inner{max-width:1180px;margin:0 auto;padding:10px 14px;display:flex;gap:18px;flex-wrap:wrap;font-size:12px;font-weight:700}
+    .wrap{max-width:1180px;margin:16px auto;padding:0 12px 18px;position:relative}
+    .wrap::before,.wrap::after{content:"";position:absolute;top:8px;bottom:8px;width:5px;border-radius:8px;background:repeating-linear-gradient(180deg, rgba(150,92,45,.2) 0, rgba(150,92,45,.2) 8px, rgba(120,64,30,.08) 8px, rgba(120,64,30,.08) 16px);opacity:.55}
+    .wrap::before{left:2px}.wrap::after{right:2px}
+    .surface{margin:0 16px;border:1px solid rgba(139,85,47,.34);border-radius:16px;background:rgba(255,250,240,.8);box-shadow:inset 0 0 0 2px rgba(255,255,255,.36),0 10px 24px rgba(76,42,18,.15);padding:12px;position:relative;overflow:hidden}
+    .surface::before{content:"";position:absolute;right:-40px;top:80px;width:220px;height:220px;border-radius:50%;opacity:.18;background:radial-gradient(circle, rgba(139,85,47,.6) 2px, transparent 2px) center/16px 16px,radial-gradient(circle, transparent 58%, rgba(139,85,47,.45) 59%, rgba(139,85,47,.45) 61%, transparent 62%),radial-gradient(circle, transparent 72%, rgba(139,85,47,.35) 73%, rgba(139,85,47,.35) 75%, transparent 76%)}
+    .title{font-size:24px;color:var(--brown);font-weight:700;margin-bottom:8px}
+    .heritage{position:relative;margin-bottom:10px;border-radius:12px;overflow:hidden;border:1px solid rgba(139,85,47,.4);padding:9px 10px 11px;font-size:12px;color:var(--muted);background:repeating-linear-gradient(90deg, rgba(139,85,47,.18) 0, rgba(139,85,47,.18) 8px, transparent 8px, transparent 16px)}
+    .heritage::before{content:"◌ ◍ ◌ ◍ ◌ ◍ ◌ ◍ ◌ ◍ ◌ ◍";position:absolute;top:-2px;left:8px;right:8px;white-space:nowrap;letter-spacing:3px;font-size:11px;color:rgba(139,85,47,.6)}
+    .sub{font-size:13px;color:var(--muted);margin-bottom:12px}
+    .card{border:1px solid rgba(139,85,47,.28);border-radius:14px;padding:12px;margin-bottom:12px;background:linear-gradient(180deg, rgba(255,254,250,.98), rgba(247,236,217,.95));box-shadow:0 5px 16px rgba(78,44,20,.12)}
+    h3{margin:0 0 10px;color:var(--brown);font-size:15px}
+    label{display:block;font-size:12px;color:var(--muted);margin:0 0 5px}
+    input,select,textarea{width:100%;border:1px solid rgba(139,85,47,.28);border-radius:10px;padding:9px 10px;font-size:13px;background:#fffdf8}
+    textarea{min-height:80px;resize:vertical}
+    .date-inline,.birth-inline{display:grid;grid-template-columns:auto 1fr auto 1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px}
+    .date-inline label,.birth-inline label{margin:0;white-space:nowrap;font-size:12px}
+    .target-buttons{display:flex;gap:8px;margin-bottom:10px}
+    .target-btn{border:1px solid rgba(90,33,182,.24);color:var(--purple);background:#fff;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer}
+    .target-btn.active{background:var(--purple);color:#fff}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+    .actions{display:flex;gap:8px;margin-top:8px}.btn{border:none;border-radius:10px;padding:8px 10px;font-size:12px;cursor:pointer}
+    .btn.primary{background:var(--purple);color:#fff}.btn.soft{background:rgba(91,33,182,.1);color:var(--purple)}
+    .result{margin-top:8px;background:rgba(232,245,233,.66);border-radius:10px;padding:8px;font-size:13px}
+    .hours-wrap{margin-top:10px;overflow-x:auto}.hours-grid{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:6px;min-width:780px}
+    .hour-card{border:1px solid rgba(139,85,47,.25);border-radius:12px;min-height:66px;padding:6px 7px;background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(251,240,221,.95));box-shadow:0 2px 7px rgba(78,44,20,.11);overflow:hidden}
+    .hour-branch{font-size:13px;font-weight:700;color:var(--brown);margin-bottom:2px}.hour-range{font-size:10px;color:var(--muted);margin-bottom:4px;white-space:nowrap}
+    .c{color:#fff;border-radius:999px;padding:2px 6px;font-size:11px;font-weight:700;display:block;white-space:nowrap;line-height:1.15;width:100%;text-align:center;overflow:hidden;text-overflow:ellipsis}
+    .da{background:#2563eb}.ll{background:#7c3aed}.th{background:#16a34a}.xk{background:#ea580c}.tc{background:#0d9488}.kv{background:#dc2626}
+    @media (max-width:900px){.date-inline,.birth-inline{grid-template-columns:auto 1fr auto 1fr auto 1fr}}
+    @media (max-width:780px){.row2{grid-template-columns:1fr}.date-inline,.birth-inline{grid-template-columns:auto 1fr auto 1fr auto 1fr}}
+  </style>
+</head>
+<body>
+  <div class="topbar"><div class="inner"><span>TRANG CHỦ</span><span>XEM NGÀY</span><span>PHONG THỦY</span><span>XEM TUỔI</span><span>GIA ĐẠO</span></div></div>
+  <div class="wrap"><div class="surface">
+    <div class="title">🪷 Daily fortune</div>
+    <div class="heritage">Hoạ tiết trống đồng và nếp lịch âm Việt · Ưu tiên sự an hòa, gia đạo, hương hỏa</div>
+    <div class="sub">Bản tách riêng hoàn toàn, không liên quan Joy.</div>
+
+    <section class="card">
+      <h3>📜 Lịch Lục Nhâm trong ngày</h3>
+      <div class="date-inline">
+        <label for="month">Tháng dương</label><input id="month" type="number" min="1" max="12" value="1" />
+        <label for="day">Ngày dương</label><input id="day" type="number" min="1" max="31" value="1" />
+        <label for="year">Năm</label><input id="year" type="number" value="2026" />
+      </div>
+      <div class="result" id="dayCung">Ngày này thuộc cung: Đại An</div>
+      <div class="hours-wrap"><div class="hours-grid" id="hours"></div></div>
+    </section>
+
+    <section class="card">
+      <h3>☯️ Tham khảo chuyện hằng ngày</h3>
+      <label>Xem cho ai</label>
+      <div class="target-buttons">
+        <button class="target-btn active" data-target="owner" type="button">Gia chủ</button>
+        <button class="target-btn" data-target="other" type="button">Cho người khác</button>
+      </div>
+      <label>Ngày sinh Gia chủ</label>
+      <div class="birth-inline">
+        <label for="ownerDay">Ngày</label><input id="ownerDay" type="number" min="1" max="31" />
+        <label for="ownerMonth">Tháng</label><input id="ownerMonth" type="number" min="1" max="12" />
+        <label for="ownerYear">Năm (*)</label><input id="ownerYear" type="number" required />
+      </div>
+      <div class="row2">
+        <div><label for="hasParticipant">Có người tham gia?</label><select id="hasParticipant"><option value="no">Không</option><option value="yes">Có</option></select></div>
+        <div><label for="participantRole">Vai trò</label><input id="participantRole" placeholder="Ví dụ: khách hàng" /></div>
+      </div>
+      <label>Ngày sinh người tham gia</label>
+      <div class="birth-inline">
+        <label for="pDay">Ngày</label><input id="pDay" type="number" min="1" max="31" />
+        <label for="pMonth">Tháng</label><input id="pMonth" type="number" min="1" max="12" />
+        <label for="pYear">Năm (*)</label><input id="pYear" type="number" />
+      </div>
+      <label for="topic">Chủ đề</label>
+      <textarea id="topic" placeholder="Ví dụ: mai nên nhắn khách lúc nào để tăng phản hồi tích cực?"></textarea>
+      <div class="actions"><button class="btn primary" id="previewBtn" type="button">Xem nhanh trong ngày</button><button class="btn soft" type="button">Hỏi thêm với Bot (sample)</button></div>
+      <div class="result" id="dailyResult">Nhập chủ đề và bấm "Xem nhanh trong ngày".</div>
+    </section>
+  </div></div>
+
+  <script>
+    var selectedTarget = "owner";
+    var cungs = ["Đại An","Lưu Liên","Tốc Hỷ","Xích Khẩu","Tiểu Cát","Không Vong"];
+    var cls = ["da","ll","th","xk","tc","kv"];
+    var hours = [["Tý","23:00 - 00:59"],["Sửu","01:00 - 02:59"],["Dần","03:00 - 04:59"],["Mão","05:00 - 06:59"],["Thìn","07:00 - 08:59"],["Tỵ","09:00 - 10:59"],["Ngọ","11:00 - 12:59"],["Mùi","13:00 - 14:59"],["Thân","15:00 - 16:59"],["Dậu","17:00 - 18:59"],["Tuất","19:00 - 20:59"],["Hợi","21:00 - 22:59"]];
+
+    function renderHours() {
+      var m = parseInt(document.getElementById("month").value || "1", 10);
+      var d = parseInt(document.getElementById("day").value || "1", 10);
+      if (m < 1 || m > 12) m = 1;
+      if (d < 1 || d > 31) d = 1;
+      var dayIndex = ((m - 1) + d - 1) % 6;
+      document.getElementById("dayCung").textContent = "Ngày này thuộc cung: " + cungs[dayIndex];
+      var grid = document.getElementById("hours");
+      grid.innerHTML = "";
+      for (var i = 0; i < hours.length; i++) {
+        var ci = (dayIndex + i) % 6;
+        var card = document.createElement("div");
+        card.className = "hour-card";
+        card.innerHTML = "<div class='hour-branch'>" + hours[i][0] + "</div><div class='hour-range'>" + hours[i][1] + "</div><div><span class='c " + cls[ci] + "'>" + cungs[ci] + "</span></div>";
+        grid.appendChild(card);
+      }
+    }
+
+    function renderSummary() {
+      var ownerYear = (document.getElementById("ownerYear").value || "").trim();
+      var hasParticipant = document.getElementById("hasParticipant").value === "yes";
+      var pYear = (document.getElementById("pYear").value || "").trim();
+      var role = (document.getElementById("participantRole").value || "").trim();
+      var topic = (document.getElementById("topic").value || "").trim();
+      if (!ownerYear) return document.getElementById("dailyResult").textContent = "Vui lòng nhập năm sinh Gia chủ (bắt buộc).";
+      if (hasParticipant && !pYear) return document.getElementById("dailyResult").textContent = "Vui lòng nhập năm sinh người tham gia (bắt buộc khi chọn Có).";
+      var who = selectedTarget === "owner" ? "gia chủ" : "người khác";
+      var p = hasParticipant ? ", người tham gia (" + (role || "chưa ghi vai trò") + "), năm sinh " + pYear : ", không có người tham gia";
+      document.getElementById("dailyResult").textContent = "Sample: xem cho " + who + ", năm sinh gia chủ " + ownerYear + p + ". Chủ đề: " + (topic || "chưa nhập");
+    }
+
+    document.querySelectorAll(".target-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        document.querySelectorAll(".target-btn").forEach(function(b){ b.classList.remove("active"); });
+        btn.classList.add("active");
+        selectedTarget = btn.getAttribute("data-target");
+        renderSummary();
+      });
+    });
+    document.getElementById("previewBtn").addEventListener("click", renderSummary);
+    document.getElementById("month").addEventListener("input", renderHours);
+    document.getElementById("day").addEventListener("input", renderHours);
+    renderHours();
+  </script>
+</body>
+</html>
