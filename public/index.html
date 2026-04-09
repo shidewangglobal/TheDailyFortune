@@ -206,29 +206,86 @@
       else box.classList.add("disabled");
     }
 
-    function saveProfile() {
-      var payload = {
-        ownerName: document.getElementById("ownerName").value || "",
-        ownerPhone: document.getElementById("ownerPhone").value || "",
-        ownerDay: document.getElementById("ownerDay").value || "",
-        ownerMonth: document.getElementById("ownerMonth").value || "",
-        ownerYear: document.getElementById("ownerYear").value || ""
+    function getProfiles() {
+      try {
+        var raw = localStorage.getItem("daily_fortune_profiles");
+        if (!raw) return [];
+        var parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) { return []; }
+    }
+
+    function setProfiles(list) {
+      localStorage.setItem("daily_fortune_profiles", JSON.stringify(list || []));
+    }
+
+    function getActiveProfileId() {
+      return localStorage.getItem("daily_fortune_active_profile_id") || "";
+    }
+
+    function setActiveProfileId(id) {
+      localStorage.setItem("daily_fortune_active_profile_id", id || "");
+    }
+
+    function createProfileId() {
+      return "p-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+    }
+
+    function upsertOwnerProfile(options) {
+      var opts = options || {};
+      var ownerName = (document.getElementById("ownerName").value || "").trim();
+      var ownerPhone = (document.getElementById("ownerPhone").value || "").trim();
+      var ownerDay = (document.getElementById("ownerDay").value || "").trim();
+      var ownerMonth = (document.getElementById("ownerMonth").value || "").trim();
+      var ownerYear = (document.getElementById("ownerYear").value || "").trim();
+
+      if (!ownerYear) {
+        if (!opts.silent) document.getElementById("dailyResult").textContent = "Vui lòng nhập năm sinh Gia chủ (bắt buộc).";
+        return false;
+      }
+
+      var profiles = getProfiles();
+      var activeId = getActiveProfileId();
+      var active = profiles.find(function (p) { return p.id === activeId; });
+      var id = active ? active.id : createProfileId();
+      var next = {
+        id: id,
+        name: ownerName || "Gia chủ",
+        contact: ownerPhone,
+        birthDay: ownerDay,
+        birthMonth: ownerMonth,
+        birthYear: ownerYear,
+        updatedAt: new Date().toISOString()
       };
-      localStorage.setItem("daily_fortune_owner_profile", JSON.stringify(payload));
-      document.getElementById("dailyResult").textContent = "Đã lưu profile Gia chủ.";
+
+      var found = false;
+      profiles = profiles.map(function (p) {
+        if (p.id !== id) return p;
+        found = true;
+        return next;
+      });
+      if (!found) profiles.push(next);
+      setProfiles(profiles);
+      setActiveProfileId(id);
+      return true;
+    }
+
+    var autoSaveTimer = null;
+    function scheduleAutoSaveOwnerProfile() {
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(function () {
+        upsertOwnerProfile({ silent: true });
+      }, 400);
+    }
+
+    function saveProfile() {
+      var ok = upsertOwnerProfile({ silent: false });
+      if (ok) document.getElementById("dailyResult").textContent = "Đã lưu profile Gia chủ từ trang chủ.";
     }
 
     function loadProfile() {
-      var raw = localStorage.getItem("daily_fortune_owner_profile");
-      if (!raw) return;
-      try {
-        var p = JSON.parse(raw);
-        document.getElementById("ownerName").value = p.ownerName || "";
-        document.getElementById("ownerPhone").value = p.ownerPhone || "";
-        document.getElementById("ownerDay").value = p.ownerDay || "";
-        document.getElementById("ownerMonth").value = p.ownerMonth || "";
-        document.getElementById("ownerYear").value = p.ownerYear || "";
-      } catch (_) {}
+      loadActiveProfileToForm();
+      document.getElementById("dailyResult").textContent = "Đã nạp profile mặc định.";
     }
 
     document.querySelectorAll(".target-btn").forEach(function(btn){
@@ -243,9 +300,13 @@
     document.getElementById("hasParticipant").addEventListener("change", syncParticipantUI);
     document.getElementById("saveProfileBtn").addEventListener("click", saveProfile);
     document.getElementById("loadProfileBtn").addEventListener("click", loadProfile);
+    ["ownerName","ownerPhone","ownerDay","ownerMonth","ownerYear"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", scheduleAutoSaveOwnerProfile);
+    });
     document.getElementById("month").addEventListener("input", renderHours);
     document.getElementById("day").addEventListener("input", renderHours);
-    loadProfile();
     loadActiveProfileToForm();
     syncParticipantUI();
     renderHours();
