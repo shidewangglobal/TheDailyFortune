@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily fortune - Quản lý Profile</title>
+  <style>
+    :root { --brown:#7a3417; --paper:#f6eddc; --paper2:#efe1c8; --text:#3a2a1f; --muted:#7d5e46; --purple:#5b21b6; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(135deg,var(--paper),var(--paper2),#e9d7ba);
+    }
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      background: linear-gradient(180deg,#b34122,#8e2d18);
+      border-bottom: 2px solid #742413;
+      color: #fff7e6;
+      box-shadow: 0 4px 12px rgba(0,0,0,.2);
+    }
+    .topbar .inner {
+      max-width: 980px; margin: 0 auto; padding: 10px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+    }
+    .topbar a {
+      color: #fff7e6; text-decoration: none; font-size: 12px; font-weight: 700;
+      border: 1px solid rgba(255,247,230,.35); padding: 6px 10px; border-radius: 999px;
+    }
+    .wrap { max-width: 980px; margin: 16px auto; padding: 0 12px 20px; }
+    .card {
+      border: 1px solid rgba(139,85,47,.28);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: linear-gradient(180deg, rgba(255,254,250,.98), rgba(247,236,217,.95));
+      box-shadow: 0 5px 16px rgba(78,44,20,.12);
+    }
+    h1 { margin: 0 0 6px; color: var(--brown); font-size: 24px; }
+    h3 { margin: 0 0 10px; color: var(--brown); font-size: 16px; }
+    .sub { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .birth { display: grid; grid-template-columns: auto 1fr auto 1fr auto 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+    label { display: block; font-size: 12px; color: var(--muted); margin: 0 0 5px; white-space: nowrap; }
+    input {
+      width: 100%;
+      border: 1px solid rgba(139,85,47,.28);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font-size: 13px;
+      background: #fffdf8;
+    }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .btn {
+      border: none; border-radius: 10px; padding: 8px 10px; font-size: 12px; cursor: pointer;
+    }
+    .btn.primary { background: var(--purple); color: #fff; }
+    .btn.soft { background: rgba(91,33,182,.1); color: var(--purple); }
+    .status { margin-top: 8px; font-size: 13px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px dashed rgba(0,0,0,.1); }
+    th { color: var(--muted); font-size: 12px; }
+    .row-actions { display: flex; gap: 6px; }
+    .row-actions button {
+      border: 1px solid rgba(139,85,47,.22);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--brown);
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    @media (max-width: 820px) {
+      .grid { grid-template-columns: 1fr; }
+      .birth { grid-template-columns: auto 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="inner">
+      <strong>🪷 Daily fortune · Quản lý Profile</strong>
+      <a href="/">Về Dashboard</a>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="card">
+      <h1>Profile Gia chủ</h1>
+      <p class="sub">Tạo nhiều profile, chọn profile mặc định để dùng khi khám phá.</p>
+
+      <h3>Thêm / Sửa profile</h3>
+      <div class="grid">
+        <div>
+          <label for="ownerName">Họ và tên</label>
+          <input id="ownerName" placeholder="Ví dụ: Nguyễn Văn A" />
+        </div>
+        <div>
+          <label for="ownerContact">Liên hệ</label>
+          <input id="ownerContact" placeholder="SĐT hoặc email (tuỳ chọn)" />
+        </div>
+      </div>
+      <div class="birth">
+        <label for="ownerDay">Ngày sinh</label>
+        <input id="ownerDay" type="number" min="1" max="31" placeholder="Ngày" />
+        <label for="ownerMonth">Tháng sinh</label>
+        <input id="ownerMonth" type="number" min="1" max="12" placeholder="Tháng" />
+        <label for="ownerYear">Năm sinh (*)</label>
+        <input id="ownerYear" type="number" placeholder="Bắt buộc" />
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="saveBtn" type="button">Lưu profile</button>
+        <button class="btn soft" id="resetBtn" type="button">Làm mới form</button>
+      </div>
+      <div class="status" id="status">Sẵn sàng.</div>
+    </section>
+
+    <section class="card">
+      <h3>Danh sách profile</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Tên</th>
+            <th>Ngày sinh</th>
+            <th>Liên hệ</th>
+            <th>Mặc định</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="profilesBody"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    var STORAGE_KEY = "daily_fortune_profiles";
+    var STORAGE_ACTIVE = "daily_fortune_active_profile_id";
+    var editingId = null;
+
+    function uuid() {
+      return "p-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+    }
+
+    function getProfiles() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        var parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) { return []; }
+    }
+
+    function setProfiles(list) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list || []));
+    }
+
+    function getActiveProfileId() {
+      return localStorage.getItem(STORAGE_ACTIVE) || "";
+    }
+
+    function setActiveProfileId(id) {
+      localStorage.setItem(STORAGE_ACTIVE, id || "");
+    }
+
+    function clearForm() {
+      editingId = null;
+      document.getElementById("ownerName").value = "";
+      document.getElementById("ownerContact").value = "";
+      document.getElementById("ownerDay").value = "";
+      document.getElementById("ownerMonth").value = "";
+      document.getElementById("ownerYear").value = "";
+    }
+
+    function setStatus(text) {
+      document.getElementById("status").textContent = text;
+    }
+
+    function fillForm(profile) {
+      if (!profile) return;
+      editingId = profile.id;
+      document.getElementById("ownerName").value = profile.name || "";
+      document.getElementById("ownerContact").value = profile.contact || "";
+      document.getElementById("ownerDay").value = profile.birthDay || "";
+      document.getElementById("ownerMonth").value = profile.birthMonth || "";
+      document.getElementById("ownerYear").value = profile.birthYear || "";
+    }
+
+    function renderProfiles() {
+      var body = document.getElementById("profilesBody");
+      var profiles = getProfiles();
+      var activeId = getActiveProfileId();
+      body.innerHTML = "";
+
+      if (!profiles.length) {
+        var empty = document.createElement("tr");
+        empty.innerHTML = "<td colspan='5'>Chưa có profile nào.</td>";
+        body.appendChild(empty);
+        return;
+      }
+
+      profiles.forEach(function (p) {
+        var tr = document.createElement("tr");
+        var birth = [p.birthDay, p.birthMonth, p.birthYear].filter(Boolean).join("/");
+        tr.innerHTML =
+          "<td>" + (p.name || "-") + "</td>" +
+          "<td>" + (birth || "-") + "</td>" +
+          "<td>" + (p.contact || "-") + "</td>" +
+          "<td>" + (p.id === activeId ? "✓" : "") + "</td>" +
+          "<td><div class='row-actions'>" +
+            "<button data-act='use' data-id='" + p.id + "'>Dùng</button>" +
+            "<button data-act='edit' data-id='" + p.id + "'>Sửa</button>" +
+            "<button data-act='del' data-id='" + p.id + "'>Xoá</button>" +
+          "</div></td>";
+        body.appendChild(tr);
+      });
+    }
+
+    function upsertProfile() {
+      var name = (document.getElementById("ownerName").value || "").trim();
+      var contact = (document.getElementById("ownerContact").value || "").trim();
+      var birthDay = (document.getElementById("ownerDay").value || "").trim();
+      var birthMonth = (document.getElementById("ownerMonth").value || "").trim();
+      var birthYear = (document.getElementById("ownerYear").value || "").trim();
+
+      if (!name) return setStatus("Vui lòng nhập họ và tên.");
+      if (!birthYear) return setStatus("Năm sinh là bắt buộc.");
+
+      var profiles = getProfiles();
+      if (editingId) {
+        profiles = profiles.map(function (p) {
+          if (p.id !== editingId) return p;
+          return {
+            id: p.id,
+            name: name,
+            contact: contact,
+            birthDay: birthDay,
+            birthMonth: birthMonth,
+            birthYear: birthYear,
+            updatedAt: new Date().toISOString(),
+          };
+        });
+        setStatus("Đã cập nhật profile.");
+      } else {
+        var profile = {
+          id: uuid(),
+          name: name,
+          contact: contact,
+          birthDay: birthDay,
+          birthMonth: birthMonth,
+          birthYear: birthYear,
+          updatedAt: new Date().toISOString(),
+        };
+        profiles.push(profile);
+        if (!getActiveProfileId()) setActiveProfileId(profile.id);
+        setStatus("Đã thêm profile mới.");
+      }
+      setProfiles(profiles);
+      renderProfiles();
+      clearForm();
+    }
+
+    document.getElementById("saveBtn").addEventListener("click", upsertProfile);
+    document.getElementById("resetBtn").addEventListener("click", function () {
+      clearForm();
+      setStatus("Đã làm mới form.");
+    });
+
+    document.getElementById("profilesBody").addEventListener("click", function (e) {
+      var target = e.target;
+      if (!target || !target.dataset) return;
+      var act = target.dataset.act;
+      var id = target.dataset.id;
+      if (!act || !id) return;
+
+      var profiles = getProfiles();
+      if (act === "use") {
+        setActiveProfileId(id);
+        renderProfiles();
+        setStatus("Đã chọn profile mặc định.");
+        return;
+      }
+
+      if (act === "edit") {
+        var p = profiles.find(function (x) { return x.id === id; });
+        fillForm(p);
+        setStatus("Đang sửa profile.");
+        return;
+      }
+
+      if (act === "del") {
+        var next = profiles.filter(function (x) { return x.id !== id; });
+        setProfiles(next);
+        if (getActiveProfileId() === id) {
+          setActiveProfileId(next[0] ? next[0].id : "");
+        }
+        renderProfiles();
+        setStatus("Đã xoá profile.");
+      }
+    });
+
+    renderProfiles();
+  </script>
+</body>
+</html>

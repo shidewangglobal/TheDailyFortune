@@ -80,7 +80,7 @@
   </style>
 </head>
 <body>
-  <div class="topbar"><div class="inner"><span>🪷 Daily fortune</span><span>Quản lý Profile</span></div></div>
+  <div class="topbar"><div class="inner"><span>🪷 Daily fortune</span><a href="/profile.html" style="color:#fff7e6;text-decoration:none;border:1px solid rgba(255,247,230,.35);padding:6px 10px;border-radius:999px">Quản lý Profile</a></div></div>
   <div class="wrap"><div class="surface">
     <div class="title">🪷 Daily fortune</div>
     <div class="heritage"></div>
@@ -181,6 +181,23 @@
       document.getElementById("dailyResult").textContent = "Sample: xem cho " + who + ", năm sinh gia chủ " + ownerYear + p + ". Chủ đề: " + (topic || "chưa nhập");
     }
 
+    function loadActiveProfileToForm() {
+      try {
+        var listRaw = localStorage.getItem("daily_fortune_profiles");
+        var activeId = localStorage.getItem("daily_fortune_active_profile_id");
+        if (!listRaw || !activeId) return;
+        var list = JSON.parse(listRaw);
+        if (!Array.isArray(list)) return;
+        var p = list.find(function (x) { return x.id === activeId; });
+        if (!p) return;
+        document.getElementById("ownerName").value = p.name || "";
+        document.getElementById("ownerPhone").value = p.contact || "";
+        document.getElementById("ownerDay").value = p.birthDay || "";
+        document.getElementById("ownerMonth").value = p.birthMonth || "";
+        document.getElementById("ownerYear").value = p.birthYear || "";
+      } catch (_) {}
+    }
+
     function syncParticipantUI() {
       var checked = document.getElementById("hasParticipant").checked;
       var box = document.getElementById("participantBox");
@@ -229,6 +246,7 @@
     document.getElementById("month").addEventListener("input", renderHours);
     document.getElementById("day").addEventListener("input", renderHours);
     loadProfile();
+    loadActiveProfileToForm();
     syncParticipantUI();
     renderHours();
   </script>
