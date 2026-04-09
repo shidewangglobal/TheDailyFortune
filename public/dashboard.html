@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily fortune</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@600;700&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{--paper:#FDFCF0;--primary:#8B0000;--accent:#D4AF37;--text:#2b1f15;--muted:#6f5a43}
+    *{box-sizing:border-box}
+    body{
+      margin:0;color:var(--text);font-family:"EB Garamond",serif;background:var(--paper);
+      background-image:
+        radial-gradient(circle at 20% 25%, rgba(139,0,0,.04), transparent 42%),
+        repeating-linear-gradient(45deg, rgba(120,98,74,.04) 0, rgba(120,98,74,.04) 1px, transparent 1px, transparent 14px);
+    }
+    .topbar{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#9d1010,#7a0000);color:#fff8e8;border-bottom:2px solid #680000}
+    .topbar .inner{max-width:1160px;margin:0 auto;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+    .brand{font-family:"Crimson Text",serif;font-size:30px;font-weight:700;letter-spacing:.4px}
+    .profile-link{color:#fff8e8;text-decoration:none;border:1px solid rgba(212,175,55,.65);padding:6px 10px;border-radius:8px}
+    .wrap{max-width:1160px;margin:16px auto;padding:0 12px 22px}
+    .cloud{position:relative}
+    .cloud:before,.cloud:after{content:"☁";position:absolute;color:rgba(212,175,55,.55);font-size:22px;line-height:1}
+    .cloud:before{left:10px;top:8px}.cloud:after{right:10px;bottom:8px}
+    .card{background:#fffdf4;border:1px solid rgba(212,175,55,.45);border-radius:14px;box-shadow:0 5px 15px rgba(0,0,0,.08);padding:12px;margin-bottom:14px}
+    .section-title{font-family:"Crimson Text",serif;color:var(--primary);font-size:30px;margin:0 0 8px}
+    .divider{height:18px;position:relative;margin:8px 0 10px}
+    .divider:before{content:"";position:absolute;left:0;right:0;top:8px;border-top:1px solid rgba(212,175,55,.7)}
+    .divider span{position:absolute;left:50%;top:0;transform:translateX(-50%);background:#fffdf4;padding:0 8px;color:var(--accent);font-size:16px}
+
+    .scroll{border:1px solid rgba(120,78,38,.45);border-radius:12px;background:linear-gradient(180deg,#fdf4da,#f7e5bd);position:relative;overflow:hidden}
+    .scroll:before,.scroll:after{content:"";position:absolute;top:10px;bottom:10px;width:14px;background:linear-gradient(180deg,#7b4b28,#533114);border-radius:8px}
+    .scroll:before{left:8px}.scroll:after{right:8px}
+    .scroll-body{padding:14px 28px 14px 34px;display:grid;grid-template-columns:1.3fr .9fr;gap:14px}
+    .energy-title{font-family:"Crimson Text",serif;color:var(--primary);font-size:38px;line-height:1;margin:0 0 6px}
+    .energy-meta{font-size:24px;color:#523827}
+    .seal{display:inline-block;background:var(--primary);color:#fff4d8;border:2px solid var(--accent);border-radius:8px;padding:3px 8px;font-size:20px;font-weight:600}
+    .bagua{display:inline-flex;align-items:center;justify-content:center;width:86px;height:86px;border-radius:50%;border:3px solid var(--accent);color:var(--primary);font-weight:700;font-size:26px;background:radial-gradient(circle,#fff7e5 0,#f3e2bc 100%)}
+    .energy-right{text-align:center;display:flex;flex-direction:column;gap:8px;justify-content:center}
+    .label{font-size:22px;color:var(--muted)}
+    .value{font-size:34px;color:var(--primary);font-weight:700}
+
+    .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    label{display:block;font-size:22px;color:var(--muted);margin:0 0 4px}
+    input,textarea,select{width:100%;border:1px solid rgba(120,78,38,.28);border-radius:10px;padding:8px 10px;font-size:22px;background:#fffef8;font-family:"EB Garamond",serif}
+    textarea{min-height:72px;resize:vertical}
+    .date-inline{display:grid;grid-template-columns:auto 1fr auto 1fr auto 1fr;gap:8px;align-items:center;margin:8px 0}
+    .date-inline label{margin:0;white-space:nowrap}
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+    .seal-btn{border:2px solid var(--accent);background:var(--primary);color:#fff8e6;border-radius:8px;padding:8px 12px;font-size:21px;font-family:"Crimson Text",serif;cursor:pointer;transition:.2s}
+    .seal-btn:hover{box-shadow:0 0 14px rgba(212,175,55,.7);transform:translateY(-1px)}
+    .soft-btn{background:#fff4e0;color:var(--primary)}
+    .toggle-row{display:flex;gap:8px;margin:8px 0}
+    .pill{border:1px solid rgba(139,0,0,.25);border-radius:999px;padding:7px 10px;cursor:pointer;font-size:20px;color:var(--primary);background:#fff}
+    .pill.active{background:var(--primary);color:#fff8e7}
+    .check-row{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:22px}
+    .check-row input{width:auto;transform:scale(1.2)}
+    .participant-box{border:1px dashed rgba(120,78,38,.35);border-radius:12px;padding:8px;transition:.2s}
+    .participant-box.disabled{opacity:.45;pointer-events:none;background:#f4efe0}
+    .status{margin-top:8px;font-size:21px;color:var(--muted)}
+
+    .bamboo-grid{display:grid;grid-template-columns:repeat(6,minmax(160px,1fr));gap:8px;overflow-x:auto;padding-bottom:4px}
+    .slip{min-height:90px;border:1px solid rgba(120,78,38,.35);border-radius:10px;background:linear-gradient(180deg,#f8e7bf,#ecd39f);box-shadow:inset 0 0 0 1px rgba(255,246,224,.6);padding:8px;position:relative}
+    .slip:before,.slip:after{content:"";position:absolute;top:8px;bottom:8px;width:4px;background:#9b6f33}
+    .slip:before{left:6px}.slip:after{right:6px}
+    .slip-inner{margin:0 8px}
+    .branch{font-size:25px;font-weight:700;color:#5c3d1f}
+    .range{font-size:18px;color:#735739;white-space:nowrap}
+    .cung-badge{margin-top:5px;border-radius:999px;padding:2px 8px;color:#fff;text-align:center;font-size:19px;font-weight:600;white-space:nowrap}
+    .da{background:#506ecf}.ll{background:#7d4bb2}.th{background:#238a3a}.xk{background:#c35a1f}.tc{background:#14776e}.kv{background:#a43131}
+    .icon{font-size:20px;margin-right:4px}
+
+    @media (max-width:900px){
+      .scroll-body{grid-template-columns:1fr}
+      .profile-grid{grid-template-columns:1fr}
+      .date-inline{grid-template-columns:auto 1fr auto 1fr auto 1fr}
+      .bamboo-grid{grid-template-columns:repeat(3,minmax(160px,1fr))}
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="inner">
+      <div class="brand">Lục Nhâm Chiến Lược</div>
+      <a class="profile-link" href="/profile.html">Profile</a>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="card cloud">
+      <div class="scroll">
+        <div class="scroll-body">
+          <div>
+            <h2 class="energy-title">Năng Lượng Ngày</h2>
+            <div class="energy-meta"><span id="todayDate">09/04/2026</span> · <span id="todayCanChi">Nhâm Thìn</span></div>
+            <div class="divider"><span>🪷</span></div>
+            <div class="label">Gia chủ: <span class="seal" id="ownerSeal">Đạt</span></div>
+          </div>
+          <div class="energy-right">
+            <div class="bagua">☯</div>
+            <div class="label">Điểm thành công</div>
+            <div class="value" id="energyScore">85%</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card cloud">
+      <h3 class="section-title">Profile Gia Chủ</h3>
+      <div class="profile-grid">
+        <div><label for="ownerName">Họ và tên</label><input id="ownerName" placeholder="Nhập tên gia chủ" /></div>
+        <div><label for="ownerPhone">Liên hệ</label><input id="ownerPhone" placeholder="SĐT hoặc email (tuỳ chọn)" /></div>
+      </div>
+      <div class="date-inline">
+        <label for="ownerDay">Ngày sinh</label><input id="ownerDay" type="number" min="1" max="31" />
+        <label for="ownerMonth">Tháng sinh</label><input id="ownerMonth" type="number" min="1" max="12" />
+        <label for="ownerYear">Năm sinh (*)</label><input id="ownerYear" type="number" required />
+      </div>
+      <div class="btn-row">
+        <button class="seal-btn soft-btn" id="saveProfileBtn" type="button">Lưu profile</button>
+        <button class="seal-btn soft-btn" id="loadProfileBtn" type="button">Nạp profile</button>
+      </div>
+    </section>
+
+    <section class="card cloud">
+      <h3 class="section-title">Dự Báo 6 Cung</h3>
+      <div class="date-inline">
+        <label for="month">Tháng dương</label><input id="month" type="number" min="1" max="12" value="1" />
+        <label for="day">Ngày dương</label><input id="day" type="number" min="1" max="31" value="1" />
+        <label for="year">Năm</label><input id="year" type="number" value="2026" />
+      </div>
+      <div class="status" id="dayCung">Ngày này thuộc cung: Đại An</div>
+      <div class="divider"><span>🪷</span></div>
+      <div class="bamboo-grid" id="hours"></div>
+    </section>
+
+    <section class="card cloud">
+      <h3 class="section-title">Tham Khảo Chuyện Hằng Ngày</h3>
+      <label>Xem cho ai</label>
+      <div class="toggle-row">
+        <div class="pill active" data-target="owner">Gia chủ</div>
+        <div class="pill" data-target="other">Cho người khác</div>
+      </div>
+      <div class="check-row">
+        <input id="hasParticipant" type="checkbox" />
+        <label for="hasParticipant" style="margin:0">Có người tham gia</label>
+      </div>
+      <div id="participantBox" class="participant-box disabled">
+        <div class="profile-grid">
+          <div><label for="participantRole">Vai trò</label><input id="participantRole" placeholder="Ví dụ: khách hàng" /></div>
+          <div></div>
+        </div>
+        <div class="date-inline">
+          <label for="pDay">Ngày sinh</label><input id="pDay" type="number" min="1" max="31" />
+          <label for="pMonth">Tháng sinh</label><input id="pMonth" type="number" min="1" max="12" />
+          <label for="pYear">Năm sinh (*)</label><input id="pYear" type="number" />
+        </div>
+      </div>
+      <label for="topic">Chủ đề</label>
+      <textarea id="topic" placeholder="Ví dụ: mai nên nhắn khách lúc nào để tăng phản hồi tích cực?"></textarea>
+      <div class="btn-row">
+        <button class="seal-btn" id="previewBtn" type="button">Khám phá</button>
+      </div>
+      <div class="status" id="dailyResult">Nhập chủ đề và bấm "Khám phá".</div>
+    </section>
+  </div>
+
+  <script>
+    var selectedTarget = "owner";
+    var cungs = ["Đại An","Lưu Liên","Tốc Hỷ","Xích Khẩu","Tiểu Cát","Không Vong"];
+    var cls = ["da","ll","th","xk","tc","kv"];
+    var hours = [["Tý","23:00 - 00:59"],["Sửu","01:00 - 02:59"],["Dần","03:00 - 04:59"],["Mão","05:00 - 06:59"],["Thìn","07:00 - 08:59"],["Tỵ","09:00 - 10:59"],["Ngọ","11:00 - 12:59"],["Mùi","13:00 - 14:59"],["Thân","15:00 - 16:59"],["Dậu","17:00 - 18:59"],["Tuất","19:00 - 20:59"],["Hợi","21:00 - 22:59"]];
+    var cungIcons = {
+      "Đại An":"⛩️",
+      "Lưu Liên":"🪢",
+      "Tốc Hỷ":"🏮",
+      "Xích Khẩu":"⚔️",
+      "Tiểu Cát":"🪙",
+      "Không Vong":"☁️"
+    };
+
+    function renderHours() {
+      var m = parseInt(document.getElementById("month").value || "1", 10);
+      var d = parseInt(document.getElementById("day").value || "1", 10);
+      if (m < 1 || m > 12) m = 1;
+      if (d < 1 || d > 31) d = 1;
+      var dayIndex = ((m - 1) + d - 1) % 6;
+      document.getElementById("dayCung").textContent = "Ngày này thuộc cung: " + cungs[dayIndex];
+      var grid = document.getElementById("hours");
+      grid.innerHTML = "";
+      for (var i = 0; i < hours.length; i++) {
+        var ci = (dayIndex + i) % 6;
+        var cung = cungs[ci];
+        var card = document.createElement("div");
+        card.className = "slip";
+        card.innerHTML =
+          "<div class='slip-inner'>" +
+          "<div class='branch'>" + hours[i][0] + "</div>" +
+          "<div class='range'>" + hours[i][1] + "</div>" +
+          "<div class='cung-badge " + cls[ci] + "'><span class='icon'>" + (cungIcons[cung] || "•") + "</span>" + cung + "</div>" +
+          "</div>";
+        grid.appendChild(card);
+      }
+    }
+
+    function renderSummary() {
+      var ownerYear = (document.getElementById("ownerYear").value || "").trim();
+      var hasParticipant = document.getElementById("hasParticipant").checked;
+      var pYear = (document.getElementById("pYear").value || "").trim();
+      var role = (document.getElementById("participantRole").value || "").trim();
+      var topic = (document.getElementById("topic").value || "").trim();
+      if (!ownerYear) return document.getElementById("dailyResult").textContent = "Vui lòng nhập năm sinh Gia chủ (bắt buộc).";
+      if (hasParticipant && !pYear) return document.getElementById("dailyResult").textContent = "Vui lòng nhập năm sinh người tham gia (bắt buộc khi chọn Có).";
+      var who = selectedTarget === "owner" ? "gia chủ" : "người khác";
+      var p = hasParticipant ? ", người tham gia (" + (role || "chưa ghi vai trò") + "), năm sinh " + pYear : ", không có người tham gia";
+      document.getElementById("dailyResult").textContent = "Khám phá cho " + who + ", năm sinh gia chủ " + ownerYear + p + ". Chủ đề: " + (topic || "chưa nhập");
+    }
+
+    function loadActiveProfileToForm() {
+      try {
+        var listRaw = localStorage.getItem("daily_fortune_profiles");
+        var activeId = localStorage.getItem("daily_fortune_active_profile_id");
+        if (!listRaw || !activeId) return;
+        var list = JSON.parse(listRaw);
+        if (!Array.isArray(list)) return;
+        var p = list.find(function (x) { return x.id === activeId; });
+        if (!p) return;
+        document.getElementById("ownerName").value = p.name || "";
+        document.getElementById("ownerPhone").value = p.contact || "";
+        document.getElementById("ownerDay").value = p.birthDay || "";
+        document.getElementById("ownerMonth").value = p.birthMonth || "";
+        document.getElementById("ownerYear").value = p.birthYear || "";
+        document.getElementById("ownerSeal").textContent = (p.name || "Gia chủ").split(" ").slice(-1)[0];
+      } catch (_) {}
+    }
+
+    function syncParticipantUI() {
+      var checked = document.getElementById("hasParticipant").checked;
+      var box = document.getElementById("participantBox");
+      if (!box) return;
+      if (checked) box.classList.remove("disabled");
+      else box.classList.add("disabled");
+    }
+
+    function getProfiles() {
+      try {
+        var raw = localStorage.getItem("daily_fortune_profiles");
+        if (!raw) return [];
+        var parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) { return []; }
+    }
+    function setProfiles(list) { localStorage.setItem("daily_fortune_profiles", JSON.stringify(list || [])); }
+    function getActiveProfileId() { return localStorage.getItem("daily_fortune_active_profile_id") || ""; }
+    function setActiveProfileId(id) { localStorage.setItem("daily_fortune_active_profile_id", id || ""); }
+    function createProfileId() { return "p-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8); }
+
+    function upsertOwnerProfile(options) {
+      var opts = options || {};
+      var ownerName = (document.getElementById("ownerName").value || "").trim();
+      var ownerPhone = (document.getElementById("ownerPhone").value || "").trim();
+      var ownerDay = (document.getElementById("ownerDay").value || "").trim();
+      var ownerMonth = (document.getElementById("ownerMonth").value || "").trim();
+      var ownerYear = (document.getElementById("ownerYear").value || "").trim();
+      if (!ownerYear) {
+        if (!opts.silent) document.getElementById("dailyResult").textContent = "Vui lòng nhập năm sinh Gia chủ (bắt buộc).";
+        return false;
+      }
+      var profiles = getProfiles();
+      var activeId = getActiveProfileId();
+      var active = profiles.find(function (p) { return p.id === activeId; });
+      var id = active ? active.id : createProfileId();
+      var next = { id:id, name:ownerName || "Gia chủ", contact:ownerPhone, birthDay:ownerDay, birthMonth:ownerMonth, birthYear:ownerYear, updatedAt:new Date().toISOString() };
+      var found = false;
+      profiles = profiles.map(function (p) { if (p.id !== id) return p; found = true; return next; });
+      if (!found) profiles.push(next);
+      setProfiles(profiles);
+      setActiveProfileId(id);
+      document.getElementById("ownerSeal").textContent = (next.name || "Gia chủ").split(" ").slice(-1)[0];
+      return true;
+    }
+
+    var autoSaveTimer = null;
+    function scheduleAutoSaveOwnerProfile() {
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(function () { upsertOwnerProfile({ silent: true }); }, 350);
+    }
+
+    function saveProfile() {
+      var ok = upsertOwnerProfile({ silent: false });
+      if (ok) document.getElementById("dailyResult").textContent = "Đã lưu profile Gia chủ từ trang chủ.";
+    }
+    function loadProfile() {
+      loadActiveProfileToForm();
+      document.getElementById("dailyResult").textContent = "Đã nạp profile mặc định.";
+    }
+
+    document.querySelectorAll(".pill").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        document.querySelectorAll(".pill").forEach(function(b){ b.classList.remove("active"); });
+        btn.classList.add("active");
+        selectedTarget = btn.getAttribute("data-target");
+        renderSummary();
+      });
+    });
+    document.getElementById("previewBtn").addEventListener("click", renderSummary);
+    document.getElementById("hasParticipant").addEventListener("change", syncParticipantUI);
+    document.getElementById("saveProfileBtn").addEventListener("click", saveProfile);
+    document.getElementById("loadProfileBtn").addEventListener("click", loadProfile);
+    ["ownerName","ownerPhone","ownerDay","ownerMonth","ownerYear"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", scheduleAutoSaveOwnerProfile);
+    });
+    document.getElementById("month").addEventListener("input", renderHours);
+    document.getElementById("day").addEventListener("input", renderHours);
+
+    var now = new Date();
+    document.getElementById("todayDate").textContent = now.toLocaleDateString("vi-VN");
+    loadActiveProfileToForm();
+    syncParticipantUI();
+    renderHours();
+  </script>
+</body>
+</html>

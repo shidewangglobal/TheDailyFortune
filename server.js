@@ -29,7 +29,7 @@ function safePath(urlPath) {
 }
 
 const server = http.createServer((req, res) => {
-  const urlPath = req.url === "/" ? "/index.html" : req.url;
+  const urlPath = req.url === "/" ? "/dashboard.html" : req.url;
   const reqPath = safePath(urlPath);
   const filePath = path.join(PUBLIC_DIR, reqPath);
 
