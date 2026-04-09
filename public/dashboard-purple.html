@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily fortune</title>
+  <style>
+    :root {
+      --bg-1: #120022;
+      --bg-2: #22003d;
+      --bg-3: #32005b;
+      --card: rgba(255, 255, 255, 0.08);
+      --card-2: rgba(255, 255, 255, 0.12);
+      --text: #f7efff;
+      --muted: #cdb8e7;
+      --primary: #a855f7;
+      --primary-2: #7e22ce;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --ring: rgba(168, 85, 247, 0.45);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(168, 85, 247, 0.35), transparent 30%),
+        radial-gradient(circle at 80% 20%, rgba(126, 34, 206, 0.30), transparent 35%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3));
+      min-height: 100vh;
+    }
+    .shell {
+      max-width: 1180px;
+      margin: 20px auto;
+      padding: 0 14px 24px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(8px);
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+    .brand {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+    .brand small {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .top-actions a {
+      text-decoration: none;
+      color: #f5e9ff;
+      background: linear-gradient(180deg, rgba(168,85,247,.35), rgba(126,34,206,.35));
+      border: 1px solid rgba(255,255,255,.22);
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .card {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: linear-gradient(180deg, var(--card), var(--card-2));
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    }
+    .title {
+      margin: 0 0 10px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .energy {
+      display: grid;
+      grid-template-columns: 1.3fr .9fr;
+      gap: 12px;
+    }
+    .energy .left {
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 12px;
+      padding: 10px;
+    }
+    .meta {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .seal {
+      display: inline-block;
+      background: #be123c;
+      border: 1px solid rgba(255,255,255,.25);
+      color: #fff1f2;
+      border-radius: 10px;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-weight: 800;
+      margin-right: 8px;
+    }
+    .score {
+      background: rgba(255,255,255,.09);
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+    }
+    .score .num {
+      font-size: 34px;
+      font-weight: 900;
+      color: #f5d0fe;
+      line-height: 1;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .date-inline {
+      display: grid;
+      grid-template-columns: auto 1fr auto 1fr auto 1fr;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+      white-space: nowrap;
+    }
+    .date-inline label { margin-bottom: 0; }
+    input, textarea {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.24);
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+    input:focus, textarea:focus {
+      border-color: var(--ring);
+      box-shadow: 0 0 0 3px rgba(168,85,247,.18);
+    }
+    textarea { min-height: 78px; resize: vertical; }
+    .toggle-row {
+      display: flex;
+      gap: 8px;
+      margin: 8px 0;
+      flex-wrap: wrap;
+    }
+    .pill {
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 999px;
+      padding: 7px 11px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      color: #e9d5ff;
+      background: rgba(255,255,255,.06);
+    }
+    .pill.active {
+      background: linear-gradient(180deg, var(--primary), var(--primary-2));
+      color: #fff;
+    }
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+      font-size: 13px;
+    }
+    .check-row input { width: auto; transform: scale(1.15); }
+    .participant-box {
+      border: 1px dashed rgba(255,255,255,.22);
+      border-radius: 12px;
+      padding: 8px;
+      transition: opacity .2s;
+    }
+    .participant-box.disabled {
+      opacity: .45;
+      pointer-events: none;
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 8px 11px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn.primary {
+      color: #fff;
+      background: linear-gradient(180deg, var(--primary), var(--primary-2));
+    }
+    .btn.soft {
+      color: #f3e8ff;
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.16);
+    }
+    .status {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .hours-wrap { overflow-x: auto; }
+    .hours-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(150px, 1fr));
+      gap: 8px;
+      min-width: 900px;
+    }
+    .hour-card {
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.24);
+      padding: 8px;
+    }
+    .hour-branch { font-size: 14px; font-weight: 800; }
+    .hour-range { font-size: 11px; color: var(--muted); margin: 2px 0 6px; white-space: nowrap; }
+    .cung {
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .da { background: #3b82f6; }
+    .ll { background: #8b5cf6; }
+    .th { background: var(--ok); }
+    .xk { background: #f97316; }
+    .tc { background: #14b8a6; }
+    .kv { background: var(--danger); }
+
+    @media (max-width: 920px) {
+      .energy { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .date-inline { grid-template-columns: auto 1fr auto 1fr auto 1fr; }
+    }
+    @media (max-width: 680px) {
+      .date-inline { grid-template-columns: auto 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">Daily fortune<small>Bản giao diện tím tối giản</small></div>
+      <div class="top-actions">
+        <span id="headerDate"></span>
+        <a href="/profile.html">Quản lý Profile</a>
+      </div>
+    </div>
+
+    <section class="card">
+      <h2 class="title">Năng Lượng Ngày</h2>
+      <div class="energy">
+        <div class="left">
+          <div class="meta"><span id="todayDate">09/04/2026</span> · <span id="todayCanChi">Nhâm Thìn</span></div>
+          <div><span class="seal" id="ownerSeal">Gia chủ</span> Điểm dự báo theo hồ sơ hiện tại</div>
+        </div>
+        <div class="score">
+          <div class="subtitle">Điểm thành công</div>
+          <div class="num" id="energyScore">85%</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="title">Dự Báo 6 Cung</h2>
+      <div class="date-inline">
+        <label for="month">Tháng dương</label><input id="month" type="number" min="1" max="12" value="1" />
+        <label for="day">Ngày dương</label><input id="day" type="number" min="1" max="31" value="1" />
+        <label for="year">Năm</label><input id="year" type="number" value="2026" />
+      </div>
+      <div class="status" id="dayCung">Ngày này thuộc cung: Đại An</div>
+      <div class="hours-wrap">
+        <div class="hours-grid" id="hours"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="title">Tham Khảo Chuyện Hằng Ngày</h2>
+      <label>Xem cho ai</label>
+      <div class="toggle-row">
+        <div class="pill active" data-target="owner">Gia chủ</div>
+        <div class="pill" data-target="other">Cho người khác</div>
+      </div>
+      <div class="form-grid">
+        <div><label for="ownerName">Họ và tên Gia chủ</label><input id="ownerName" placeholder="Nhập tên gia chủ" /></div>
+        <div><label for="ownerPhone">Liên hệ</label><input id="ownerPhone" placeholder="SĐT hoặc email (tuỳ chọn)" /></div>
+      </div>
+      <div class="date-inline">
+        <label for="ownerDay">Ngày sinh</label><input id="ownerDay" type="number" min="1" max="31" />
+        <label for="ownerMonth">Tháng sinh</label><input id="ownerMonth" type="number" min="1" max="12" />
+        <label for="ownerYear">Năm sinh (*)</label><input id="ownerYear" type="number" />
+      </div>
+      <div class="check-row">
+        <input id="hasParticipant" type="checkbox" />
+        <label for="hasParticipant" style="margin:0">Có người tham gia</label>
+      </div>
+      <div id="participantBox" class="participant-box disabled">
+        <div class="form-grid">
+          <div><label for="participantRole">Vai trò</label><input id="participantRole" placeholder="Ví dụ: khách hàng" /></div>
+          <div></div>
+        </div>
+        <div class="date-inline">
+          <label for="pDay">Ngày sinh</label><input id="pDay" type="number" min="1" max="31" />
+          <label for="pMonth">Tháng sinh</label><input id="pMonth" type="number" min="1" max="12" />
+          <label for="pYear">Năm sinh (*)</label><input id="pYear" type="number" />
+        </div>
+      </div>
+      <label for="topic">Chủ đề</label>
+      <textarea id="topic" placeholder="Ví dụ: mai nên nhắn khách lúc nào để tăng phản hồi tích cực?"></textarea>
+      <div class="btn-row">
+        <button class="btn primary" id="previewBtn" type="button">Khám phá</button>
+        <button class="btn soft" id="saveProfileBtn" type="button">Lưu profile</button>
+        <button class="btn soft" id="loadProfileBtn" type="button">Nạp profile</button>
+      </div>
+      <div class="status" id="dailyResult">Nhập chủ đề và bấm "Khám phá".</div>
+    </section>
+  </div>
+
+  <script>
+    var selectedTarget = "owner";
+    var cungs = ["Đại An","Lưu Liên","Tốc Hỷ","Xích Khẩu","Tiểu Cát","Không Vong"];
+    var cls = ["da","ll","th","xk","tc","kv"];
+    var hours = [["Tý","23:00 - 00:59"],["Sửu","01:00 - 02:59"],["Dần","03:00 - 04:59"],["Mão","05:00 - 06:59"],["Thìn","07:00 - 08:59"],["Tỵ","09:00 - 10:59"],["Ngọ","11:00 - 12:59"],["Mùi","13:00 - 14:59"],["Thân","15:00 - 16:59"],["Dậu","17:00 - 18:59"],["Tuất","19:00 - 20:59"],["Hợi","21:00 - 22:59"]];
+
+    function renderHours() {
+      var m = parseInt(document.getElementById("month").value || "1", 10);
+      var d = parseInt(document.getElementById("day").value || "1", 10);
+      if (m < 1 || m > 12) m = 1;
+      if (d < 1 || d > 31) d = 1;
+      var dayIndex = ((m - 1) + d - 1) % 6;
+      document.getElementById("dayCung").textContent = "Ngày này thuộc cung: " + cungs[dayIndex];
+      var grid = document.getElementById("hours");
+      grid.innerHTML = "";
+      for (var i = 0; i < hours.length; i++) {
+        var ci = (dayIndex + i) % 6;
+        var card = document.createElement("div");
+        card.className = "hour-card";
+        card.innerHTML =
+          "<div class='hour-branch'>" + hours[i][0] + "</div>" +
+          "<div class='hour-range'>" + hours[i][1] + "</div>" +
+          "<div class='cung " + cls[ci] + "'>" + cungs[ci] + "</div>";
+        grid.appendChild(card);
+      }
+    }
+
+    function renderSummary() {
+      var ownerYear = (document.getElementById("ownerYear").value || "").trim();
+      var hasParticipant = document.getElementById("hasParticipant").checked;
+      var pYear = (document.getElementById("pYear").value || "").trim();
+      var role = (document.getElementById("participantRole").value || "").trim();
+      var topic = (document.getElementById("topic").value || "").trim();
+      if (!ownerYear) return document.getElementById("dailyResult").textContent = "Vui lòng nhập năm sinh Gia chủ (bắt buộc).";
+      if (hasParticipant && !pYear) return document.getElementById("dailyResult").textContent = "Vui lòng nhập năm sinh người tham gia (bắt buộc khi chọn Có).";
+      var who = selectedTarget === "owner" ? "gia chủ" : "người khác";
+      var p = hasParticipant ? ", người tham gia (" + (role || "chưa ghi vai trò") + "), năm sinh " + pYear : ", không có người tham gia";
+      document.getElementById("dailyResult").textContent = "Khám phá cho " + who + ", năm sinh gia chủ " + ownerYear + p + ". Chủ đề: " + (topic || "chưa nhập");
+    }
+
+    function loadActiveProfileToForm() {
+      try {
+        var listRaw = localStorage.getItem("daily_fortune_profiles");
+        var activeId = localStorage.getItem("daily_fortune_active_profile_id");
+        if (!listRaw || !activeId) return;
+        var list = JSON.parse(listRaw);
+        if (!Array.isArray(list)) return;
+        var p = list.find(function (x) { return x.id === activeId; });
+        if (!p) return;
+        document.getElementById("ownerName").value = p.name || "";
+        document.getElementById("ownerPhone").value = p.contact || "";
+        document.getElementById("ownerDay").value = p.birthDay || "";
+        document.getElementById("ownerMonth").value = p.birthMonth || "";
+        document.getElementById("ownerYear").value = p.birthYear || "";
+        document.getElementById("ownerSeal").textContent = (p.name || "Gia chủ").split(" ").slice(-1)[0];
+      } catch (_) {}
+    }
+
+    function syncParticipantUI() {
+      var checked = document.getElementById("hasParticipant").checked;
+      var box = document.getElementById("participantBox");
+      if (!box) return;
+      if (checked) box.classList.remove("disabled");
+      else box.classList.add("disabled");
+    }
+
+    function getProfiles() {
+      try {
+        var raw = localStorage.getItem("daily_fortune_profiles");
+        if (!raw) return [];
+        var parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) { return []; }
+    }
+    function setProfiles(list) { localStorage.setItem("daily_fortune_profiles", JSON.stringify(list || [])); }
+    function getActiveProfileId() { return localStorage.getItem("daily_fortune_active_profile_id") || ""; }
+    function setActiveProfileId(id) { localStorage.setItem("daily_fortune_active_profile_id", id || ""); }
+    function createProfileId() { return "p-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8); }
+
+    function upsertOwnerProfile(options) {
+      var opts = options || {};
+      var ownerName = (document.getElementById("ownerName").value || "").trim();
+      var ownerPhone = (document.getElementById("ownerPhone").value || "").trim();
+      var ownerDay = (document.getElementById("ownerDay").value || "").trim();
+      var ownerMonth = (document.getElementById("ownerMonth").value || "").trim();
+      var ownerYear = (document.getElementById("ownerYear").value || "").trim();
+      if (!ownerYear) {
+        if (!opts.silent) document.getElementById("dailyResult").textContent = "Vui lòng nhập năm sinh Gia chủ (bắt buộc).";
+        return false;
+      }
+      var profiles = getProfiles();
+      var activeId = getActiveProfileId();
+      var active = profiles.find(function (p) { return p.id === activeId; });
+      var id = active ? active.id : createProfileId();
+      var next = { id:id, name:ownerName || "Gia chủ", contact:ownerPhone, birthDay:ownerDay, birthMonth:ownerMonth, birthYear:ownerYear, updatedAt:new Date().toISOString() };
+      var found = false;
+      profiles = profiles.map(function (p) { if (p.id !== id) return p; found = true; return next; });
+      if (!found) profiles.push(next);
+      setProfiles(profiles);
+      setActiveProfileId(id);
+      document.getElementById("ownerSeal").textContent = (next.name || "Gia chủ").split(" ").slice(-1)[0];
+      return true;
+    }
+
+    var autoSaveTimer = null;
+    function scheduleAutoSaveOwnerProfile() {
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(function () { upsertOwnerProfile({ silent: true }); }, 350);
+    }
+
+    function saveProfile() {
+      var ok = upsertOwnerProfile({ silent: false });
+      if (ok) document.getElementById("dailyResult").textContent = "Đã lưu profile Gia chủ từ trang chủ.";
+    }
+    function loadProfile() {
+      loadActiveProfileToForm();
+      document.getElementById("dailyResult").textContent = "Đã nạp profile mặc định.";
+    }
+
+    document.querySelectorAll(".pill").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        document.querySelectorAll(".pill").forEach(function(b){ b.classList.remove("active"); });
+        btn.classList.add("active");
+        selectedTarget = btn.getAttribute("data-target");
+        renderSummary();
+      });
+    });
+    document.getElementById("previewBtn").addEventListener("click", renderSummary);
+    document.getElementById("hasParticipant").addEventListener("change", syncParticipantUI);
+    document.getElementById("saveProfileBtn").addEventListener("click", saveProfile);
+    document.getElementById("loadProfileBtn").addEventListener("click", loadProfile);
+    ["ownerName","ownerPhone","ownerDay","ownerMonth","ownerYear"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", scheduleAutoSaveOwnerProfile);
+    });
+    document.getElementById("month").addEventListener("input", renderHours);
+    document.getElementById("day").addEventListener("input", renderHours);
+
+    var now = new Date();
+    var d = String(now.getDate()).padStart(2, "0");
+    var m = String(now.getMonth() + 1).padStart(2, "0");
+    document.getElementById("headerDate").textContent = d + "/" + m;
+    document.getElementById("todayDate").textContent = now.toLocaleDateString("vi-VN");
+    loadActiveProfileToForm();
+    syncParticipantUI();
+    renderHours();
+  </script>
+</body>
+</html>
