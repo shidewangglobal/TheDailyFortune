@@ -16,28 +16,87 @@
         radial-gradient(circle at 20% 25%, rgba(139,0,0,.04), transparent 42%),
         repeating-linear-gradient(45deg, rgba(120,98,74,.04) 0, rgba(120,98,74,.04) 1px, transparent 1px, transparent 14px);
     }
-    .topbar{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#9d1010,#7a0000);color:#fff8e8;border-bottom:2px solid #680000;box-shadow:0 3px 12px rgba(0,0,0,.22)}
-    .topbar .inner{max-width:1160px;margin:0 auto;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;position:relative}
-    .topbar .inner:after{
+    .topbar{
+      position:sticky;top:0;z-index:20;
+      background:linear-gradient(180deg,#960c0c,#760000);
+      color:#fff8e8;border-bottom:2px solid #640000;
+      box-shadow:0 3px 12px rgba(0,0,0,.22);
+    }
+    .topbar .inner{
+      max-width:1160px;margin:0 auto;
+      padding:12px 14px 10px;
+      display:flex;justify-content:space-between;align-items:center;
+      min-height:78px;
+      position:relative;
+      z-index:2;
+    }
+    .brand{
+      font-family:"Crimson Text",serif;
+      font-size:34px;
+      font-weight:700;
+      letter-spacing:.3px;
+      color:#f7d27a;
+      text-shadow:0 1px 0 rgba(0,0,0,.3);
+    }
+    .right-meta{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:31px;
+      color:#f6e3bb;
+    }
+    .date-chip{
+      border-right:1px solid rgba(246,227,187,.35);
+      padding-right:10px;
+      font-weight:600;
+    }
+    .profile-link{
+      color:#f6e3bb;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-size:30px;
+      border:none;
+      padding:0;
+    }
+    .top-ornament{
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      top:-1px;
+      width:350px;
+      height:62px;
+      pointer-events:none;
+      z-index:1;
+    }
+    .top-ornament::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-bottom-left-radius:80px 42px;
+      border-bottom-right-radius:80px 42px;
+      background:
+        radial-gradient(circle at 50% 102%, rgba(212,175,55,.92) 0 4px, transparent 5px),
+        radial-gradient(circle at 28% 40%, rgba(212,175,55,.8) 0 4px, transparent 5px),
+        radial-gradient(circle at 72% 40%, rgba(212,175,55,.8) 0 4px, transparent 5px),
+        radial-gradient(circle at 18% 26%, rgba(212,175,55,.5) 0 3px, transparent 4px),
+        radial-gradient(circle at 82% 26%, rgba(212,175,55,.5) 0 3px, transparent 4px),
+        linear-gradient(180deg, rgba(212,175,55,.42), rgba(212,175,55,.06));
+      box-shadow:inset 0 -1px 0 rgba(212,175,55,.25);
+      opacity:.95;
+    }
+    .top-ornament::after{
       content:"";
       position:absolute;
       left:50%;
       transform:translateX(-50%);
-      top:0;
-      width:240px;
-      height:34px;
-      pointer-events:none;
-      opacity:.68;
-      background:
-        radial-gradient(circle at 50% 100%, rgba(212,175,55,.9) 0 3px, transparent 4px),
-        radial-gradient(circle at 34% 42%, rgba(212,175,55,.78) 0 3px, transparent 4px),
-        radial-gradient(circle at 66% 42%, rgba(212,175,55,.78) 0 3px, transparent 4px),
-        linear-gradient(180deg, rgba(212,175,55,.42), rgba(212,175,55,0));
-      border-bottom-left-radius:36px;
-      border-bottom-right-radius:36px;
+      bottom:-8px;
+      width:28px;
+      height:16px;
+      background:linear-gradient(180deg, rgba(212,175,55,.78), rgba(212,175,55,.2));
+      clip-path:polygon(50% 100%, 0 0, 100% 0);
     }
-    .brand{font-family:"Crimson Text",serif;font-size:30px;font-weight:700;letter-spacing:.4px}
-    .profile-link{color:#fff8e8;text-decoration:none;border:1px solid rgba(212,175,55,.65);padding:6px 10px;border-radius:8px}
     .wrap{max-width:1160px;margin:16px auto;padding:0 12px 22px}
     .cloud{position:relative}
     .cloud:before,.cloud:after{
@@ -158,14 +217,22 @@
       .profile-grid{grid-template-columns:1fr}
       .date-inline{grid-template-columns:auto 1fr auto 1fr auto 1fr}
       .bamboo-grid{grid-template-columns:repeat(3,minmax(160px,1fr))}
+      .top-ornament{width:240px;height:44px}
+      .brand{font-size:27px}
+      .right-meta{font-size:24px}
+      .profile-link{font-size:22px}
     }
   </style>
 </head>
 <body>
   <div class="topbar">
     <div class="inner">
+      <div class="top-ornament" aria-hidden="true"></div>
       <div class="brand">Lục Nhâm Chiến Lược</div>
-      <a class="profile-link" href="/profile.html">Profile</a>
+      <div class="right-meta">
+        <div class="date-chip" id="headerDate">THỨ 5, 09/04</div>
+        <a class="profile-link" href="/profile.html">👤 Profile ▾</a>
+      </div>
     </div>
   </div>
 
@@ -394,6 +461,11 @@
     document.getElementById("day").addEventListener("input", renderHours);
 
     var now = new Date();
+    var weekday = ["CHỦ NHẬT","THỨ 2","THỨ 3","THỨ 4","THỨ 5","THỨ 6","THỨ 7"];
+    var d = String(now.getDate()).padStart(2, "0");
+    var m = String(now.getMonth() + 1).padStart(2, "0");
+    var headerDate = document.getElementById("headerDate");
+    if (headerDate) headerDate.textContent = weekday[now.getDay()] + ", " + d + "/" + m;
     document.getElementById("todayDate").textContent = now.toLocaleDateString("vi-VN");
     loadActiveProfileToForm();
     syncParticipantUI();
