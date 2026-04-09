@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Daily fortune</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Noto+Serif:wght@600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-1: #120022;
@@ -24,7 +27,7 @@
     body {
       margin: 0;
       color: var(--text);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      font-family: "Be Vietnam Pro", Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       background:
         radial-gradient(circle at 20% 10%, rgba(168, 85, 247, 0.35), transparent 30%),
         radial-gradient(circle at 80% 20%, rgba(126, 34, 206, 0.30), transparent 35%),
@@ -64,9 +67,9 @@
       opacity: .55;
     }
     .shell {
-      max-width: 1180px;
-      margin: 20px auto;
-      padding: 0 14px 24px;
+      width: min(1680px, calc(100vw - 24px));
+      margin: 12px auto;
+      padding: 0 6px 24px;
       position: relative;
       z-index: 1;
     }
@@ -75,17 +78,19 @@
       justify-content: space-between;
       align-items: center;
       gap: 10px;
-      margin-bottom: 14px;
+      margin-bottom: 18px;
       background: rgba(0, 0, 0, 0.22);
       border: 1px solid rgba(255,255,255,0.12);
       backdrop-filter: blur(8px);
       border-radius: 14px;
-      padding: 10px 12px;
+      padding: 13px 16px;
     }
     .brand {
-      font-size: 22px;
+      font-family: "Noto Serif", Georgia, serif;
+      font-size: 30px;
       font-weight: 800;
-      letter-spacing: .2px;
+      letter-spacing: .4px;
+      text-shadow: 0 0 18px rgba(205, 160, 255, 0.38);
     }
     .top-actions {
       display: flex;
@@ -108,15 +113,21 @@
       border: 1px solid rgba(255,255,255,0.14);
       background: linear-gradient(180deg, var(--card), var(--card-2));
       border-radius: 14px;
-      padding: 12px;
-      margin-bottom: 12px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
       box-shadow: 0 8px 24px rgba(0,0,0,.18);
     }
     .title {
       margin: 0 0 10px;
-      font-size: 20px;
+      font-family: "Noto Serif", Georgia, serif;
+      font-size: 34px;
       font-weight: 800;
-      letter-spacing: .2px;
+      letter-spacing: .5px;
+      color: #f6e9ff;
+    }
+    .energy-card .title {
+      color: #D4AF37;
+      text-shadow: 0 0 14px rgba(212, 175, 55, 0.28);
     }
     .subtitle {
       color: var(--muted);
@@ -124,55 +135,88 @@
       margin-bottom: 8px;
     }
     .energy {
-      display: grid;
-      grid-template-columns: 1.3fr .9fr;
-      gap: 12px;
+      display: block;
     }
     .energy .left {
       background: rgba(0,0,0,.22);
       border: 1px solid rgba(255,255,255,.14);
       border-radius: 12px;
-      padding: 10px;
+      padding: 26px 24px 24px;
+      text-align: center;
+    }
+    .energy-top-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      align-items: stretch;
+      gap: 14px;
+      margin-top: 6px;
+      margin-bottom: 16px;
+    }
+    .energy-cell {
+      min-height: 78px;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 12px;
+      background: rgba(255,255,255,.06);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 12px;
     }
     .energy-heading {
-      margin: 0 0 6px;
-      font-size: 34px;
+      margin: 0;
+      font-family: "Noto Serif", Georgia, serif;
+      font-size: 42px;
       line-height: .95;
-      letter-spacing: .4px;
-      color: #fef2ff;
+      letter-spacing: .9px;
+      color: #D4AF37;
       font-weight: 900;
+      text-shadow: 0 0 20px rgba(212, 175, 55, 0.32);
     }
     .energy-line {
       display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
+      gap: 10px 14px;
+      flex-wrap: nowrap;
       align-items: center;
-      margin-bottom: 8px;
+      justify-content: center;
+      margin: 0;
     }
     .energy-date {
-      font-size: 30px;
+      font-size: 33px;
       font-weight: 800;
-      color: #f9d8ff;
+      color: #f2f3f7;
       line-height: 1;
+      letter-spacing: .5px;
     }
     .energy-canchi {
-      font-size: 30px;
+      font-size: 32px;
       font-weight: 700;
-      color: #d9b0ff;
+      color: #dde3f0;
       line-height: 1;
+      font-family: "Noto Serif", Georgia, serif;
     }
     .energy-profile {
-      font-size: 22px;
-      font-weight: 600;
-      color: #f3e8ff;
-      line-height: 1.15;
+      font-size: 19px;
+      font-weight: 700;
+      color: #f9e9bd;
+      line-height: 1.2;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid rgba(212, 175, 55, 0.65);
+      border-radius: 999px;
+      padding: 8px 16px;
+      background: rgba(212, 175, 55, 0.1);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), 0 0 16px rgba(212, 175, 55, 0.18);
+      margin: 0;
     }
     .energy-body {
-      font-size: 18px;
-      line-height: 1.32;
+      font-size: 22px;
+      line-height: 1.8;
       color: #f4dfff;
-      margin: 0 0 8px;
-      max-width: 95%;
+      margin: 0 auto 14px;
+      max-width: 80%;
+      text-align: center;
     }
     .seal {
       display: inline-block;
@@ -185,22 +229,29 @@
       font-weight: 800;
       margin-right: 8px;
     }
-    .score {
-      background: rgba(255,255,255,.09);
-      border: 1px solid rgba(255,255,255,.16);
-      border-radius: 12px;
-      padding: 12px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 6px;
+    .energy-success {
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.32);
+      background: rgba(255,255,255,.08);
     }
-    .score .num {
-      font-size: 34px;
+    .energy-success .subtitle {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.6px;
+      margin: 0;
+      color: #e9d5ff;
+    }
+    .energy-success .num {
+      font-size: 28px;
       font-weight: 900;
       color: #f5d0fe;
-      line-height: 1;
+      letter-spacing: .5px;
+      text-shadow: 0 0 14px rgba(231, 176, 255, 0.45);
     }
     .form-grid {
       display: grid;
@@ -218,7 +269,8 @@
     label {
       display: block;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 15px;
+      font-weight: 600;
       margin-bottom: 4px;
       white-space: nowrap;
     }
@@ -229,8 +281,8 @@
       border: 1px solid rgba(255,255,255,.16);
       background: rgba(0,0,0,.24);
       color: #fff;
-      padding: 8px 10px;
-      font-size: 13px;
+      padding: 11px 12px;
+      font-size: 16px;
       outline: none;
     }
     input:focus, textarea:focus {
@@ -249,7 +301,7 @@
       border-radius: 999px;
       padding: 7px 11px;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 700;
       color: #e9d5ff;
       background: rgba(255,255,255,.06);
@@ -285,8 +337,8 @@
     .btn {
       border: none;
       border-radius: 10px;
-      padding: 8px 11px;
-      font-size: 12px;
+      padding: 10px 14px;
+      font-size: 15px;
       font-weight: 700;
       cursor: pointer;
     }
@@ -302,9 +354,19 @@
     .status {
       margin-top: 8px;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 15px;
     }
     .hours-wrap { overflow-x: auto; }
+    .forecast-card .date-inline label,
+    .forecast-card .status,
+    .forecast-card .hour-branch { font-size: 16px; }
+    .forecast-card .hour-range { font-size: 13px; }
+    .forecast-card .cung { font-size: 13px; padding: 4px 9px; }
+    .daily-ref-card label,
+    .daily-ref-card .pill,
+    .daily-ref-card .status { font-size: 16px; }
+    .daily-ref-card textarea::placeholder,
+    .daily-ref-card input::placeholder { font-size: 15px; }
     .hours-grid {
       display: grid;
       grid-template-columns: repeat(6, minmax(150px, 1fr));
@@ -318,11 +380,11 @@
       padding: 8px;
     }
     .hour-branch { font-size: 14px; font-weight: 800; }
-    .hour-range { font-size: 11px; color: var(--muted); margin: 2px 0 6px; white-space: nowrap; }
+    .hour-range { font-size: 12px; color: var(--muted); margin: 2px 0 6px; white-space: nowrap; }
     .cung {
       border-radius: 999px;
       padding: 3px 8px;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       text-align: center;
       color: #fff;
@@ -335,17 +397,55 @@
     .tc { background: #14b8a6; }
     .kv { background: var(--danger); }
 
+    @media (min-width: 1500px) {
+      .shell { width: calc(100vw - 18px); }
+      .hours-grid { grid-template-columns: repeat(6, minmax(180px, 1fr)); min-width: 1080px; }
+    }
     @media (max-width: 920px) {
-      .energy { grid-template-columns: 1fr; }
+      .shell { width: calc(100vw - 12px); padding: 0 2px 16px; margin-top: 8px; }
+      .topbar { padding: 10px 12px; }
+      .brand { font-size: 22px; }
+      .card { padding: 12px; }
+      .title { font-size: 26px; }
       .form-grid { grid-template-columns: 1fr; }
       .date-inline { grid-template-columns: auto 1fr auto 1fr auto 1fr; }
-      .energy-heading { font-size: 28px; }
+      .energy-top-row { grid-template-columns: 1fr; gap: 10px; }
+      .energy-line { flex-wrap: wrap; }
+      .energy-cell { min-height: auto; }
+      .energy .left { padding: 14px 12px 14px; }
       .energy-date, .energy-canchi { font-size: 24px; }
-      .energy-profile { font-size: 18px; }
-      .energy-body { font-size: 16px; }
+      .energy-profile { font-size: 14px; padding: 7px 12px; }
+      .energy-body { font-size: 16px; max-width: 92%; }
+      .forecast-card .date-inline label,
+      .forecast-card .status,
+      .forecast-card .hour-branch,
+      .daily-ref-card label,
+      .daily-ref-card .pill,
+      .daily-ref-card .status { font-size: 14px; }
+      .btn { width: 100%; }
+      .btn-row { display: grid; grid-template-columns: 1fr; }
+      .hours-wrap { overflow-x: visible; }
+      .hours-grid {
+        min-width: 0;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
     }
     @media (max-width: 680px) {
+      .title { font-size: 24px; }
+      .top-actions a { font-size: 11px; }
       .date-inline { grid-template-columns: auto 1fr; }
+      .hours-wrap { overflow-x: visible; }
+      .hours-grid {
+        min-width: 0;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .hour-card { padding: 10px; }
+      .hour-branch { font-size: 15px; }
+      .hour-range { font-size: 12px; }
+      .cung { font-size: 12px; }
+    }
+    @media (max-width: 420px) {
+      .hours-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -358,27 +458,34 @@
       </div>
     </div>
 
-    <section class="card">
+    <section class="card energy-card">
       <h2 class="title">Năng Lượng Ngày</h2>
       <div class="energy">
         <div class="left">
-          <h3 class="energy-heading">NĂNG LƯỢNG NGÀY</h3>
-          <div class="energy-line">
-            <div class="energy-date" id="todayDate">09/04/2026</div>
-            <div class="energy-canchi" id="todayCanChi">Nhâm Thìn</div>
-            <div class="energy-profile">Bản mệnh: <span id="ownerProfileLabel">Vượng Thế Đạt (Đại Lâm Mộc)</span></div>
+          <div class="energy-top-row">
+            <div class="energy-cell">
+              <div class="energy-success">
+                <div class="subtitle">Điểm thành công</div>
+                <div class="num" id="energyScore">85%</div>
+              </div>
+            </div>
+            <div class="energy-cell">
+              <div class="energy-line">
+                <div class="energy-date" id="todayDate">09/04/2026</div>
+                <div class="energy-canchi" id="todayCanChi">Nhâm Thìn</div>
+              </div>
+            </div>
+            <div class="energy-cell">
+              <div class="energy-profile">Bản mệnh: <span id="ownerProfileLabel">Gia chủ (theo hồ sơ)</span></div>
+            </div>
           </div>
           <p class="energy-body" id="energyMessage">Hôm nay hợp mở đầu việc mới, đàm phán ngắn gọn và chốt hạng mục quan trọng. Hạn chế tranh luận kéo dài và quyết định nóng vội.</p>
           <div><span class="seal" id="ownerSeal">Gia chủ</span> Điểm dự báo theo hồ sơ hiện tại</div>
         </div>
-        <div class="score">
-          <div class="subtitle">Điểm thành công</div>
-          <div class="num" id="energyScore">85%</div>
-        </div>
       </div>
     </section>
 
-    <section class="card">
+    <section class="card forecast-card">
       <h2 class="title">Dự Báo 6 Cung</h2>
       <div class="date-inline">
         <label for="month">Tháng dương</label><input id="month" type="number" min="1" max="12" value="1" />
@@ -391,7 +498,7 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card daily-ref-card">
       <h2 class="title">Tham Khảo Chuyện Hằng Ngày</h2>
       <label>Xem cho ai</label>
       <div class="toggle-row">
@@ -426,10 +533,8 @@
       <textarea id="topic" placeholder="Ví dụ: mai nên nhắn khách lúc nào để tăng phản hồi tích cực?"></textarea>
       <div class="btn-row">
         <button class="btn primary" id="previewBtn" type="button">Khám phá</button>
-        <button class="btn soft" id="saveProfileBtn" type="button">Lưu profile</button>
-        <button class="btn soft" id="loadProfileBtn" type="button">Nạp profile</button>
       </div>
-      <div class="status" id="dailyResult">Nhập chủ đề và bấm "Khám phá".</div>
+      <div class="status" id="dailyResult"></div>
     </section>
   </div>
 
@@ -545,15 +650,6 @@
       autoSaveTimer = setTimeout(function () { upsertOwnerProfile({ silent: true }); }, 350);
     }
 
-    function saveProfile() {
-      var ok = upsertOwnerProfile({ silent: false });
-      if (ok) document.getElementById("dailyResult").textContent = "Đã lưu profile Gia chủ từ trang chủ.";
-    }
-    function loadProfile() {
-      loadActiveProfileToForm();
-      document.getElementById("dailyResult").textContent = "Đã nạp profile mặc định.";
-    }
-
     document.querySelectorAll(".pill").forEach(function(btn){
       btn.addEventListener("click", function(){
         document.querySelectorAll(".pill").forEach(function(b){ b.classList.remove("active"); });
@@ -564,8 +660,6 @@
     });
     document.getElementById("previewBtn").addEventListener("click", renderSummary);
     document.getElementById("hasParticipant").addEventListener("change", syncParticipantUI);
-    document.getElementById("saveProfileBtn").addEventListener("click", saveProfile);
-    document.getElementById("loadProfileBtn").addEventListener("click", loadProfile);
     ["ownerName","ownerPhone","ownerDay","ownerMonth","ownerYear"].forEach(function (id) {
       var el = document.getElementById(id);
       if (!el) return;

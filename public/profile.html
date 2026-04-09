@@ -4,77 +4,145 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Daily fortune - Quản lý Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Noto+Serif:wght@600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    :root { --brown:#7a3417; --paper:#f6eddc; --paper2:#efe1c8; --text:#3a2a1f; --muted:#7d5e46; --purple:#5b21b6; }
+    :root {
+      --bg-1: #120022;
+      --bg-2: #22003d;
+      --bg-3: #32005b;
+      --card: rgba(255, 255, 255, 0.08);
+      --card-2: rgba(255, 255, 255, 0.12);
+      --text: #f7efff;
+      --muted: #cdb8e7;
+      --primary: #a855f7;
+      --primary-2: #7e22ce;
+      --ring: rgba(168, 85, 247, 0.45);
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
       color: var(--text);
-      background: linear-gradient(135deg,var(--paper),var(--paper2),#e9d7ba);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(168, 85, 247, 0.35), transparent 30%),
+        radial-gradient(circle at 80% 20%, rgba(126, 34, 206, 0.30), transparent 35%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3));
+      min-height: 100vh;
     }
     .topbar {
       position: sticky; top: 0; z-index: 20;
-      background: linear-gradient(180deg,#b34122,#8e2d18);
-      border-bottom: 2px solid #742413;
-      color: #fff7e6;
+      background: rgba(0, 0, 0, 0.28);
+      border-bottom: 1px solid rgba(255,255,255,0.14);
       box-shadow: 0 4px 12px rgba(0,0,0,.2);
+      backdrop-filter: blur(8px);
     }
     .topbar .inner {
-      max-width: 980px; margin: 0 auto; padding: 10px 14px;
+      width: min(1680px, calc(100vw - 24px)); margin: 0 auto; padding: 13px 16px;
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px;
     }
+    .topbar strong {
+      font-family: "Noto Serif", Georgia, serif;
+      font-size: 23px;
+      letter-spacing: .4px;
+      color: #f6e9ff;
+      text-shadow: 0 0 14px rgba(205, 160, 255, 0.35);
+    }
     .topbar a {
-      color: #fff7e6; text-decoration: none; font-size: 12px; font-weight: 700;
-      border: 1px solid rgba(255,247,230,.35); padding: 6px 10px; border-radius: 999px;
+      color: #f5e9ff; text-decoration: none; font-size: 12px; font-weight: 700;
+      border: 1px solid rgba(255,255,255,.24); padding: 6px 10px; border-radius: 999px;
+      background: linear-gradient(180deg, rgba(168,85,247,.35), rgba(126,34,206,.35));
     }
-    .wrap { max-width: 980px; margin: 16px auto; padding: 0 12px 20px; }
+    .wrap { width: min(1680px, calc(100vw - 24px)); margin: 14px auto; padding: 0 6px 20px; }
     .card {
-      border: 1px solid rgba(139,85,47,.28);
+      border: 1px solid rgba(255,255,255,.14);
       border-radius: 14px;
-      padding: 12px;
-      margin-bottom: 12px;
-      background: linear-gradient(180deg, rgba(255,254,250,.98), rgba(247,236,217,.95));
-      box-shadow: 0 5px 16px rgba(78,44,20,.12);
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      background: linear-gradient(180deg, var(--card), var(--card-2));
+      box-shadow: 0 8px 24px rgba(0,0,0,.18);
     }
-    h1 { margin: 0 0 6px; color: var(--brown); font-size: 24px; }
-    h3 { margin: 0 0 10px; color: var(--brown); font-size: 16px; }
-    .sub { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-    .birth { display: grid; grid-template-columns: auto 1fr auto 1fr auto 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
-    label { display: block; font-size: 12px; color: var(--muted); margin: 0 0 5px; white-space: nowrap; }
+    h1 {
+      margin: 0 0 6px;
+      font-family: "Noto Serif", Georgia, serif;
+      color: #f6e9ff;
+      font-size: 36px;
+      letter-spacing: .5px;
+      text-shadow: 0 0 16px rgba(205, 160, 255, 0.35);
+    }
+    h3 {
+      margin: 0 0 10px;
+      font-family: "Noto Serif", Georgia, serif;
+      color: #ead3ff;
+      font-size: 26px;
+      letter-spacing: .4px;
+    }
+    .sub { margin: 0 0 14px; color: var(--muted); font-size: 17px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+    .birth { display: grid; grid-template-columns: auto 1fr auto 1fr auto 1fr; gap: 12px; align-items: center; margin-bottom: 10px; }
+    label { display: block; font-size: 15px; font-weight: 600; color: var(--muted); margin: 0 0 5px; white-space: nowrap; }
     input {
       width: 100%;
-      border: 1px solid rgba(139,85,47,.28);
+      border: 1px solid rgba(255,255,255,.16);
       border-radius: 10px;
-      padding: 9px 10px;
-      font-size: 13px;
-      background: #fffdf8;
+      padding: 11px 12px;
+      font-size: 16px;
+      color: #fff;
+      background: rgba(0,0,0,.24);
     }
-    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    input:focus {
+      outline: none;
+      border-color: var(--ring);
+      box-shadow: 0 0 0 3px rgba(168,85,247,.18);
+    }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
     .btn {
-      border: none; border-radius: 10px; padding: 8px 10px; font-size: 12px; cursor: pointer;
+      border: none; border-radius: 10px; padding: 10px 13px; font-size: 15px; cursor: pointer;
     }
-    .btn.primary { background: var(--purple); color: #fff; }
-    .btn.soft { background: rgba(91,33,182,.1); color: var(--purple); }
-    .status { margin-top: 8px; font-size: 13px; color: var(--muted); }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px dashed rgba(0,0,0,.1); }
-    th { color: var(--muted); font-size: 12px; }
+    .btn.primary {
+      color: #fff;
+      background: linear-gradient(180deg, var(--primary), var(--primary-2));
+      font-weight: 700;
+    }
+    .btn.soft {
+      color: #f3e8ff;
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.16);
+      font-weight: 700;
+    }
+    .status { margin-top: 10px; font-size: 15px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px dashed rgba(255,255,255,.14); }
+    th { color: #e9d5ff; font-size: 13px; font-weight: 700; }
     .row-actions { display: flex; gap: 6px; }
     .row-actions button {
-      border: 1px solid rgba(139,85,47,.22);
+      border: 1px solid rgba(255,255,255,.22);
       border-radius: 8px;
-      background: #fff;
-      color: var(--brown);
+      background: rgba(255,255,255,.08);
+      color: #f5e9ff;
       padding: 4px 8px;
-      font-size: 11px;
+      font-size: 12px;
       cursor: pointer;
     }
+    @media (min-width: 1500px) {
+      .topbar .inner,
+      .wrap { width: calc(100vw - 18px); }
+    }
     @media (max-width: 820px) {
+      .topbar .inner,
+      .wrap { width: calc(100vw - 12px); padding-left: 2px; padding-right: 2px; }
+      .topbar strong { font-size: 18px; }
+      .card { padding: 12px; }
+      h1 { font-size: 28px; }
+      h3 { font-size: 22px; }
       .grid { grid-template-columns: 1fr; }
       .birth { grid-template-columns: auto 1fr; }
+      .actions { display: grid; grid-template-columns: 1fr; }
+      .btn { width: 100%; }
+      .table-wrap { overflow-x: auto; }
+      table { min-width: 700px; font-size: 14px; }
     }
   </style>
 </head>
@@ -119,18 +187,20 @@
 
     <section class="card">
       <h3>Danh sách profile</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Tên</th>
-            <th>Ngày sinh</th>
-            <th>Liên hệ</th>
-            <th>Mặc định</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody id="profilesBody"></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên</th>
+              <th>Ngày sinh</th>
+              <th>Liên hệ</th>
+              <th>Mặc định</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="profilesBody"></tbody>
+        </table>
+      </div>
     </section>
   </div>
 
