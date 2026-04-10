@@ -194,9 +194,9 @@
   <div class="topbar">
     <div class="inner">
       <strong id="pageTitle">🪷 Daily fortune · Quản lý Profile</strong>
-      <div class="inline-actions">
+      <div class="inline-actions hidden" id="topbarNav" aria-label="Điều hướng">
         <span class="mode-badge" id="modeBadge">ADMIN</span>
-        <a href="/">Về Dashboard</a>
+        <a id="topbarDashboardLink" href="/dashboard-purple.html">Về Dashboard</a>
       </div>
     </div>
   </div>
@@ -292,11 +292,6 @@
       <section class="card">
         <h1>Hồ sơ của bạn</h1>
         <p class="sub">Nhập invitation code để truy cập. Chỉ người có mã mới vào được.</p>
-        <div class="note">
-          Mã test tạm thời:
-          <br>- <strong>ADMIN-2026</strong> (admin/unlimited)
-          <br>- <strong>TEST-2026</strong> (khách, 20 lượt miễn phí tổng cộng)
-        </div>
         <div class="grid">
           <div>
             <label for="inviteCode">Invitation code</label>
@@ -360,7 +355,7 @@
     var INVITE_CODES_KEY = "daily_fortune_invite_codes";
     var INVITE_CODES = {
       "ADMIN-2026": { tier: "admin" },
-      "TEST-2026": { tier: "test" }
+      "TEST-2026": { tier: "admin" }
     };
     function usageKey(invite) { return "daily_fortune_usage_total_" + invite; }
     function getDailyUsage(invite) {
@@ -619,27 +614,50 @@
       var savedInvite = localStorage.getItem("daily_fortune_customer_invite") || "";
       return savedInvite ? "customer" : "admin";
     }
+    function getActiveCustomerInviteKey() {
+      var raw = localStorage.getItem("daily_fortune_customer_invite") || "";
+      if (!raw) return "";
+      return findInviteCodeKey(raw) || "";
+    }
+    /** Khách: chỉ hiện nút Dashboard sau khi đã lưu hồ sơ (đủ điều kiện vào app). Admin: luôn hiện badge + link. */
+    function refreshTopbarNav(mode) {
+      var nav = document.getElementById("topbarNav");
+      var badge = document.getElementById("modeBadge");
+      var dash = document.getElementById("topbarDashboardLink");
+      if (!nav || !badge || !dash) return;
+      if (mode !== "customer") {
+        nav.classList.remove("hidden");
+        badge.classList.remove("hidden");
+        dash.classList.remove("hidden");
+        badge.textContent = "ADMIN";
+        dash.setAttribute("href", "/dashboard-purple.html");
+        return;
+      }
+      var inviteKey = getActiveCustomerInviteKey();
+      var done = inviteKey && isProfileDone(inviteKey);
+      if (!done) {
+        nav.classList.add("hidden");
+        return;
+      }
+      nav.classList.remove("hidden");
+      badge.classList.add("hidden");
+      dash.classList.remove("hidden");
+      dash.setAttribute("href", "/dashboard-purple.html?role=customer");
+    }
     function setModeUI(mode) {
       var isCustomer = mode === "customer";
       document.getElementById("adminView").classList.toggle("hidden", isCustomer);
       document.getElementById("customerView").classList.toggle("hidden", !isCustomer);
-      document.getElementById("modeBadge").textContent = isCustomer ? "CUSTOMER" : "ADMIN";
       document.getElementById("pageTitle").textContent = isCustomer
         ? "🪷 Daily fortune · Hồ sơ khách hàng"
         : "🪷 Daily fortune · Quản lý Profile";
+      refreshTopbarNav(mode);
     }
     function customerKey(invite) { return "daily_fortune_customer_profile_" + invite; }
     function customerDoneKey(invite) { return "daily_fortune_customer_profile_done_" + invite; }
     function isProfileDone(invite) { return localStorage.getItem(customerDoneKey(invite)) === "1"; }
     function markProfileDone(invite) { localStorage.setItem(customerDoneKey(invite), "1"); }
     function isValidInvite(invite) { return !!findInviteCodeKey(invite); }
-    function resetTestFlow() {
-      var invite = "TEST-2026";
-      localStorage.removeItem(customerKey(invite));
-      localStorage.removeItem(customerDoneKey(invite));
-      localStorage.removeItem("daily_fortune_customer_invite");
-      localStorage.removeItem(usageKey(invite));
-    }
     function saveCustomerProfile(invite, profile) {
       localStorage.setItem(customerKey(invite), JSON.stringify(profile));
       localStorage.setItem("daily_fortune_customer_invite", invite);
@@ -707,8 +725,6 @@
       document.getElementById("customerHour").value = (profile && profile.birthHour) || "";
     }
     function initCustomerMode() {
-      var resetParam = new URLSearchParams(window.location.search).get("reset");
-      if (resetParam === "test") resetTestFlow();
       var params = new URLSearchParams(window.location.search);
       var nextUrl = params.get("next") || "/dashboard-purple.html";
       document.getElementById("goDashboardBtn").setAttribute("href", nextUrl);
@@ -743,6 +759,7 @@
         showCustomerPanels(true);
         refreshContinue(inviteKey);
         setCustomerStatus(isProfileDone(inviteKey) ? "Đã mở hồ sơ của bạn." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+        refreshTopbarNav("customer");
       });
       document.getElementById("customerSaveBtn").addEventListener("click", function () {
         var invite = (document.getElementById("inviteCode").value || "").trim();
@@ -777,7 +794,9 @@
         markProfileDone(inviteKey);
         refreshContinue(inviteKey);
         setCustomerStatus("Đã lưu hồ sơ. Bây giờ bạn có thể bấm \"Bắt đầu trải nghiệm\".");
+        refreshTopbarNav("customer");
       });
+      refreshTopbarNav("customer");
     }
 
     document.getElementById("createInviteBtn").addEventListener("click", function () {
