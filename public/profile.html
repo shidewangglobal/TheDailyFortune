@@ -170,6 +170,65 @@
       font-size: 13px;
       font-weight: 700;
     }
+    .pkg-section { margin: 12px 0 14px; }
+    .pkg-section h4 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #ead3ff;
+    }
+    .pkg-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: stretch;
+    }
+    .pkg-chip {
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #f3e8ff;
+      background: rgba(0,0,0,.2);
+      cursor: pointer;
+      text-align: left;
+      line-height: 1.35;
+      max-width: 100%;
+    }
+    .pkg-chip:hover { border-color: var(--ring); background: rgba(168,85,247,.12); }
+    .pkg-chip.selected {
+      border-color: rgba(168,85,247,.75);
+      background: linear-gradient(180deg, rgba(168,85,247,.28), rgba(126,34,206,.22));
+      box-shadow: 0 0 0 1px rgba(168,85,247,.35);
+    }
+    .pkg-chip .pkg-name { display: block; font-weight: 800; color: #fff; }
+    .pkg-chip .pkg-price { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .combo-section { margin-top: 14px; }
+    .combo-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .combo-chip {
+      border: 1px dashed rgba(255,255,255,.28);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #e9d5ff;
+      background: rgba(255,255,255,.06);
+      cursor: pointer;
+    }
+    .combo-chip:hover { border-color: var(--ring); color: #fff; }
+    .invite-quote {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      font-size: 14px;
+      color: #e9d5ff;
+      line-height: 1.45;
+    }
+    .invite-quote strong { color: #fce7ff; }
+    .invite-quote .muted { font-size: 12px; color: var(--muted); margin-top: 6px; }
     @media (min-width: 1500px) {
       .topbar .inner,
       .wrap { width: calc(100vw - 18px); }
@@ -256,6 +315,51 @@
     <section class="card">
       <h3>Quản lý invitation code</h3>
       <p class="sub">Tạo mã random dạng 3 số + 3 chữ (ví dụ: 482abc) để cấp cho khách.</p>
+
+      <div class="pkg-section" id="invitePricingWrap">
+        <h4>Gói quota &amp; giá tham khảo (mỗi mã một quota tổng)</h4>
+        <div class="pkg-chips" id="invitePkgChips" role="group" aria-label="Chọn gói">
+          <button type="button" class="pkg-chip selected" data-pkg="p20" title="Dùng cho CTKM / giới thiệu">
+            <span class="pkg-name">20 lượt</span>
+            <span class="pkg-price">Miễn phí</span>
+          </button>
+          <button type="button" class="pkg-chip" data-pkg="p30" title="Gói phổ biến cho cá nhân">
+            <span class="pkg-name">30 lượt</span>
+            <span class="pkg-price">90.000đ · ~3.000đ/lượt</span>
+          </button>
+          <button type="button" class="pkg-chip" data-pkg="p180" title="Ưu đãi gói dài">
+            <span class="pkg-name">180 lượt</span>
+            <span class="pkg-price">449.000đ · ~2.500đ/lượt</span>
+          </button>
+          <button type="button" class="pkg-chip" data-pkg="p365" title="Một năm — giá theo năm">
+            <span class="pkg-name">365 lượt</span>
+            <span class="pkg-price">799.000đ · ~2.190đ/lượt</span>
+          </button>
+          <button type="button" class="pkg-chip" data-pkg="custom" title="Nhập quota — 5.000đ mỗi lượt">
+            <span class="pkg-name">Tuỳ chỉnh</span>
+            <span class="pkg-price">5.000đ × số lượt / mã</span>
+          </button>
+        </div>
+        <div class="combo-section">
+          <h4>Combo nhanh (chọn để điền quota + số mã)</h4>
+          <p class="sub" style="margin:0 0 6px;font-size:14px;">Gợi ý bán / cấp — chỉnh lại số mã nếu cần.</p>
+          <div class="combo-chips" id="inviteComboChips">
+            <button type="button" class="combo-chip" data-combo="trial5x20" title="Thử nghiệm / referral">5 mã × 20 (miễn phí)</button>
+            <button type="button" class="combo-chip" data-combo="solo30" title="Một khách cá nhân">1 mã × 30 (90k)</button>
+            <button type="button" class="combo-chip" data-combo="half180" title="Gói 6 tháng">1 mã × 180 (449k)</button>
+            <button type="button" class="combo-chip" data-combo="year365" title="Gói năm">1 mã × 365 (799k)</button>
+            <button type="button" class="combo-chip" data-combo="team5x30" title="Nhóm nhỏ">5 mã × 30 (450k)</button>
+            <button type="button" class="combo-chip" data-combo="biz10x180" title="Đối tác / nhiều khách">10 mã × 180 (4,49tr)</button>
+            <button type="button" class="combo-chip" data-combo="agency20x30" title="Chiến dịch lớn">20 mã × 30 (1,8tr)</button>
+            <button type="button" class="combo-chip" data-combo="custom50" title="Tuỳ chỉnh: 50 lượt × 5k">1 mã × 50 (250k · custom)</button>
+          </div>
+        </div>
+        <div class="invite-quote" id="inviteQuoteBanner">
+          <span id="inviteQuoteText">Chọn gói và số mã để xem tổng tham khảo.</span>
+          <div class="muted">Giá tham khảo cho admin ghi nhận — chỉnh trên hợp đồng / hoá đơn thực tế.</div>
+        </div>
+      </div>
+
       <div class="birth">
         <label for="newInviteTier">Loại mã</label>
         <select id="newInviteTier">
@@ -409,6 +513,131 @@
       var el = document.getElementById("inviteStatus");
       if (el) el.textContent = text;
     }
+
+    var inviteSelectedPkg = "p20";
+    var CUSTOM_PER_TURN_VND = 5000;
+    var INVITE_PKG_DEFAULT_LIMIT = { p20: 20, p30: 30, p180: 180, p365: 365 };
+    var INVITE_COMBOS = {
+      trial5x20: { pkg: "p20", limit: 20, count: 5 },
+      solo30: { pkg: "p30", limit: 30, count: 1 },
+      half180: { pkg: "p180", limit: 180, count: 1 },
+      year365: { pkg: "p365", limit: 365, count: 1 },
+      team5x30: { pkg: "p30", limit: 30, count: 5 },
+      biz10x180: { pkg: "p180", limit: 180, count: 10 },
+      agency20x30: { pkg: "p30", limit: 30, count: 20 },
+      custom50: { pkg: "custom", limit: 50, count: 1 }
+    };
+    function formatVnd(n) {
+      if (!Number.isFinite(n) || n < 0) return "—";
+      return n.toLocaleString("vi-VN") + "đ";
+    }
+    function inferPkgFromLimit(lim) {
+      if (!Number.isFinite(lim) || lim < 1) return "custom";
+      if (lim === 20) return "p20";
+      if (lim === 30) return "p30";
+      if (lim === 180) return "p180";
+      if (lim === 365) return "p365";
+      return "custom";
+    }
+    function pricePerCodeVnd(pkgId, limitVal) {
+      var lim = Number.isFinite(limitVal) && limitVal > 0 ? limitVal : 1;
+      if (pkgId === "custom") return lim * CUSTOM_PER_TURN_VND;
+      if (pkgId === "p20") return 0;
+      if (pkgId === "p30") return 90000;
+      if (pkgId === "p180") return 449000;
+      if (pkgId === "p365") return 799000;
+      return lim * CUSTOM_PER_TURN_VND;
+    }
+    function syncPkgChipVisual() {
+      var root = document.getElementById("invitePkgChips");
+      if (!root) return;
+      var chips = root.querySelectorAll(".pkg-chip");
+      for (var i = 0; i < chips.length; i++) {
+        chips[i].classList.toggle("selected", chips[i].getAttribute("data-pkg") === inviteSelectedPkg);
+      }
+    }
+    function updateInvitePricingQuote() {
+      var wrap = document.getElementById("invitePricingWrap");
+      var textEl = document.getElementById("inviteQuoteText");
+      var tierEl = document.getElementById("newInviteTier");
+      if (!textEl || !tierEl) return;
+      if (tierEl.value === "admin") {
+        if (wrap) wrap.style.opacity = "0.5";
+        textEl.innerHTML = "Mã <strong>admin</strong> không giới hạn — không áp dụng bảng giá quota.";
+        return;
+      }
+      if (wrap) wrap.style.opacity = "1";
+      var countRaw = parseInt((document.getElementById("newInviteCount").value || "1").trim(), 10);
+      var count = Number.isFinite(countRaw) && countRaw > 0 ? Math.min(countRaw, 500) : 1;
+      var limitRaw = parseInt((document.getElementById("newInviteLimit").value || "20").trim(), 10);
+      var limit = Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : 20;
+      var per = pricePerCodeVnd(inviteSelectedPkg, limit);
+      var total = per * count;
+      var pkgTitle = {
+        p20: "20 lượt (miễn phí)",
+        p30: "30 lượt — 90.000đ/mã",
+        p180: "180 lượt — 449.000đ/mã",
+        p365: "365 lượt — 799.000đ/mã",
+        custom: "Tuỳ chỉnh — " + formatVnd(CUSTOM_PER_TURN_VND) + "/lượt × " + limit + " lượt"
+      }[inviteSelectedPkg] || "";
+      textEl.innerHTML =
+        "Gói: <strong>" + pkgTitle + "</strong> · <strong>" + count + "</strong> mã → tham khảo <strong>" + formatVnd(total) + "</strong> " +
+        "(đơn giá 1 mã: <strong>" + formatVnd(per) + "</strong>).";
+    }
+    function wireInvitePricingUi() {
+      var pkgRoot = document.getElementById("invitePkgChips");
+      if (pkgRoot) {
+        pkgRoot.addEventListener("click", function (e) {
+          var btn = e.target && e.target.closest ? e.target.closest(".pkg-chip") : null;
+          if (!btn) return;
+          var pkg = btn.getAttribute("data-pkg");
+          if (!pkg) return;
+          inviteSelectedPkg = pkg;
+          var defLim = INVITE_PKG_DEFAULT_LIMIT[pkg];
+          var limInput = document.getElementById("newInviteLimit");
+          if (defLim != null && limInput) limInput.value = String(defLim);
+          syncPkgChipVisual();
+          updateInvitePricingQuote();
+        });
+      }
+      var comboRoot = document.getElementById("inviteComboChips");
+      if (comboRoot) {
+        comboRoot.addEventListener("click", function (e) {
+          var btn = e.target && e.target.closest ? e.target.closest(".combo-chip") : null;
+          if (!btn) return;
+          var id = btn.getAttribute("data-combo");
+          var combo = id ? INVITE_COMBOS[id] : null;
+          if (!combo) return;
+          var tier = document.getElementById("newInviteTier");
+          if (tier) tier.value = "test";
+          inviteSelectedPkg = combo.pkg;
+          var limInput = document.getElementById("newInviteLimit");
+          var cntInput = document.getElementById("newInviteCount");
+          if (limInput) limInput.value = String(combo.limit);
+          if (cntInput) cntInput.value = String(combo.count);
+          syncPkgChipVisual();
+          updateInvitePricingQuote();
+        });
+      }
+      var limInput = document.getElementById("newInviteLimit");
+      if (limInput) {
+        limInput.addEventListener("input", function () {
+          var v = parseInt((this.value || "").trim(), 10);
+          if (!Number.isFinite(v) || v < 1) {
+            updateInvitePricingQuote();
+            return;
+          }
+          inviteSelectedPkg = inferPkgFromLimit(v);
+          syncPkgChipVisual();
+          updateInvitePricingQuote();
+        });
+      }
+      var cntInput = document.getElementById("newInviteCount");
+      if (cntInput) cntInput.addEventListener("input", updateInvitePricingQuote);
+      var tier = document.getElementById("newInviteTier");
+      if (tier) tier.addEventListener("change", updateInvitePricingQuote);
+    }
+
     function renderInviteCodes() {
       var body = document.getElementById("inviteCodesBody");
       if (!body) return;
@@ -845,6 +1074,9 @@
 
     renderProfiles();
     renderInviteCodes();
+    wireInvitePricingUi();
+    syncPkgChipVisual();
+    updateInvitePricingQuote();
     var mode = getMode();
     setModeUI(mode);
     if (mode === "customer") initCustomerMode();
