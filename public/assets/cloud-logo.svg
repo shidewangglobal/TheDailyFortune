@@ -1,0 +1,72 @@
+<svg width="520" height="120" viewBox="0 0 520 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="goldStroke" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F6DE90"/>
+      <stop offset="55%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#AD7C15"/>
+    </linearGradient>
+    <linearGradient id="redFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#970A0A"/>
+      <stop offset="100%" stop-color="#6A0404"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-40%" width="140%" height="220%">
+      <feDropShadow dx="0" dy="2.2" stdDeviation="2.2" flood-color="#2a0d07" flood-opacity="0.42"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <!-- Outer red cloud body -->
+    <path
+      d="M10 30
+         C45 8, 86 8, 116 28
+         C137 10, 165 10, 190 28
+         C210 12, 233 10, 260 14
+         C287 10, 310 12, 330 28
+         C355 10, 383 10, 404 28
+         C434 8, 475 8, 510 30
+         L510 62
+         C487 62, 468 66, 452 78
+         C433 93, 408 91, 392 80
+         C374 94, 351 95, 334 84
+         C317 96, 292 104, 260 118
+         C228 104, 203 96, 186 84
+         C169 95, 146 94, 128 80
+         C112 91, 87 93, 68 78
+         C52 66, 33 62, 10 62 Z"
+      fill="url(#redFill)"
+      stroke="url(#goldStroke)"
+      stroke-width="3"
+      stroke-linejoin="round"/>
+
+    <!-- Top swirls -->
+    <g fill="none" stroke="url(#goldStroke)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M26 34 C46 22, 69 24, 81 36 C90 45, 83 55, 73 55 C63 55, 58 47, 61 40 C64 34, 72 33, 76 38 C81 43, 78 50, 70 50"/>
+      <path d="M84 34 C101 23, 122 24, 134 36 C141 44, 138 52, 130 54 C122 56, 116 51, 117 44 C118 38, 126 36, 130 40"/>
+      <path d="M139 34 C157 22, 180 24, 192 37 C201 47, 195 58, 183 59 C171 60, 165 50, 168 42 C171 35, 181 33, 186 39 C192 45, 188 54, 178 54"/>
+      <path d="M195 34 C210 24, 230 23, 248 28"/>
+      <path d="M494 34 C474 22, 451 24, 439 36 C430 45, 437 55, 447 55 C457 55, 462 47, 459 40 C456 34, 448 33, 444 38 C439 43, 442 50, 450 50"/>
+      <path d="M436 34 C419 23, 398 24, 386 36 C379 44, 382 52, 390 54 C398 56, 404 51, 403 44 C402 38, 394 36, 390 40"/>
+      <path d="M381 34 C363 22, 340 24, 328 37 C319 47, 325 58, 337 59 C349 60, 355 50, 352 42 C349 35, 339 33, 334 39 C328 45, 332 54, 342 54"/>
+      <path d="M325 34 C310 24, 290 23, 272 28"/>
+    </g>
+
+    <!-- Lower swirls and center drop -->
+    <g fill="none" stroke="url(#goldStroke)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M108 64 C126 58, 146 63, 158 75 C165 82, 160 91, 150 92 C140 93, 134 86, 136 79 C138 73, 147 70, 153 75"/>
+      <path d="M412 64 C394 58, 374 63, 362 75 C355 82, 360 91, 370 92 C380 93, 386 86, 384 79 C382 73, 373 70, 367 75"/>
+      <path d="M224 66 C238 58, 252 58, 260 66 C268 58, 282 58, 296 66"/>
+      <path d="M231 74 C246 74, 254 82, 252 91 C250 100, 238 101, 233 94 C229 88, 233 81, 240 81 C247 81, 250 87, 248 92"/>
+      <path d="M289 74 C274 74, 266 82, 268 91 C270 100, 282 101, 287 94 C291 88, 287 81, 280 81 C273 81, 270 87, 272 92"/>
+      <path d="M260 118 L242 95 L278 95 Z" fill="#7A0909"/>
+      <path d="M260 118 L246 99 L274 99 Z"/>
+    </g>
+
+    <!-- Fine inner strokes -->
+    <g opacity="0.45" fill="none" stroke="#F2CF73" stroke-width="1.1">
+      <path d="M44 28 C62 18, 84 18, 97 30"/>
+      <path d="M423 28 C441 18, 463 18, 476 30"/>
+      <path d="M237 22 C252 20, 268 20, 283 22"/>
+      <path d="M220 60 C236 54, 248 54, 260 60 C272 54, 284 54, 300 60"/>
+    </g>
+  </g>
+</svg>

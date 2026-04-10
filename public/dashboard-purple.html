@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily fortune</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Noto+Serif:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-1: #120022;
+      --bg-2: #22003d;
+      --bg-3: #32005b;
+      --card: rgba(255, 255, 255, 0.08);
+      --card-2: rgba(255, 255, 255, 0.12);
+      --text: #f7efff;
+      --muted: #cdb8e7;
+      --primary: #a855f7;
+      --primary-2: #7e22ce;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --ring: rgba(168, 85, 247, 0.45);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "Be Vietnam Pro", Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(168, 85, 247, 0.35), transparent 30%),
+        radial-gradient(circle at 80% 20%, rgba(126, 34, 206, 0.30), transparent 35%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3));
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      background-image:
+        radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,.80), transparent 55%),
+        radial-gradient(1.5px 1.5px at 25% 65%, rgba(255,255,255,.60), transparent 55%),
+        radial-gradient(1.8px 1.8px at 40% 30%, rgba(255,255,255,.75), transparent 55%),
+        radial-gradient(1.2px 1.2px at 55% 80%, rgba(255,255,255,.55), transparent 55%),
+        radial-gradient(2px 2px at 72% 18%, rgba(255,255,255,.85), transparent 55%),
+        radial-gradient(1.5px 1.5px at 85% 55%, rgba(255,255,255,.65), transparent 55%),
+        radial-gradient(1.2px 1.2px at 92% 28%, rgba(255,255,255,.60), transparent 55%),
+        radial-gradient(1.6px 1.6px at 15% 88%, rgba(255,255,255,.70), transparent 55%),
+        radial-gradient(1px 1px at 33% 48%, rgba(255,255,255,.50), transparent 55%),
+        radial-gradient(1.1px 1.1px at 63% 63%, rgba(255,255,255,.55), transparent 55%);
+      opacity: .75;
+    }
+    body::after {
+      background-image:
+        radial-gradient(80px 60px at 22% 22%, rgba(255,255,255,.08), transparent 70%),
+        radial-gradient(110px 80px at 74% 36%, rgba(255,255,255,.06), transparent 70%),
+        radial-gradient(90px 70px at 58% 78%, rgba(255,255,255,.05), transparent 70%);
+      mix-blend-mode: screen;
+      opacity: .55;
+    }
+    .shell {
+      width: min(1680px, calc(100vw - 24px));
+      margin: 12px auto;
+      padding: 0 6px 24px;
+      position: relative;
+      z-index: 1;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(8px);
+      border-radius: 14px;
+      padding: 13px 16px;
+    }
+    .brand {
+      font-family: "Noto Serif", Georgia, serif;
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: .4px;
+      text-shadow: 0 0 18px rgba(205, 160, 255, 0.38);
+    }
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .top-actions a {
+      text-decoration: none;
+      color: #f5e9ff;
+      background: linear-gradient(180deg, rgba(168,85,247,.35), rgba(126,34,206,.35));
+      border: 1px solid rgba(255,255,255,.22);
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .card {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: linear-gradient(180deg, var(--card), var(--card-2));
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    }
+    .title {
+      margin: 0 0 10px;
+      font-family: "Noto Serif", Georgia, serif;
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      color: #f6e9ff;
+    }
+    .energy-card .title {
+      color: #D4AF37;
+      text-shadow: 0 0 14px rgba(212, 175, 55, 0.28);
+    }
+    .energy-head-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .energy-head-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .energy-date-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px;
+      background: rgba(255,255,255,.03);
+      padding: 6px 10px;
+      font-size: 30px;
+      font-weight: 800;
+      color: #f2f3f7;
+      line-height: 1;
+    }
+    .energy-date-chip .canchi-inline {
+      color: #dde3f0;
+      font-family: "Noto Serif", Georgia, serif;
+      font-size: 30px;
+      font-weight: 700;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .energy {
+      display: block;
+    }
+    .energy .left {
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: left;
+    }
+    .energy-split {
+      display: grid;
+      grid-template-columns: minmax(420px, 47%) 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .energy-meta-col {
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 12px;
+      background: rgba(255,255,255,.05);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .energy-analysis-col {
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      background: rgba(0,0,0,.16);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+    }
+    .energy-heading {
+      margin: 0;
+      font-family: "Noto Serif", Georgia, serif;
+      font-size: 42px;
+      line-height: .95;
+      letter-spacing: .9px;
+      color: #D4AF37;
+      font-weight: 900;
+      text-shadow: 0 0 20px rgba(212, 175, 55, 0.32);
+    }
+    .energy-line {
+      display: flex;
+      gap: 8px 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-start;
+      margin: 0;
+    }
+    .energy-date { font-size: 30px; font-weight: 800; color: #f2f3f7; line-height: 1; letter-spacing: .5px; }
+    .energy-canchi { font-size: 30px; font-weight: 700; color: #dde3f0; line-height: 1; font-family: "Noto Serif", Georgia, serif; }
+    .energy-profile {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f2e7ff;
+      line-height: 1.2;
+      margin: 0;
+    }
+    .energy-body {
+      font-size: 19px;
+      line-height: 1.55;
+      color: #f4dfff;
+      margin: 0;
+      max-width: 100%;
+      text-align: left;
+    }
+    .global-date-row {
+      margin: 0;
+    }
+    .global-date-row .date-inline {
+      margin: 0;
+      justify-content: flex-start;
+    }
+    .global-date-row .date-inline label {
+      font-size: 14px;
+      color: #e8d7ff;
+    }
+    .global-date-row .date-inline input {
+      font-size: 14px;
+      padding: 7px 8px;
+      min-height: 34px;
+    }
+    .energy-summary-footer {
+      font-size: 13px;
+      color: #e9d5ff;
+    }
+    .seal {
+      display: inline-block;
+      background: #be123c;
+      border: 1px solid rgba(255,255,255,.25);
+      color: #fff1f2;
+      border-radius: 10px;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-weight: 800;
+      margin-right: 8px;
+    }
+    .energy-success {
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.03);
+    }
+    .energy-success .subtitle {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.6px;
+      margin: 0;
+      color: #e9d5ff;
+    }
+    .energy-success .num {
+      font-size: 26px;
+      font-weight: 900;
+      color: #f5d0fe;
+      letter-spacing: .5px;
+      text-shadow: 0 0 14px rgba(231, 176, 255, 0.45);
+    }
+    .energy-head-inline .energy-success .num { font-size: 34px; }
+    .energy-head-inline .energy-success .subtitle { font-size: 12px; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .date-inline {
+      display: grid;
+      grid-template-columns: auto 1fr auto 1fr auto 1fr;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      white-space: nowrap;
+    }
+    .date-inline label { margin-bottom: 0; }
+    input, textarea, select {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.24);
+      color: #fff;
+      padding: 11px 12px;
+      font-size: 16px;
+      outline: none;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--ring);
+      box-shadow: 0 0 0 3px rgba(168,85,247,.18);
+    }
+    textarea { min-height: 78px; resize: vertical; }
+    .toggle-row {
+      display: flex;
+      gap: 8px;
+      margin: 8px 0;
+      flex-wrap: wrap;
+    }
+    .pill {
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 999px;
+      padding: 7px 11px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      color: #e9d5ff;
+      background: rgba(255,255,255,.06);
+    }
+    .pill.active {
+      background: linear-gradient(180deg, var(--primary), var(--primary-2));
+      color: #fff;
+    }
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+      font-size: 13px;
+    }
+    .check-row input { width: auto; transform: scale(1.15); }
+    .participant-box {
+      border: 1px dashed rgba(255,255,255,.22);
+      border-radius: 12px;
+      padding: 8px;
+      transition: opacity .2s;
+    }
+    .participant-box.disabled {
+      opacity: .45;
+      pointer-events: none;
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn.primary {
+      color: #fff;
+      background: linear-gradient(180deg, var(--primary), var(--primary-2));
+    }
+    .btn.soft {
+      color: #f3e8ff;
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.16);
+    }
+    .status {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+    .day-cung-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      line-height: 1.35;
+    }
+    .day-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0;
+      font-size: .78em;
+      font-weight: 700;
+      letter-spacing: .2px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .day-chip.month {
+      color: var(--muted);
+    }
+    .day-chip .cung {
+      margin-left: 6px;
+      font-size: .9em;
+      padding: 3px 9px;
+    }
+    .forecast-focus {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+    .hours-wrap { overflow-x: auto; }
+    .lower-grid {
+      display: grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .lower-grid .card { margin-bottom: 0; }
+    .forecast-card .status,
+    .forecast-card .hour-branch { font-size: 21px; }
+    .forecast-card .hour-range { font-size: 16px; }
+    .forecast-card .cung { font-size: 16px; padding: 6px 11px; }
+    .forecast-card .hour-card { padding: 14px; }
+    .daily-ref-card label,
+    .daily-ref-card .pill,
+    .daily-ref-card .status { font-size: 20px; }
+    .daily-ref-card textarea::placeholder,
+    .daily-ref-card input::placeholder { font-size: 17px; }
+    .daily-ref-card input,
+    .daily-ref-card textarea,
+    .daily-ref-card select { font-size: 17px; }
+    .compact-date-row {
+      display: grid;
+      grid-template-columns: auto 70px auto 70px auto 92px auto minmax(190px, 1fr);
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .compact-date-row label {
+      font-size: 21px;
+      font-weight: 700;
+    }
+    .compact-date-row input {
+      font-size: 15px;
+      padding: 8px 8px;
+      min-height: 34px;
+    }
+    .compact-date-row select {
+      font-size: 15px;
+      padding: 8px 8px;
+      min-height: 34px;
+    }
+    .owner-core-row {
+      display: grid;
+      grid-template-columns: auto minmax(170px, 1fr) auto minmax(210px, 1fr) auto 100px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .owner-core-row label,
+    .compact-date-row label { margin-bottom: 0; }
+    .participant-row {
+      display: grid;
+      grid-template-columns: auto minmax(140px, 1fr) auto 90px auto 90px auto 100px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .participant-row label { margin-bottom: 0; }
+    .daily-date-readonly {
+      margin: 6px 0 10px;
+      color: #d8c2f1;
+      font-size: 16px;
+      font-style: italic;
+    }
+    .daily-usage-readonly {
+      margin: 0 0 8px;
+      color: #f5d0fe;
+      font-size: 14px;
+    }
+    .result-box {
+      margin-top: 10px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 12px;
+      background: rgba(255,255,255,.06);
+      padding: 14px 16px;
+      color: #f2e8ff;
+      line-height: 1.55;
+      font-size: 16px;
+    }
+    .result-box strong { color: #f9e9bd; }
+    .analysis-card .result-box {
+      margin-top: 0;
+      min-height: 180px;
+      max-height: 260px;
+      overflow: auto;
+    }
+    .hours-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(150px, 1fr));
+      gap: 8px;
+      min-width: 900px;
+    }
+    .lower-grid .hours-wrap { overflow-x: visible; }
+    .lower-grid .hours-grid {
+      min-width: 0;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .hour-card {
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.24);
+      padding: 8px;
+    }
+    .hour-branch { font-size: 14px; font-weight: 800; }
+    .hour-range { font-size: 12px; color: var(--muted); margin: 2px 0 6px; white-space: nowrap; }
+    .cung {
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .da { background: #3b82f6; }
+    .ll { background: #8b5cf6; }
+    .th { background: var(--ok); }
+    .xk { background: #f97316; }
+    .tc { background: #14b8a6; }
+    .kv { background: var(--danger); }
+
+    @media (min-width: 1500px) {
+      .shell { width: calc(100vw - 18px); }
+      .hours-grid { grid-template-columns: repeat(6, minmax(180px, 1fr)); min-width: 1080px; }
+    }
+    @media (min-width: 1024px) {
+      html, body { height: 100%; overflow: hidden; }
+      .shell {
+        height: calc(100vh - 12px);
+        margin: 6px auto;
+        padding: 0 6px 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        overflow: auto;
+      }
+      .topbar { margin-bottom: 0; }
+      .card { margin-bottom: 0; }
+      .title { margin-bottom: 6px; font-size: 30px; }
+      .energy .left { padding: 10px; }
+      .energy-split { gap: 8px; }
+      .energy-analysis-col { padding: 10px; }
+      .energy-body { font-size: 17px; line-height: 1.42; }
+      .global-date-row .date-inline { gap: 6px; }
+      .global-date-row .date-inline label { font-size: 13px; }
+      .global-date-row .date-inline input { font-size: 13px; padding: 6px 7px; min-height: 30px; }
+      .lower-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        align-items: start;
+      }
+      .lower-grid .card {
+        display: flex;
+        flex-direction: column;
+      }
+      .forecast-card .status,
+      .forecast-card .hour-branch { font-size: 18px; }
+      .forecast-card .hour-range { font-size: 14px; }
+      .forecast-card .hour-card { padding: 10px; }
+      .hours-wrap { overflow: hidden; }
+      .hours-grid { min-width: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+      .daily-ref-card { overflow: hidden; }
+      .daily-ref-card label,
+      .daily-ref-card .pill,
+      .daily-ref-card .status { font-size: 16px; }
+      .daily-ref-card input,
+      .daily-ref-card textarea,
+      .daily-ref-card select { font-size: 15px; }
+      .daily-date-readonly { font-size: 13px; margin: 2px 0 6px; }
+      .analysis-card .result-box { font-size: 15px; max-height: 170px; }
+      .participant-box { padding: 6px; }
+      .daily-ref-card .btn-row { margin-top: 6px; }
+      .daily-ref-card textarea { min-height: 58px; }
+    }
+    @media (max-width: 920px) {
+      .shell { width: calc(100vw - 12px); padding: 0 2px 16px; margin-top: 8px; }
+      .topbar { padding: 10px 12px; }
+      .brand { font-size: 22px; }
+      .card { padding: 12px; }
+      .title { font-size: 26px; }
+      .energy-date-chip { font-size: 18px; }
+      .energy-date-chip .canchi-inline { font-size: 16px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .date-inline { grid-template-columns: auto 1fr auto 1fr auto 1fr; }
+      .lower-grid { grid-template-columns: 1fr; gap: 0; }
+      .lower-grid .card { margin-bottom: 16px; }
+      .energy-split { grid-template-columns: 1fr; gap: 12px; }
+      .energy-meta-col, .energy-analysis-col { padding: 12px; }
+      .energy .left { padding: 14px 12px 14px; }
+      .energy-date, .energy-canchi { font-size: 24px; }
+      .energy-profile { font-size: 14px; padding: 7px 12px; }
+      .energy-body { font-size: 16px; max-width: 100%; text-align: left; }
+      .global-date-row .date-inline label { font-size: 14px; }
+      .global-date-row .date-inline input { font-size: 15px; min-height: 0; padding: 10px 10px; }
+      .compact-date-row,
+      .owner-core-row,
+      .participant-row { grid-template-columns: 140px 1fr; gap: 6px 8px; }
+      .daily-ref-card .date-inline { grid-template-columns: 140px 1fr; gap: 6px 8px; }
+      .daily-ref-card .owner-core-row label,
+      .daily-ref-card .compact-date-row label,
+      .daily-ref-card .participant-row label,
+      .daily-ref-card .date-inline label {
+        margin-bottom: 0;
+        align-self: center;
+      }
+      .daily-ref-card .owner-core-row input,
+      .daily-ref-card .compact-date-row input,
+      .daily-ref-card .participant-row input,
+      .daily-ref-card .compact-date-row select,
+      .daily-ref-card .date-inline input {
+        width: 100%;
+      }
+      .forecast-card .date-inline label,
+      .forecast-card .status,
+      .forecast-card .hour-branch,
+      .daily-ref-card label,
+      .daily-ref-card .pill,
+      .daily-ref-card .status { font-size: 15px; }
+      .btn { width: 100%; }
+      .btn-row { display: grid; grid-template-columns: 1fr; }
+      .hours-wrap { overflow-x: visible; }
+      .hours-grid {
+        min-width: 0;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 680px) {
+      .title { font-size: 24px; }
+      .top-actions a { font-size: 11px; }
+      .date-inline { grid-template-columns: auto 1fr; }
+      .compact-date-row,
+      .owner-core-row,
+      .participant-row,
+      .daily-ref-card .date-inline { grid-template-columns: 128px 1fr; }
+      .hours-wrap { overflow-x: visible; }
+      .hours-grid {
+        min-width: 0;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .hour-card { padding: 10px; }
+      .hour-branch { font-size: 15px; }
+      .hour-range { font-size: 12px; }
+      .cung { font-size: 12px; }
+    }
+    @media (max-width: 420px) {
+      .hours-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">Daily fortune</div>
+      <div class="top-actions">
+        <a id="profileNavLink" href="/profile.html">Quản lý Profile</a>
+      </div>
+    </div>
+
+    <section class="card energy-card">
+      <div class="energy-head-row">
+        <h2 class="title">Năng Lượng Ngày</h2>
+        <div class="energy-head-inline">
+          <div class="energy-success">
+            <div class="subtitle">Điểm thành công</div>
+            <div class="num" id="energyScore">85%</div>
+          </div>
+          <div class="energy-date-chip">
+            <span id="todayDate">09/04/2026</span>
+            <span class="canchi-inline" id="todayCanChi">Nhâm Thìn</span>
+          </div>
+        </div>
+      </div>
+      <div class="energy">
+        <div class="left">
+          <div class="energy-split">
+            <div class="energy-meta-col">
+              <div class="energy-profile">Bản mệnh: <span id="ownerProfileLabel">Gia chủ (theo hồ sơ)</span></div>
+              <div class="global-date-row">
+                <div class="date-inline">
+                  <label for="globalMonth">Tháng dương</label><input id="globalMonth" type="number" min="1" max="12" />
+                  <label for="globalDay">Ngày dương</label><input id="globalDay" type="number" min="1" max="31" />
+                  <label for="globalYear">Năm</label><input id="globalYear" type="number" />
+                </div>
+              </div>
+            </div>
+            <div class="energy-analysis-col">
+              <p class="energy-body" id="energyMessage">Hôm nay hợp mở đầu việc mới, đàm phán ngắn gọn và chốt hạng mục quan trọng. Hạn chế tranh luận kéo dài và quyết định nóng vội.</p>
+              <div class="energy-summary-footer"><span class="seal" id="ownerSeal">Gia chủ</span> Điểm dự báo theo hồ sơ hiện tại</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="lower-grid">
+      <section class="card daily-ref-card">
+        <h2 class="title">Tham Khảo Chuyện Hằng Ngày</h2>
+        <div class="daily-date-readonly" id="dailyDateReadonly">Đang xem cho ngày: 09/04/2026</div>
+        <div class="daily-usage-readonly" id="dailyUsageReadonly"></div>
+        <div class="compact-date-row">
+          <label for="refMonth">Tháng dương</label><input id="refMonth" type="number" min="1" max="12" />
+          <label for="refDay">Ngày dương</label><input id="refDay" type="number" min="1" max="31" />
+          <label for="refYear">Năm</label><input id="refYear" type="number" />
+          <label for="focusHour">Khung giờ xem</label>
+          <select id="focusHour">
+            <option value="">Tự gợi ý giờ tốt</option>
+            <option value="0">Tý (23:00 - 00:59)</option>
+            <option value="1">Sửu (01:00 - 02:59)</option>
+            <option value="2">Dần (03:00 - 04:59)</option>
+            <option value="3">Mão (05:00 - 06:59)</option>
+            <option value="4">Thìn (07:00 - 08:59)</option>
+            <option value="5">Tỵ (09:00 - 10:59)</option>
+            <option value="6">Ngọ (11:00 - 12:59)</option>
+            <option value="7">Mùi (13:00 - 14:59)</option>
+            <option value="8">Thân (15:00 - 16:59)</option>
+            <option value="9">Dậu (17:00 - 18:59)</option>
+            <option value="10">Tuất (19:00 - 20:59)</option>
+            <option value="11">Hợi (21:00 - 22:59)</option>
+          </select>
+        </div>
+        <label>Xem cho ai</label>
+        <div class="toggle-row">
+          <div class="pill active" data-target="owner">Gia chủ</div>
+          <div class="pill" data-target="other">Cho người khác</div>
+        </div>
+        <div class="owner-core-row">
+          <label for="ownerName">Gia chủ</label><input id="ownerName" placeholder="Nhập tên gia chủ" />
+          <label for="ownerPhone">Liên hệ</label><input id="ownerPhone" placeholder="SĐT hoặc email (tuỳ chọn)" />
+          <label for="ownerYear">Năm sinh (*)</label><input id="ownerYear" type="number" />
+        </div>
+        <div class="date-inline">
+          <label for="ownerDay">Ngày sinh</label><input id="ownerDay" type="number" min="1" max="31" />
+          <label for="ownerMonth">Tháng sinh</label><input id="ownerMonth" type="number" min="1" max="12" />
+          <label></label><div></div>
+        </div>
+        <div class="check-row">
+          <input id="hasParticipant" type="checkbox" />
+          <label for="hasParticipant" style="margin:0">Có người tham gia</label>
+        </div>
+        <div id="participantBox" class="participant-box disabled">
+          <div class="participant-row">
+            <label for="participantRole">Vai trò</label><input id="participantRole" placeholder="Ví dụ: khách hàng" />
+            <label for="pDay">Ngày sinh</label><input id="pDay" type="number" min="1" max="31" />
+            <label for="pMonth">Tháng sinh</label><input id="pMonth" type="number" min="1" max="12" />
+            <label for="pYear">Năm sinh (*)</label><input id="pYear" type="number" />
+          </div>
+        </div>
+        <label for="topic">Chủ đề</label>
+        <textarea id="topic" placeholder="Ví dụ: mai nên nhắn khách lúc nào để tăng phản hồi tích cực?"></textarea>
+        <div class="btn-row">
+          <button class="btn primary" id="previewBtn" type="button">Khám phá</button>
+        </div>
+      </section>
+
+      <section class="card forecast-card">
+        <h2 class="title">Dự Báo 6 Cung</h2>
+        <div class="daily-date-readonly" id="forecastDateReadonly">Đang xem cho ngày: 09/04/2026</div>
+        <div class="status" id="dayCung">Ngày này thuộc cung: Đại An</div>
+        <div class="forecast-focus" id="forecastFocusReadonly">Giờ xem: Tự gợi ý theo giờ tốt trong ngày.</div>
+        <div class="hours-wrap">
+          <div class="hours-grid" id="hours"></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card analysis-card">
+      <div class="result-box" id="dailyResult">Nhập chủ đề và chọn thông tin, sau đó bấm Khám phá để xem luận giải.</div>
+    </section>
+  </div>
+
+  <script>
+    var selectedTarget = "owner";
+    var currentDayIndex = 0;
+    var totalLimit = 20;
+    var INVITE_CODES_KEY = "daily_fortune_invite_codes";
+    var roleQuery = new URLSearchParams(window.location.search).get("role") || "";
+    var roleParam = roleQuery || (localStorage.getItem("daily_fortune_customer_invite") ? "customer" : "admin");
+    var customerInviteCode = "";
+    var DEFAULT_INVITE_CODES = {
+      "ADMIN-2026": { tier: "admin" },
+      "TEST-2026": { tier: "test" }
+    };
+    function getInviteCodes() {
+      var merged = {};
+      Object.keys(DEFAULT_INVITE_CODES).forEach(function (k) { merged[k] = DEFAULT_INVITE_CODES[k]; });
+      try {
+        var raw = localStorage.getItem(INVITE_CODES_KEY);
+        if (!raw) return merged;
+        var parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return merged;
+        Object.keys(parsed).forEach(function (k) {
+          if (!parsed[k] || typeof parsed[k] !== "object") return;
+          merged[k] = parsed[k];
+        });
+      } catch (_) {}
+      return merged;
+    }
+    var INVITE_CODES = getInviteCodes();
+    var cungs = ["Đại An","Lưu Liên","Tốc Hỷ","Xích Khẩu","Tiểu Cát","Không Vong"];
+    var cls = ["da","ll","th","xk","tc","kv"];
+    var hours = [["Tý","23:00 - 00:59"],["Sửu","01:00 - 02:59"],["Dần","03:00 - 04:59"],["Mão","05:00 - 06:59"],["Thìn","07:00 - 08:59"],["Tỵ","09:00 - 10:59"],["Ngọ","11:00 - 12:59"],["Mùi","13:00 - 14:59"],["Thân","15:00 - 16:59"],["Dậu","17:00 - 18:59"],["Tuất","19:00 - 20:59"],["Hợi","21:00 - 22:59"]];
+    var stems = ["Giáp","Ất","Bính","Đinh","Mậu","Kỷ","Canh","Tân","Nhâm","Quý"];
+    var branches = ["Tý","Sửu","Dần","Mão","Thìn","Tỵ","Ngọ","Mùi","Thân","Dậu","Tuất","Hợi"];
+    var NAP_AM_BY_CAN_CHI = {
+      "Giáp Tý":"Hải Trung Kim","Ất Sửu":"Hải Trung Kim",
+      "Bính Dần":"Lô Trung Hỏa","Đinh Mão":"Lô Trung Hỏa",
+      "Mậu Thìn":"Đại Lâm Mộc","Kỷ Tỵ":"Đại Lâm Mộc",
+      "Canh Ngọ":"Lộ Bàng Thổ","Tân Mùi":"Lộ Bàng Thổ",
+      "Nhâm Thân":"Kiếm Phong Kim","Quý Dậu":"Kiếm Phong Kim",
+      "Giáp Tuất":"Sơn Đầu Hỏa","Ất Hợi":"Sơn Đầu Hỏa",
+      "Bính Tý":"Giản Hạ Thủy","Đinh Sửu":"Giản Hạ Thủy",
+      "Mậu Dần":"Thành Đầu Thổ","Kỷ Mão":"Thành Đầu Thổ",
+      "Canh Thìn":"Bạch Lạp Kim","Tân Tỵ":"Bạch Lạp Kim",
+      "Nhâm Ngọ":"Dương Liễu Mộc","Quý Mùi":"Dương Liễu Mộc",
+      "Giáp Thân":"Tuyền Trung Thủy","Ất Dậu":"Tuyền Trung Thủy",
+      "Bính Tuất":"Ốc Thượng Thổ","Đinh Hợi":"Ốc Thượng Thổ",
+      "Mậu Tý":"Tích Lịch Hỏa","Kỷ Sửu":"Tích Lịch Hỏa",
+      "Canh Dần":"Tùng Bách Mộc","Tân Mão":"Tùng Bách Mộc",
+      "Nhâm Thìn":"Trường Lưu Thủy","Quý Tỵ":"Trường Lưu Thủy",
+      "Giáp Ngọ":"Sa Trung Kim","Ất Mùi":"Sa Trung Kim",
+      "Bính Thân":"Sơn Hạ Hỏa","Đinh Dậu":"Sơn Hạ Hỏa",
+      "Mậu Tuất":"Bình Địa Mộc","Kỷ Hợi":"Bình Địa Mộc",
+      "Canh Tý":"Bích Thượng Thổ","Tân Sửu":"Bích Thượng Thổ",
+      "Nhâm Dần":"Kim Bạch Kim","Quý Mão":"Kim Bạch Kim",
+      "Giáp Thìn":"Phú Đăng Hỏa","Ất Tỵ":"Phú Đăng Hỏa",
+      "Bính Ngọ":"Thiên Hà Thủy","Đinh Mùi":"Thiên Hà Thủy",
+      "Mậu Thân":"Đại Trạch Thổ","Kỷ Dậu":"Đại Trạch Thổ",
+      "Canh Tuất":"Thoa Xuyến Kim","Tân Hợi":"Thoa Xuyến Kim",
+      "Nhâm Tý":"Tang Đố Mộc","Quý Sửu":"Tang Đố Mộc",
+      "Giáp Dần":"Đại Khê Thủy","Ất Mão":"Đại Khê Thủy",
+      "Bính Thìn":"Sa Trung Thổ","Đinh Tỵ":"Sa Trung Thổ",
+      "Mậu Ngọ":"Thiên Thượng Hỏa","Kỷ Mùi":"Thiên Thượng Hỏa",
+      "Canh Thân":"Thạch Lựu Mộc","Tân Dậu":"Thạch Lựu Mộc",
+      "Nhâm Tuất":"Đại Hải Thủy","Quý Hợi":"Đại Hải Thủy"
+    };
+    function customerProfileKey(invite) { return "daily_fortune_customer_profile_" + invite; }
+    function usageKey(invite) { return "daily_fortune_usage_total_" + invite; }
+    function getDailyUsage(invite) {
+      var n = parseInt(localStorage.getItem(usageKey(invite)) || "0", 10);
+      return Number.isFinite(n) ? n : 0;
+    }
+    function setDailyUsage(invite, value) {
+      localStorage.setItem(usageKey(invite), String(value));
+    }
+    function getCustomerProfile(invite) {
+      try {
+        var raw = localStorage.getItem(customerProfileKey(invite));
+        return raw ? JSON.parse(raw) : null;
+      } catch (_) { return null; }
+    }
+    function updateUsageReadonly() {
+      var el = document.getElementById("dailyUsageReadonly");
+      if (!customerInviteCode) {
+        el.textContent = "Admin mode: không giới hạn lượt xem.";
+        return;
+      }
+      var codeInfo = INVITE_CODES[customerInviteCode] || {};
+      var limit = Number.isFinite(parseInt(codeInfo.totalLimit, 10)) ? parseInt(codeInfo.totalLimit, 10) : totalLimit;
+      if (codeInfo.tier === "admin") {
+        el.textContent = "Mã " + customerInviteCode + " - Không giới hạn lượt xem.";
+        return;
+      }
+      el.textContent = "Mã " + customerInviteCode + " - Đã dùng: " + getDailyUsage(customerInviteCode) + "/" + limit + " lượt miễn phí.";
+    }
+    function ensureCustomerAccess() {
+      if (roleParam !== "customer") return true;
+      var resetParam = new URLSearchParams(window.location.search).get("reset");
+      if (resetParam === "test") {
+        localStorage.removeItem("daily_fortune_usage_total_TEST-2026");
+      }
+      var invite = localStorage.getItem("daily_fortune_customer_invite") || "";
+      if (!invite) {
+        location.href = "/profile.html?role=customer&next=" + encodeURIComponent(location.pathname + location.search);
+        return false;
+      }
+      if (!INVITE_CODES[invite]) {
+        location.href = "/profile.html?role=customer&next=" + encodeURIComponent(location.pathname + location.search);
+        return false;
+      }
+      var profile = getCustomerProfile(invite);
+      if (!profile || !profile.birthYear || !profile.name) {
+        location.href = "/profile.html?role=customer&next=" + encodeURIComponent(location.pathname + location.search);
+        return false;
+      }
+      customerInviteCode = invite;
+      return true;
+    }
+    function updateProfileNavLink() {
+      var link = document.getElementById("profileNavLink");
+      if (!link) return;
+      if (roleParam === "customer") {
+        link.setAttribute("href", "/profile.html?role=customer");
+        link.textContent = "Hồ sơ của bạn";
+      } else {
+        link.setAttribute("href", "/profile.html?role=admin");
+        link.textContent = "Quản lý Profile";
+      }
+    }
+
+    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+    function dateToYMD(date) { return { y: date.getFullYear(), m: date.getMonth() + 1, d: date.getDate() }; }
+    function ymdToDate(y, m, d) { return new Date(y, m - 1, d); }
+    function normalizeYMD(y, m, d) {
+      var ny = y || new Date().getFullYear();
+      var nm = clamp(m || 1, 1, 12);
+      var maxDay = new Date(ny, nm, 0).getDate();
+      var nd = clamp(d || 1, 1, maxDay);
+      return { y: ny, m: nm, d: nd };
+    }
+    function getCanChiByDate(date) {
+      var base = new Date(1984, 1, 2);
+      var diff = Math.floor((date - base) / 86400000);
+      var stem = stems[(diff % 10 + 10) % 10];
+      var branch = branches[(diff % 12 + 12) % 12];
+      return stem + " " + branch;
+    }
+    function getCanChiByYear(year) {
+      var diff = year - 1984;
+      return stems[(diff % 10 + 10) % 10] + " " + branches[(diff % 12 + 12) % 12];
+    }
+    function getMonthCung(month) {
+      return cungs[((month - 1) % 6 + 6) % 6];
+    }
+    function getDayCung(month, day) {
+      var monthIndex = ((month - 1) % 6 + 6) % 6;
+      return cungs[(monthIndex + (day - 1)) % 6];
+    }
+    function getHourCungByInput(month, day, hourBranchIndex) {
+      var monthIndex = ((month - 1) % 6 + 6) % 6;
+      var dayIndex = (monthIndex + (day - 1)) % 6;
+      return cungs[(dayIndex + hourBranchIndex) % 6];
+    }
+    function getHourCanChi(dayCanChi, hourBranchIndex) {
+      var dayStem = dayCanChi.split(" ")[0] || "";
+      var startStemMap = {
+        "Giáp":0, "Kỷ":0,
+        "Ất":2, "Canh":2,
+        "Bính":4, "Tân":4,
+        "Đinh":6, "Nhâm":6,
+        "Mậu":8, "Quý":8
+      };
+      var start = startStemMap[dayStem];
+      if (start === undefined) return "";
+      var stem = stems[(start + hourBranchIndex) % 10];
+      var branch = branches[hourBranchIndex];
+      return stem + " " + branch;
+    }
+    function getNapAm(canChi) { return NAP_AM_BY_CAN_CHI[canChi] || "Chưa xác định"; }
+    function getElement(napAm) {
+      if (!napAm) return "";
+      if (/Kim/.test(napAm)) return "Kim";
+      if (/Mộc/.test(napAm)) return "Mộc";
+      if (/Thủy/.test(napAm)) return "Thủy";
+      if (/Hỏa/.test(napAm)) return "Hỏa";
+      if (/Thổ/.test(napAm)) return "Thổ";
+      return "";
+    }
+    function compareElements(ownerEl, dayEl) {
+      if (!ownerEl || !dayEl) return "Chưa đủ dữ liệu để so ngũ hành.";
+      if (ownerEl === dayEl) return "Đồng hành: năng lượng ổn định, dễ giữ nhịp.";
+      var born = {
+        "Mộc":"Hỏa","Hỏa":"Thổ","Thổ":"Kim","Kim":"Thủy","Thủy":"Mộc"
+      };
+      var control = {
+        "Mộc":"Thổ","Thổ":"Thủy","Thủy":"Hỏa","Hỏa":"Kim","Kim":"Mộc"
+      };
+      if (born[ownerEl] === dayEl) return "Gia chủ sinh cho ngày (" + ownerEl + " sinh " + dayEl + "): dễ hao sức, nên chọn việc trọng điểm.";
+      if (born[dayEl] === ownerEl) return "Ngày sinh cho gia chủ (" + dayEl + " sinh " + ownerEl + "): thuận lực, dễ có trợ lực.";
+      if (control[ownerEl] === dayEl) return "Gia chủ khắc ngày (" + ownerEl + " khắc " + dayEl + "): có thể chủ động dẫn dắt nhưng dễ căng.";
+      if (control[dayEl] === ownerEl) return "Ngày khắc gia chủ (" + dayEl + " khắc " + ownerEl + "): nên đi chậm, ưu tiên an toàn.";
+      return "Quan hệ ngũ hành trung tính.";
+    }
+    function getCungClassByName(cungName) {
+      var idx = cungs.indexOf(cungName);
+      return idx >= 0 ? cls[idx] : "";
+    }
+    function updateForecastFocusLine(ymd) {
+      var el = document.getElementById("forecastFocusReadonly");
+      if (!el) return;
+      var focusHour = (document.getElementById("focusHour").value || "").trim();
+      if (focusHour === "") {
+        el.textContent = "Giờ xem: Tự gợi ý theo giờ tốt trong ngày.";
+        return;
+      }
+      var idx = parseInt(focusHour, 10);
+      if (!Number.isFinite(idx) || idx < 0 || idx >= hours.length) {
+        el.textContent = "Giờ xem: Tự gợi ý theo giờ tốt trong ngày.";
+        return;
+      }
+      var dayCanChi = getCanChiByDate(ymdToDate(ymd.y, ymd.m, ymd.d));
+      var hourCung = getHourCungByInput(ymd.m, ymd.d, idx);
+      var hourCanChi = getHourCanChi(dayCanChi, idx);
+      var hourNapAm = getNapAm(hourCanChi);
+      el.innerHTML = "Giờ xem: <strong>" + hours[idx][0] + " (" + hours[idx][1] + ")</strong> | Cung giờ: <span class='cung " +
+        getCungClassByName(hourCung) + "'>" + hourCung + "</span> | Mệnh giờ: " + hourCanChi + " (" + hourNapAm + ")";
+    }
+    function getCungTone(cung) {
+      var map = {
+        "Đại An":"thiên về ổn định, chậm mà chắc, hợp việc cần bền vững",
+        "Lưu Liên":"dễ dây dưa, kéo dài, cần kiên nhẫn và chuẩn bị giấy tờ",
+        "Tốc Hỷ":"dễ có tin tốt nhanh, hợp liên hệ/chốt việc ngắn hạn",
+        "Xích Khẩu":"dễ tranh luận, khẩu thiệt, nên kiểm soát phát ngôn",
+        "Tiểu Cát":"vượng lợi nhỏ, hợp giao dịch, gặp người hỗ trợ",
+        "Không Vong":"nhiễu, hụt, dễ sai nhịp; nên tránh quyết định lớn"
+      };
+      return map[cung] || "trung tính";
+    }
+    function getPairMeaning(dayCung, hourCung) {
+      var key = dayCung + "|" + hourCung;
+      var pair = {
+        "Tốc Hỷ|Lưu Liên":"có tín hiệu tốt ban đầu nhưng dễ vướng chậm trễ ở khâu chốt hoặc thủ tục",
+        "Tốc Hỷ|Xích Khẩu":"tin vui đi kèm tranh luận, cần mềm hóa cách trao đổi",
+        "Tiểu Cát|Đại An":"có lợi nhỏ nhưng bền, hợp đi từng bước chắc chắn",
+        "Lưu Liên|Xích Khẩu":"điểm nghẽn kéo dài dễ bùng thành xung đột lời nói",
+        "Đại An|Tiểu Cát":"ổn định và có lộc vừa phải, hợp việc thực dụng",
+        "Không Vong|Xích Khẩu":"rủi ro nhiễu thông tin, dễ hiểu nhầm và mất nhịp"
+      };
+      return pair[key] || ("trạng thái chính là " + dayCung + " phối " + hourCung + ", nên " + getCungTone(hourCung) + ".");
+    }
+    function getBranchIndexFromCanChi(canChi) {
+      if (!canChi) return -1;
+      var parts = canChi.split(" ");
+      var branch = parts[parts.length - 1] || "";
+      return branches.indexOf(branch);
+    }
+    function getSpecialPattern(ownerCanChi, dayCanChi, hourCanChi) {
+      var ob = getBranchIndexFromCanChi(ownerCanChi);
+      var db = getBranchIndexFromCanChi(dayCanChi);
+      var hb = getBranchIndexFromCanChi(hourCanChi);
+      if (ob < 0 || db < 0 || hb < 0) return "";
+      if (ob === db && db === hb) {
+        return "Thế Tự Hình mạnh (chi năm - chi ngày - chi giờ trùng nhau), dễ tự gây áp lực và đẩy cuộc trao đổi vào trạng thái căng.";
+      }
+      if (ob === db) return "Chi năm trùng chi ngày: cảm xúc cá nhân ảnh hưởng mạnh vào quyết định.";
+      if (ob === hb) return "Chi năm trùng chi giờ: phản ứng ở thời điểm chốt dễ thiếu khách quan.";
+      return "";
+    }
+    function scoreHourByCung(cung) {
+      if (cung === "Tiểu Cát") return 2;
+      if (cung === "Tốc Hỷ") return 2;
+      if (cung === "Đại An") return 1;
+      if (cung === "Lưu Liên") return -1;
+      if (cung === "Xích Khẩu") return -2;
+      if (cung === "Không Vong") return -3;
+      return 0;
+    }
+    function relationScore(text) {
+      if (/thuận lực|trợ lực|Đồng hành/.test(text)) return 2;
+      if (/khắc/.test(text) && /Ngày khắc gia chủ/.test(text)) return -2;
+      if (/khắc/.test(text) && /Gia chủ khắc ngày/.test(text)) return -1;
+      if (/hao sức/.test(text)) return -1;
+      return 0;
+    }
+    function detectDomain(topic) {
+      var t = (topic || "").toLowerCase();
+      if (/(nhà|đất|bđs|bất động sản|mua bán|xem nhà)/.test(t)) return "real_estate";
+      if (/(công việc|sales|khách|hợp đồng|chốt|bán)/.test(t)) return "sales";
+      if (/(hôn|cưới|tình cảm|gia đình)/.test(t)) return "relationship";
+      return "general";
+    }
+    function buildSituationalTactics(ctx) {
+      var tactics = [];
+      var hardHours = (ctx.cautions || []).slice(0, 2).join(", ");
+      var goodHours = (ctx.positives || []).slice(0, 3).join(", ");
+      if (ctx.status === "can_tranh_chot") {
+        tactics.push("Không đặt mục tiêu chốt ngay; ưu tiên giữ nhịp đối thoại và lấy thêm dữ kiện quyết định.");
+        if (/Xích Khẩu|Không Vong/.test(ctx.hourCung)) tactics.push("Giờ hiện tại có tính va chạm/hụt nhịp, nên chuyển sang bước xác nhận nhu cầu thay vì tranh luận điều kiện.");
+        if (hardHours) tactics.push("Nếu có thể đổi giờ, tránh các khung " + hardHours + " để giảm rủi ro đứt mạch.");
+      } else if (ctx.status === "kho_chot") {
+        tactics.push("Mục tiêu phù hợp là chốt mềm: thống nhất bước tiếp theo thay vì ép quyết định cuối ngay lập tức.");
+        tactics.push("Tách buổi trao đổi thành 2 nhịp: xác nhận nhu cầu -> xác nhận điều kiện, tránh dồn quá nhiều luận điểm một lúc.");
+        if (goodHours) tactics.push("Ưu tiên xử lý điểm chốt chính ở các khung " + goodHours + ".");
+      } else {
+        tactics.push("Có thể tiến hành chốt có điều kiện, nhưng vẫn giữ phương án dự phòng để tránh đảo chiều cuối buổi.");
+        tactics.push("Giữ cấu trúc trao đổi ngắn gọn: lợi ích cốt lõi -> điều kiện -> hành động kế tiếp.");
+        if (goodHours) tactics.push("Chọn một trong các khung " + goodHours + " để tăng xác suất đồng thuận.");
+      }
+      if (/Ngày khắc gia chủ|hao sức/.test(ctx.relationDay + " " + ctx.relationHour)) {
+        tactics.push("Do thế ngũ hành đang hao lực, nên giảm tốc độ nói và tăng thời lượng lắng nghe phản hồi thực tế.");
+      }
+      return tactics.slice(0, 3);
+    }
+    function buildEngineV2(input) {
+      var quPair = input.dayCung + "|" + input.hourCung;
+      var pairMeaning = getPairMeaning(input.dayCung, input.hourCung);
+      var special = getSpecialPattern(input.ownerCanChi, input.dayCanChi, input.hourCanChi);
+      var base = scoreHourByCung(input.hourCung) + relationScore(input.relationDay) + relationScore(input.relationHour);
+      var status = "kho_chot";
+      if (base >= 2) status = "thanh_cong_mot_phan";
+      if (base <= -2) status = "can_tranh_chot";
+      var confidence = Math.max(55, Math.min(92, 68 + base * 6 + (special ? 4 : 0)));
+      var domain = detectDomain(input.topic);
+      var tactics = buildSituationalTactics({
+        status: status,
+        hourCung: input.hourCung,
+        relationDay: input.relationDay,
+        relationHour: input.relationHour,
+        positives: input.positives || [],
+        cautions: input.cautions || []
+      });
+      return {
+        status: status,
+        confidence: confidence,
+        pairMeaning: pairMeaning,
+        specialPattern: special,
+        domain: domain,
+        tactics: tactics,
+        quPair: quPair
+      };
+    }
+    function compactHourJudgement(list, maxItems) {
+      return list.slice(0, maxItems).map(function (x) { return x.slot + " (" + x.cung + ")"; }).join("; ");
+    }
+    function setAllDateInputs(ymd) {
+      document.getElementById("globalMonth").value = ymd.m;
+      document.getElementById("globalDay").value = ymd.d;
+      document.getElementById("globalYear").value = ymd.y;
+      document.getElementById("refMonth").value = ymd.m;
+      document.getElementById("refDay").value = ymd.d;
+      document.getElementById("refYear").value = ymd.y;
+    }
+    function getYMDFrom(prefix) {
+      return {
+        m: parseInt(document.getElementById(prefix + "Month").value || "0", 10),
+        d: parseInt(document.getElementById(prefix + "Day").value || "0", 10),
+        y: parseInt(document.getElementById(prefix + "Year").value || "0", 10),
+      };
+    }
+    function getRawYMDFrom(prefix) {
+      return {
+        m: (document.getElementById(prefix + "Month").value || "").trim(),
+        d: (document.getElementById(prefix + "Day").value || "").trim(),
+        y: (document.getElementById(prefix + "Year").value || "").trim(),
+      };
+    }
+    function mirrorDateInputsRaw(fromPrefix) {
+      var toPrefix = fromPrefix === "global" ? "ref" : "global";
+      var raw = getRawYMDFrom(fromPrefix);
+      document.getElementById(toPrefix + "Month").value = raw.m;
+      document.getElementById(toPrefix + "Day").value = raw.d;
+      document.getElementById(toPrefix + "Year").value = raw.y;
+    }
+    function renderHours(date) {
+      var m = date.getMonth() + 1;
+      var d = date.getDate();
+      var y = date.getFullYear();
+      var monthCung = getMonthCung(m);
+      var dayIndex = ((m - 1) + d - 1) % 6;
+      currentDayIndex = dayIndex;
+      document.getElementById("dayCung").innerHTML =
+        "<span class='day-cung-line'>" +
+        "<span class='day-chip'>Ngày: " + d + "/" + m + "/" + y + " thuộc cung <span class='cung " + cls[dayIndex] + "'>" + cungs[dayIndex] + "</span></span>" +
+        "<span class='day-chip month'>Tháng: " + m + " thuộc cung <span class='cung " + cls[cungs.indexOf(monthCung)] + "'>" + monthCung + "</span></span>" +
+        "</span>";
+      var grid = document.getElementById("hours");
+      grid.innerHTML = "";
+      for (var i = 0; i < hours.length; i++) {
+        var ci = (dayIndex + i) % 6;
+        var card = document.createElement("div");
+        card.className = "hour-card";
+        card.innerHTML =
+          "<div class='hour-branch'>" + hours[i][0] + "</div>" +
+          "<div class='hour-range'>" + hours[i][1] + "</div>" +
+          "<div class='cung " + cls[ci] + "'>" + cungs[ci] + "</div>";
+        grid.appendChild(card);
+      }
+    }
+    function getHourCung(hourIndex) {
+      return cungs[(currentDayIndex + hourIndex) % 6];
+    }
+    function renderBySelectedDate(date) {
+      var ymd = dateToYMD(date);
+      document.getElementById("todayDate").textContent = date.toLocaleDateString("vi-VN");
+      document.getElementById("todayCanChi").textContent = getCanChiByDate(date);
+      document.getElementById("dailyDateReadonly").textContent = "Đang xem cho ngày: " + date.toLocaleDateString("vi-VN");
+      document.getElementById("forecastDateReadonly").textContent = "Đang xem cho ngày: " + date.toLocaleDateString("vi-VN");
+      renderHours(date);
+      updateForecastFocusLine(ymd);
+    }
+    function applyDateFrom(prefix) {
+      var rawText = getRawYMDFrom(prefix);
+      if (!rawText.m || !rawText.d || !rawText.y) {
+        mirrorDateInputsRaw(prefix);
+        return;
+      }
+      var raw = getYMDFrom(prefix);
+      if (!raw.m || !raw.d || !raw.y) return;
+      var ymd = normalizeYMD(raw.y, raw.m, raw.d);
+      setAllDateInputs(ymd);
+      localStorage.setItem("daily_fortune_selected_ymd", JSON.stringify(ymd));
+      renderBySelectedDate(ymdToDate(ymd.y, ymd.m, ymd.d));
+    }
+
+    async function renderSummary(consume) {
+      if (consume === undefined) consume = false;
+      var resultEl = document.getElementById("dailyResult");
+      if (consume) resultEl.innerText = "Đang phân tích...";
+      var ownerYear = (document.getElementById("ownerYear").value || "").trim();
+      var hasParticipant = document.getElementById("hasParticipant").checked;
+      var pYear = (document.getElementById("pYear").value || "").trim();
+      var role = (document.getElementById("participantRole").value || "").trim();
+      var topic = (document.getElementById("topic").value || "").trim();
+      var focusHour = (document.getElementById("focusHour").value || "").trim();
+      if (consume && customerInviteCode) {
+        var codeInfo = INVITE_CODES[customerInviteCode] || {};
+        var tier = codeInfo.tier;
+        var limit = Number.isFinite(parseInt(codeInfo.totalLimit, 10)) ? parseInt(codeInfo.totalLimit, 10) : totalLimit;
+        if (tier !== "admin") {
+          var used = getDailyUsage(customerInviteCode);
+          if (used >= limit) {
+            updateUsageReadonly();
+            return resultEl.innerHTML = "Bạn đã dùng hết " + limit + " lượt miễn phí tổng cộng. Vui lòng nâng cấp gói để tiếp tục xem.";
+          }
+          setDailyUsage(customerInviteCode, used + 1);
+        }
+      }
+      if (!ownerYear) return resultEl.innerHTML = "Vui lòng nhập năm sinh Gia chủ (bắt buộc).";
+      var ownerYearNum = parseInt(ownerYear, 10);
+      if (!ownerYearNum || ownerYear.length < 4 || ownerYearNum < 1900 || ownerYearNum > 2099) {
+        return resultEl.innerHTML = "Năm sinh gia chủ cần đủ 4 số (ví dụ: 1989).";
+      }
+      if (hasParticipant && !pYear) return resultEl.innerHTML = "Vui lòng nhập năm sinh người tham gia (bắt buộc khi chọn Có).";
+      var who = selectedTarget === "owner" ? "gia chủ" : "người khác";
+      var p = hasParticipant ? "Có người tham gia (" + (role || "chưa ghi vai trò") + "), năm sinh " + pYear : "Không có người tham gia";
+      var ymd = getYMDFrom("global");
+      var dayDate = ymdToDate(ymd.y, ymd.m, ymd.d);
+      var dayCanChi = getCanChiByDate(dayDate);
+      var dayNapAm = getNapAm(dayCanChi);
+      var ownerCanChi = ownerYearNum ? getCanChiByYear(ownerYearNum) : "";
+      var ownerNapAm = ownerCanChi ? getNapAm(ownerCanChi) : "";
+      var ownerEl = getElement(ownerNapAm);
+      var dayEl = getElement(dayNapAm);
+      var relation = compareElements(ownerEl, dayEl);
+      var monthCung = getMonthCung(ymd.m);
+      var dayCung = getDayCung(ymd.m, ymd.d);
+      var hourIdxForCalc = focusHour !== "" ? parseInt(focusHour, 10) : new Date().getHours() % 12;
+      var hourCung = getHourCungByInput(ymd.m, ymd.d, hourIdxForCalc);
+      var hourCanChi = getHourCanChi(dayCanChi, hourIdxForCalc);
+      var hourNapAm = getNapAm(hourCanChi);
+      var relationHour = compareElements(ownerEl, getElement(hourNapAm));
+      var positives = [];
+      var cautions = [];
+      var hourDetails = [];
+      var hourObjects = [];
+      for (var i = 0; i < hours.length; i++) {
+        var name = getHourCung(i);
+        var slot = hours[i][0] + " (" + hours[i][1] + ")";
+        if (name === "Tiểu Cát" || name === "Tốc Hỷ" || name === "Đại An") positives.push(slot);
+        if (name === "Không Vong" || name === "Xích Khẩu") cautions.push(slot);
+        hourObjects.push({ slot: slot, cung: name, idx: i });
+        if (name === "Tiểu Cát" || name === "Tốc Hỷ" || name === "Đại An") {
+          hourDetails.push(slot + ": thuận (" + name + ")");
+        } else if (name === "Không Vong" || name === "Xích Khẩu") {
+          hourDetails.push(slot + ": cần tránh (" + name + ")");
+        } else {
+          hourDetails.push(slot + ": trung tính (" + name + ")");
+        }
+      }
+      var suggested = positives.slice(0, 3).join(", ");
+      var avoid = cautions.slice(0, 2).join(", ");
+      var focusLine = "Tự động gợi ý theo giờ tốt trong ngày.";
+      var focusNarrative = "";
+      if (focusHour !== "") {
+        var idx = parseInt(focusHour, 10);
+        var focusName = getHourCung(idx);
+        focusLine = "Khung giờ đã chọn: <strong>" + hours[idx][0] + " (" + hours[idx][1] + ") - " + focusName + "</strong>.";
+        focusNarrative = "Tại giờ " + hours[idx][0] + " (" + hours[idx][1] + "), cung rơi vào " + focusName + ", nghĩa là " + getCungTone(focusName) + ".";
+      } else {
+        focusNarrative = "Nếu chưa cố định giờ, nên ưu tiên các khung " + compactHourJudgement(hourObjects.filter(function (h) {
+          return h.cung === "Tiểu Cát" || h.cung === "Tốc Hỷ" || h.cung === "Đại An";
+        }), 3) + " và tránh các khung " + compactHourJudgement(hourObjects.filter(function (h) {
+          return h.cung === "Không Vong" || h.cung === "Xích Khẩu";
+        }), 2) + ".";
+      }
+      var topicLine = topic ? topic : "chưa nhập cụ thể";
+      var engine = buildEngineV2({
+        dayCung: dayCung,
+        hourCung: hourCung,
+        ownerCanChi: ownerCanChi,
+        dayCanChi: dayCanChi,
+        hourCanChi: hourCanChi,
+        relationDay: relation,
+        relationHour: relationHour,
+        topic: topic,
+        positives: positives,
+        cautions: cautions
+      });
+      var statusText = engine.status === "thanh_cong_mot_phan" ? "khả năng chốt tích cực có điều kiện" :
+        (engine.status === "can_tranh_chot" ? "rủi ro cao, nên tránh ép chốt" : "khó chốt ngay, cần đi theo lộ trình");
+      var statusLabelVi = engine.status === "thanh_cong_mot_phan" ? "có thể tiến hành có điều kiện" :
+        (engine.status === "can_tranh_chot" ? "nên tránh chốt vội" : "cần đi chậm và quan sát thêm");
+      var paragraph1 = "Ngày " + dayDate.toLocaleDateString("vi-VN") + " tạo quẻ " + dayCung + " + " + hourCung + " (" + engine.quPair + "), hàm ý " +
+        engine.pairMeaning + ". Với chủ đề \"" + topicLine + "\" cho " + who + ", trạng thái dự kiến là " + statusText + " (độ chắc " + engine.confidence + "%). Bối cảnh mệnh ngày là " + dayCanChi + " (" + dayNapAm + "), còn người được xem thuộc " +
+        (ownerCanChi ? (ownerCanChi + " (" + ownerNapAm + ")") : "mệnh chưa xác định") + ", vì vậy tương quan tổng thể là: " + relation + ".";
+      var paragraph2 = "Với chủ đề \"" + topicLine + "\", mức độ thuận nhất đang tập trung ở " + (suggested || "khung giờ chưa nổi trội") +
+        ", trong khi " + (avoid || "các giờ rủi ro thấp") + " nên dùng để quan sát hoặc chuẩn bị hơn là chốt việc. " +
+        focusNarrative + " Nếu bắt buộc làm ở giờ trung tính, nên chuẩn bị sẵn phương án dự phòng và giới hạn kỳ vọng chốt nhanh.";
+      var paragraph3 = "Đối chiếu sâu hơn theo mệnh giờ " + (hourCanChi || "chưa xác định") + (hourCanChi ? (" (" + hourNapAm + ")") : "") +
+        " cho thấy " + relationHour + (engine.specialPattern ? (" " + engine.specialPattern) : "") + " Vì vậy chiến thuật phù hợp là: " +
+        engine.tactics[0] + " " + engine.tactics[1] + " " + engine.tactics[2];
+      var fallbackText = paragraph1 + "\n\n" + paragraph2 + "\n\n" + paragraph3;
+      var reasoningTrace =
+        "Dấu hiệu dùng để luận:\n" +
+        "- Cặp Ngày-Giờ: " + dayCung + "|" + hourCung + " (" + engine.pairMeaning + ")\n" +
+        "- Cung tháng: " + monthCung + "; Cung ngày: " + dayCung + "; Cung giờ: " + hourCung + "\n" +
+        "- Mệnh ngày: " + dayCanChi + " (" + dayNapAm + ", hành " + (dayEl || "chưa rõ") + ")\n" +
+        "- Mệnh giờ: " + (hourCanChi || "chưa xác định") + (hourCanChi ? (" (" + hourNapAm + ", hành " + (getElement(hourNapAm) || "chưa rõ") + ")") : "") + "\n" +
+        "- Mệnh người xem: " + (ownerCanChi || "chưa xác định") + (ownerCanChi ? (" (" + ownerNapAm + ", hành " + (ownerEl || "chưa rõ") + ")") : "") + "\n" +
+        "- Tương quan ngũ hành ngày/người xem: " + relation + "\n" +
+        "- Tương quan ngũ hành giờ/người xem: " + relationHour;
+      var analysisPayload = {
+        date_view: dayDate.toLocaleDateString("vi-VN"),
+        month_cung: monthCung,
+        day_cung: dayCung,
+        hour_cung: hourCung,
+        main_pair: engine.quPair,
+        main_pair_scope: "day_hour",
+        main_pair_display: "Cặp Ngày-Giờ: " + engine.quPair,
+        month_day_pair: monthCung + "|" + dayCung,
+        day_can_chi: dayCanChi,
+        hour_can_chi: hourCanChi,
+        owner_can_chi: ownerCanChi,
+        day_menh: dayCanChi + " - " + dayNapAm,
+        hour_menh: (hourCanChi || "") + (hourCanChi ? (" - " + hourNapAm) : ""),
+        owner_menh: ownerCanChi + " - " + ownerNapAm,
+        day_element: dayEl,
+        hour_element: getElement(hourNapAm),
+        owner_element: ownerEl,
+        relation_day: relation,
+        relation_hour: relationHour,
+        special_pattern: engine.specialPattern || "",
+        topic: topicLine,
+        subject_target: who,
+        focus_hour: focusHour !== "" ? (hours[parseInt(focusHour, 10)][0] + " " + hours[parseInt(focusHour, 10)][1]) : "",
+        suggested_hours: positives.slice(0, 2),
+        avoid_hours: cautions.slice(0, 1),
+        status: engine.status,
+        status_label_vi: statusLabelVi,
+        confidence: engine.confidence
+      };
+      try {
+        var resp = await fetch("/api/fortune/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(analysisPayload)
+        });
+        var json = await resp.json();
+        if (resp.ok && json && json.ok && json.analysis) {
+          resultEl.innerText = reasoningTrace + "\n\n" + json.analysis;
+        } else {
+          var backendErr = json && json.error ? ("Lý do: " + json.error) : "";
+          resultEl.innerText =
+            "Gemini chưa phản hồi đúng chuẩn lúc này, hệ thống tạm dùng phân tích nội bộ.\n\n" +
+            reasoningTrace + "\n\n" + fallbackText +
+            (backendErr ? ("\n\n(" + backendErr + ")") : "");
+        }
+      } catch (err) {
+        var msg = (err && err.message) ? err.message : "Kết nối tạm thời không ổn định.";
+        resultEl.innerText =
+          "Gemini đang bận hoặc chưa sẵn sàng, hệ thống tạm dùng phân tích nội bộ.\n\n" +
+          reasoningTrace + "\n\n" + fallbackText +
+          "\n\n(" + msg + ")";
+      }
+      if (consume) resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      updateUsageReadonly();
+    }
+
+    function loadActiveProfileToForm() {
+      try {
+        if (customerInviteCode) {
+          var cp = getCustomerProfile(customerInviteCode);
+          if (!cp) return;
+          document.getElementById("ownerName").value = cp.name || "";
+          document.getElementById("ownerPhone").value = cp.contact || "";
+          document.getElementById("ownerDay").value = cp.birthDay || "";
+          document.getElementById("ownerMonth").value = cp.birthMonth || "";
+          document.getElementById("ownerYear").value = cp.birthYear || "";
+          document.getElementById("ownerSeal").textContent = (cp.name || "Gia chủ").split(" ").slice(-1)[0];
+          var ccy = cp.birthYear ? getCanChiByYear(parseInt(cp.birthYear, 10)) : "";
+          var nam = ccy ? getNapAm(ccy) : "";
+          document.getElementById("ownerProfileLabel").textContent = (cp.name || "Gia chủ") + (nam ? (" - " + nam) : "") + " (mã " + customerInviteCode + ")";
+          return;
+        }
+        var listRaw = localStorage.getItem("daily_fortune_profiles");
+        var activeId = localStorage.getItem("daily_fortune_active_profile_id");
+        if (!listRaw || !activeId) return;
+        var list = JSON.parse(listRaw);
+        if (!Array.isArray(list)) return;
+        var p = list.find(function (x) { return x.id === activeId; });
+        if (!p) return;
+        document.getElementById("ownerName").value = p.name || "";
+        document.getElementById("ownerPhone").value = p.contact || "";
+        document.getElementById("ownerDay").value = p.birthDay || "";
+        document.getElementById("ownerMonth").value = p.birthMonth || "";
+        document.getElementById("ownerYear").value = p.birthYear || "";
+        document.getElementById("ownerSeal").textContent = (p.name || "Gia chủ").split(" ").slice(-1)[0];
+        var cy = p.birthYear ? getCanChiByYear(parseInt(p.birthYear, 10)) : "";
+        var na = cy ? getNapAm(cy) : "";
+        document.getElementById("ownerProfileLabel").textContent = (p.name || "Gia chủ") + (na ? (" - " + na) : "") + " (tham chiếu hồ sơ)";
+      } catch (_) {}
+    }
+    function clearOtherTargetForm() {
+      document.getElementById("ownerName").value = "";
+      document.getElementById("ownerPhone").value = "";
+      document.getElementById("ownerDay").value = "";
+      document.getElementById("ownerMonth").value = "";
+      document.getElementById("ownerYear").value = "";
+      document.getElementById("ownerSeal").textContent = "Khách";
+      document.getElementById("ownerProfileLabel").textContent = "Người khác (nhập tạm, không lưu hồ sơ)";
+    }
+
+    function syncParticipantUI() {
+      var checked = document.getElementById("hasParticipant").checked;
+      var box = document.getElementById("participantBox");
+      if (!box) return;
+      if (checked) box.classList.remove("disabled");
+      else box.classList.add("disabled");
+    }
+
+    function getProfiles() {
+      try {
+        var raw = localStorage.getItem("daily_fortune_profiles");
+        if (!raw) return [];
+        var parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) { return []; }
+    }
+    function setProfiles(list) { localStorage.setItem("daily_fortune_profiles", JSON.stringify(list || [])); }
+    function getActiveProfileId() { return localStorage.getItem("daily_fortune_active_profile_id") || ""; }
+    function setActiveProfileId(id) { localStorage.setItem("daily_fortune_active_profile_id", id || ""); }
+    function createProfileId() { return "p-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8); }
+
+    function upsertOwnerProfile(options) {
+      var opts = options || {};
+      var ownerName = (document.getElementById("ownerName").value || "").trim();
+      var ownerPhone = (document.getElementById("ownerPhone").value || "").trim();
+      var ownerDay = (document.getElementById("ownerDay").value || "").trim();
+      var ownerMonth = (document.getElementById("ownerMonth").value || "").trim();
+      var ownerYear = (document.getElementById("ownerYear").value || "").trim();
+      if (!ownerYear) {
+        if (!opts.silent) document.getElementById("dailyResult").textContent = "Vui lòng nhập năm sinh Gia chủ (bắt buộc).";
+        return false;
+      }
+      var profiles = getProfiles();
+      var activeId = getActiveProfileId();
+      var active = profiles.find(function (p) { return p.id === activeId; });
+      var id = active ? active.id : createProfileId();
+      var next = { id:id, name:ownerName || "Gia chủ", contact:ownerPhone, birthDay:ownerDay, birthMonth:ownerMonth, birthYear:ownerYear, updatedAt:new Date().toISOString() };
+      var found = false;
+      profiles = profiles.map(function (p) { if (p.id !== id) return p; found = true; return next; });
+      if (!found) profiles.push(next);
+      setProfiles(profiles);
+      setActiveProfileId(id);
+      document.getElementById("ownerSeal").textContent = (next.name || "Gia chủ").split(" ").slice(-1)[0];
+      var canchi = next.birthYear ? getCanChiByYear(parseInt(next.birthYear, 10)) : "";
+      var napam = canchi ? getNapAm(canchi) : "";
+      document.getElementById("ownerProfileLabel").textContent = (next.name || "Gia chủ") + (napam ? (" - " + napam) : "") + " (tham chiếu hồ sơ)";
+      return true;
+    }
+
+    var autoSaveTimer = null;
+    function scheduleAutoSaveOwnerProfile() {
+      if (selectedTarget !== "owner") return;
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(function () { upsertOwnerProfile({ silent: true }); }, 350);
+    }
+
+    document.querySelectorAll(".pill").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        document.querySelectorAll(".pill").forEach(function(b){ b.classList.remove("active"); });
+        btn.classList.add("active");
+        selectedTarget = btn.getAttribute("data-target");
+        if (selectedTarget === "owner") loadActiveProfileToForm();
+        else clearOtherTargetForm();
+        renderSummary();
+      });
+    });
+    document.getElementById("previewBtn").addEventListener("click", async function () {
+      var btn = document.getElementById("previewBtn");
+      btn.disabled = true;
+      try { await renderSummary(true); }
+      finally { btn.disabled = false; }
+    });
+    document.getElementById("hasParticipant").addEventListener("change", syncParticipantUI);
+    document.getElementById("focusHour").addEventListener("change", function () {
+      var ymd = getYMDFrom("global");
+      updateForecastFocusLine(ymd);
+    });
+    ["globalMonth","globalDay","globalYear"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", function () { mirrorDateInputsRaw("global"); });
+      el.addEventListener("change", function () { applyDateFrom("global"); });
+      el.addEventListener("blur", function () { applyDateFrom("global"); });
+      el.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") applyDateFrom("global");
+      });
+    });
+    ["refMonth","refDay","refYear"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", function () { mirrorDateInputsRaw("ref"); });
+      el.addEventListener("change", function () { applyDateFrom("ref"); });
+      el.addEventListener("blur", function () { applyDateFrom("ref"); });
+      el.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") applyDateFrom("ref");
+      });
+    });
+    ["ownerName","ownerPhone","ownerDay","ownerMonth","ownerYear"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", scheduleAutoSaveOwnerProfile);
+    });
+
+    if (ensureCustomerAccess()) {
+      updateProfileNavLink();
+      var today = new Date();
+      var initYmd = dateToYMD(today);
+      initYmd = normalizeYMD(initYmd.y, initYmd.m, initYmd.d);
+      setAllDateInputs(initYmd);
+      localStorage.setItem("daily_fortune_selected_ymd", JSON.stringify(initYmd));
+      loadActiveProfileToForm();
+      syncParticipantUI();
+      renderBySelectedDate(ymdToDate(initYmd.y, initYmd.m, initYmd.d));
+      updateUsageReadonly();
+      document.getElementById("dailyResult").innerText = "Nhập chủ đề và bấm Khám phá để xem phân tích.";
+    }
+  </script>
+</body>
+</html>

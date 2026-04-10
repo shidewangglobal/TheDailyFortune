@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily fortune - Quản lý Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Noto+Serif:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-1: #120022;
+      --bg-2: #22003d;
+      --bg-3: #32005b;
+      --card: rgba(255, 255, 255, 0.08);
+      --card-2: rgba(255, 255, 255, 0.12);
+      --text: #f7efff;
+      --muted: #cdb8e7;
+      --primary: #a855f7;
+      --primary-2: #7e22ce;
+      --ring: rgba(168, 85, 247, 0.45);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(168, 85, 247, 0.35), transparent 30%),
+        radial-gradient(circle at 80% 20%, rgba(126, 34, 206, 0.30), transparent 35%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3));
+      min-height: 100vh;
+    }
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(0, 0, 0, 0.28);
+      border-bottom: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 4px 12px rgba(0,0,0,.2);
+      backdrop-filter: blur(8px);
+    }
+    .topbar .inner {
+      width: min(1680px, calc(100vw - 24px)); margin: 0 auto; padding: 13px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+    }
+    .topbar strong {
+      font-family: "Noto Serif", Georgia, serif;
+      font-size: 23px;
+      letter-spacing: .4px;
+      color: #f6e9ff;
+      text-shadow: 0 0 14px rgba(205, 160, 255, 0.35);
+    }
+    .topbar a {
+      color: #f5e9ff; text-decoration: none; font-size: 12px; font-weight: 700;
+      border: 1px solid rgba(255,255,255,.24); padding: 6px 10px; border-radius: 999px;
+      background: linear-gradient(180deg, rgba(168,85,247,.35), rgba(126,34,206,.35));
+    }
+    .wrap { width: min(1680px, calc(100vw - 24px)); margin: 14px auto; padding: 0 6px 20px; }
+    .card {
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      background: linear-gradient(180deg, var(--card), var(--card-2));
+      box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-family: "Noto Serif", Georgia, serif;
+      color: #f6e9ff;
+      font-size: 36px;
+      letter-spacing: .5px;
+      text-shadow: 0 0 16px rgba(205, 160, 255, 0.35);
+    }
+    h3 {
+      margin: 0 0 10px;
+      font-family: "Noto Serif", Georgia, serif;
+      color: #ead3ff;
+      font-size: 26px;
+      letter-spacing: .4px;
+    }
+    .sub { margin: 0 0 14px; color: var(--muted); font-size: 17px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+    .birth { display: grid; grid-template-columns: auto 1fr auto 1fr auto 1fr; gap: 12px; align-items: center; margin-bottom: 10px; }
+    label { display: block; font-size: 15px; font-weight: 600; color: var(--muted); margin: 0 0 5px; white-space: nowrap; }
+    input {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: 16px;
+      color: #fff;
+      background: rgba(0,0,0,.24);
+    }
+    select {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: 16px;
+      color: #fff;
+      background: rgba(0,0,0,.24);
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--ring);
+      box-shadow: 0 0 0 3px rgba(168,85,247,.18);
+    }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .btn {
+      border: none; border-radius: 10px; padding: 10px 13px; font-size: 15px; cursor: pointer;
+    }
+    .btn.primary {
+      color: #fff;
+      background: linear-gradient(180deg, var(--primary), var(--primary-2));
+      font-weight: 700;
+    }
+    .btn.soft {
+      color: #f3e8ff;
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.16);
+      font-weight: 700;
+    }
+    .status { margin-top: 10px; font-size: 15px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px dashed rgba(255,255,255,.14); }
+    th { color: #e9d5ff; font-size: 13px; font-weight: 700; }
+    .row-actions { display: flex; gap: 6px; }
+    .row-actions button {
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 8px;
+      background: rgba(255,255,255,.08);
+      color: #f5e9ff;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .hidden { display: none !important; }
+    .mode-badge {
+      font-size: 12px;
+      font-weight: 800;
+      color: #f5d0fe;
+      border: 1px solid rgba(255,255,255,.24);
+      border-radius: 999px;
+      padding: 5px 10px;
+      background: rgba(255,255,255,.08);
+    }
+    .inline-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .note {
+      color: #e9d5ff;
+      font-size: 13px;
+      background: rgba(255,255,255,.06);
+      border: 1px dashed rgba(255,255,255,.2);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+    .locked-list { margin: 10px 0 0; padding-left: 18px; color: #e9d5ff; }
+    .locked-list li { margin: 4px 0; }
+    .invite-code-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      border: 1px solid rgba(255,255,255,.24);
+      border-radius: 999px;
+      padding: 6px 10px;
+      color: #f5d0fe;
+      background: rgba(255,255,255,.08);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    @media (min-width: 1500px) {
+      .topbar .inner,
+      .wrap { width: calc(100vw - 18px); }
+    }
+    @media (max-width: 820px) {
+      .topbar .inner,
+      .wrap { width: calc(100vw - 12px); padding-left: 2px; padding-right: 2px; }
+      .topbar strong { font-size: 18px; }
+      .card { padding: 12px; }
+      h1 { font-size: 28px; }
+      h3 { font-size: 22px; }
+      .grid { grid-template-columns: 1fr; }
+      .birth { grid-template-columns: auto 1fr; }
+      .actions { display: grid; grid-template-columns: 1fr; }
+      .btn { width: 100%; }
+      .table-wrap { overflow-x: auto; }
+      table { min-width: 700px; font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="inner">
+      <strong id="pageTitle">🪷 Daily fortune · Quản lý Profile</strong>
+      <div class="inline-actions">
+        <span class="mode-badge" id="modeBadge">ADMIN</span>
+        <a href="/">Về Dashboard</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div id="adminView">
+    <section class="card">
+      <h1>Profile Gia chủ</h1>
+      <p class="sub">Tạo nhiều profile, chọn profile mặc định để dùng khi khám phá.</p>
+
+      <h3>Thêm / Sửa profile</h3>
+      <div class="grid">
+        <div>
+          <label for="ownerName">Họ và tên</label>
+          <input id="ownerName" placeholder="Ví dụ: Nguyễn Văn A" />
+        </div>
+        <div>
+          <label for="ownerContact">Liên hệ</label>
+          <input id="ownerContact" placeholder="SĐT hoặc email (tuỳ chọn)" />
+        </div>
+      </div>
+      <div class="birth">
+        <label for="ownerDay">Ngày sinh</label>
+        <input id="ownerDay" type="number" min="1" max="31" placeholder="Ngày" />
+        <label for="ownerMonth">Tháng sinh</label>
+        <input id="ownerMonth" type="number" min="1" max="12" placeholder="Tháng" />
+        <label for="ownerYear">Năm sinh (*)</label>
+        <input id="ownerYear" type="number" placeholder="Bắt buộc" />
+        <label for="ownerHour">Giờ sinh</label>
+        <input id="ownerHour" type="number" min="0" max="23" placeholder="0-23 (tuỳ chọn)" />
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="saveBtn" type="button">Lưu profile</button>
+        <button class="btn soft" id="resetBtn" type="button">Làm mới form</button>
+      </div>
+      <div class="status" id="status">Sẵn sàng.</div>
+    </section>
+
+    <section class="card">
+      <h3>Danh sách profile</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên</th>
+              <th>Ngày sinh</th>
+              <th>Liên hệ</th>
+              <th>Mặc định</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="profilesBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Quản lý invitation code</h3>
+      <p class="sub">Tạo mã mới để cấp cho khách, có thể đặt quota theo từng mã.</p>
+      <div class="birth">
+        <label for="newInviteCode">Mã mới</label>
+        <input id="newInviteCode" placeholder="Ví dụ: KHACH-001-2026" />
+        <label for="newInviteTier">Loại mã</label>
+        <select id="newInviteTier">
+          <option value="test">Khách (giới hạn lượt)</option>
+          <option value="admin">Admin (không giới hạn)</option>
+        </select>
+        <label for="newInviteLimit">Quota tổng</label>
+        <input id="newInviteLimit" type="number" min="1" value="20" />
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="createInviteBtn" type="button">Tạo / Cập nhật mã</button>
+      </div>
+      <div class="status" id="inviteStatus">Sẵn sàng.</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Mã</th>
+              <th>Loại</th>
+              <th>Quota</th>
+              <th>Đã dùng</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="inviteCodesBody"></tbody>
+        </table>
+      </div>
+    </section>
+    </div>
+
+    <div id="customerView" class="hidden">
+      <section class="card">
+        <h1>Hồ sơ của bạn</h1>
+        <p class="sub">Nhập invitation code để truy cập. Chỉ người có mã mới vào được.</p>
+        <div class="note">
+          Mã test tạm thời:
+          <br>- <strong>ADMIN-2026</strong> (admin/unlimited)
+          <br>- <strong>TEST-2026</strong> (khách, 20 lượt miễn phí tổng cộng)
+        </div>
+        <div class="grid">
+          <div>
+            <label for="inviteCode">Invitation code</label>
+            <input id="inviteCode" placeholder="Nhập mã mời của bạn" />
+          </div>
+          <div class="inline-actions" style="align-self:end;">
+            <button class="btn primary" id="unlockBtn" type="button">Mở hồ sơ</button>
+          </div>
+        </div>
+        <div class="status" id="customerStatus">Chưa mở hồ sơ.</div>
+        <div id="activeInviteCodeWrap" class="invite-code-chip hidden">Mã hiện tại: <strong id="activeInviteCode">-</strong></div>
+      </section>
+
+      <section class="card hidden" id="customerProfileSection">
+        <h3>Thông tin cá nhân</h3>
+        <div class="grid">
+          <div>
+            <label for="customerName">Họ và tên</label>
+            <input id="customerName" placeholder="Ví dụ: Nguyễn Văn A" />
+          </div>
+          <div>
+            <label for="customerContact">Liên hệ</label>
+            <input id="customerContact" placeholder="SĐT hoặc email" />
+          </div>
+        </div>
+        <div class="birth">
+          <label for="customerDay">Ngày sinh</label>
+          <input id="customerDay" type="number" min="1" max="31" />
+          <label for="customerMonth">Tháng sinh</label>
+          <input id="customerMonth" type="number" min="1" max="12" />
+          <label for="customerYear">Năm sinh (*)</label>
+          <input id="customerYear" type="number" />
+          <label for="customerHour">Giờ sinh</label>
+          <input id="customerHour" type="number" min="0" max="23" placeholder="0-23 (tuỳ chọn)" />
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="customerSaveBtn" type="button">Lưu hồ sơ</button>
+          <a class="btn soft hidden" id="goDashboardBtn" href="/dashboard-purple.html?role=customer">Bắt đầu trải nghiệm</a>
+        </div>
+        <div class="note">
+          Lần đầu với mỗi code, vui lòng điền hồ sơ (đặc biệt là năm sinh) rồi bấm Lưu trước khi vào Dashboard.
+        </div>
+      </section>
+
+      <section class="card hidden" id="customerPerkSection">
+        <h3>Quyền dùng miễn phí</h3>
+        <div class="note" id="dailyUsageCounter">Bạn được miễn phí theo quota của mã. Đã dùng: 0/20.</div>
+        <ul class="locked-list">
+          <li>Mỗi invitation code có bộ đếm tổng riêng biệt.</li>
+          <li>Hết 20 lượt sẽ cần nâng cấp để tiếp tục xem.</li>
+          <li>Số lượt đã dùng được cập nhật tự động trên Dashboard.</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    var STORAGE_KEY = "daily_fortune_profiles";
+    var STORAGE_ACTIVE = "daily_fortune_active_profile_id";
+    var editingId = null;
+    var INVITE_CODES_KEY = "daily_fortune_invite_codes";
+    var INVITE_CODES = {
+      "ADMIN-2026": { tier: "admin" },
+      "TEST-2026": { tier: "test" }
+    };
+    function usageKey(invite) { return "daily_fortune_usage_total_" + invite; }
+    function getDailyUsage(invite) {
+      var raw = localStorage.getItem(usageKey(invite));
+      var n = parseInt(raw || "0", 10);
+      return Number.isFinite(n) ? n : 0;
+    }
+    function getInviteCodes() {
+      var merged = {};
+      Object.keys(INVITE_CODES).forEach(function (k) { merged[k] = INVITE_CODES[k]; });
+      try {
+        var raw = localStorage.getItem(INVITE_CODES_KEY);
+        if (!raw) return merged;
+        var parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return merged;
+        Object.keys(parsed).forEach(function (k) {
+          if (!parsed[k] || typeof parsed[k] !== "object") return;
+          merged[k] = parsed[k];
+        });
+      } catch (_) {}
+      return merged;
+    }
+    function setInviteCodes(codes) {
+      localStorage.setItem(INVITE_CODES_KEY, JSON.stringify(codes || {}));
+    }
+    function setInviteStatus(text) {
+      var el = document.getElementById("inviteStatus");
+      if (el) el.textContent = text;
+    }
+    function renderInviteCodes() {
+      var body = document.getElementById("inviteCodesBody");
+      if (!body) return;
+      var codes = getInviteCodes();
+      var rows = Object.keys(codes).sort();
+      body.innerHTML = "";
+      if (!rows.length) {
+        body.innerHTML = "<tr><td colspan='5'>Chưa có mã nào.</td></tr>";
+        return;
+      }
+      rows.forEach(function (code) {
+        var meta = codes[code] || {};
+        var tier = meta.tier || "test";
+        var limit = tier === "admin" ? "∞" : String(parseInt(meta.totalLimit || "20", 10) || 20);
+        var used = String(getDailyUsage(code));
+        var systemTag = (code === "ADMIN-2026" || code === "TEST-2026") ? " (mặc định)" : "";
+        var tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td>" + code + systemTag + "</td>" +
+          "<td>" + (tier === "admin" ? "admin" : "khách") + "</td>" +
+          "<td>" + limit + "</td>" +
+          "<td>" + used + "</td>" +
+          "<td><div class='row-actions'>" +
+          "<button data-act='resetUsage' data-code='" + code + "'>Reset lượt</button>" +
+          ((code === "ADMIN-2026" || code === "TEST-2026") ? "" : "<button data-act='delCode' data-code='" + code + "'>Xoá mã</button>") +
+          "</div></td>";
+        body.appendChild(tr);
+      });
+    }
+
+    function uuid() {
+      return "p-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+    }
+
+    function getProfiles() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        var parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) { return []; }
+    }
+
+    function setProfiles(list) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list || []));
+    }
+
+    function getActiveProfileId() {
+      return localStorage.getItem(STORAGE_ACTIVE) || "";
+    }
+
+    function setActiveProfileId(id) {
+      localStorage.setItem(STORAGE_ACTIVE, id || "");
+    }
+
+    function clearForm() {
+      editingId = null;
+      document.getElementById("ownerName").value = "";
+      document.getElementById("ownerContact").value = "";
+      document.getElementById("ownerDay").value = "";
+      document.getElementById("ownerMonth").value = "";
+      document.getElementById("ownerYear").value = "";
+      document.getElementById("ownerHour").value = "";
+    }
+
+    function setStatus(text) {
+      document.getElementById("status").textContent = text;
+    }
+
+    function fillForm(profile) {
+      if (!profile) return;
+      editingId = profile.id;
+      document.getElementById("ownerName").value = profile.name || "";
+      document.getElementById("ownerContact").value = profile.contact || "";
+      document.getElementById("ownerDay").value = profile.birthDay || "";
+      document.getElementById("ownerMonth").value = profile.birthMonth || "";
+      document.getElementById("ownerYear").value = profile.birthYear || "";
+      document.getElementById("ownerHour").value = profile.birthHour || "";
+    }
+
+    function renderProfiles() {
+      var body = document.getElementById("profilesBody");
+      var profiles = getProfiles();
+      var activeId = getActiveProfileId();
+      body.innerHTML = "";
+
+      if (!profiles.length) {
+        var empty = document.createElement("tr");
+        empty.innerHTML = "<td colspan='5'>Chưa có profile nào.</td>";
+        body.appendChild(empty);
+        return;
+      }
+
+      profiles.forEach(function (p) {
+        var tr = document.createElement("tr");
+        var birth = [p.birthDay, p.birthMonth, p.birthYear].filter(Boolean).join("/");
+        tr.innerHTML =
+          "<td>" + (p.name || "-") + "</td>" +
+          "<td>" + (birth || "-") + "</td>" +
+          "<td>" + (p.contact || "-") + "</td>" +
+          "<td>" + (p.id === activeId ? "✓" : "") + "</td>" +
+          "<td><div class='row-actions'>" +
+            "<button data-act='use' data-id='" + p.id + "'>Dùng</button>" +
+            "<button data-act='edit' data-id='" + p.id + "'>Sửa</button>" +
+            "<button data-act='del' data-id='" + p.id + "'>Xoá</button>" +
+          "</div></td>";
+        body.appendChild(tr);
+      });
+    }
+
+    function upsertProfile() {
+      var name = (document.getElementById("ownerName").value || "").trim();
+      var contact = (document.getElementById("ownerContact").value || "").trim();
+      var birthDay = (document.getElementById("ownerDay").value || "").trim();
+      var birthMonth = (document.getElementById("ownerMonth").value || "").trim();
+      var birthYear = (document.getElementById("ownerYear").value || "").trim();
+      var birthHour = (document.getElementById("ownerHour").value || "").trim();
+
+      if (!name) return setStatus("Vui lòng nhập họ và tên.");
+      if (!birthYear) return setStatus("Năm sinh là bắt buộc.");
+
+      var profiles = getProfiles();
+      if (editingId) {
+        profiles = profiles.map(function (p) {
+          if (p.id !== editingId) return p;
+          return {
+            id: p.id,
+            name: name,
+            contact: contact,
+            birthDay: birthDay,
+            birthMonth: birthMonth,
+            birthYear: birthYear,
+            birthHour: birthHour,
+            updatedAt: new Date().toISOString(),
+          };
+        });
+        setStatus("Đã cập nhật profile.");
+      } else {
+        var profile = {
+          id: uuid(),
+          name: name,
+          contact: contact,
+          birthDay: birthDay,
+          birthMonth: birthMonth,
+          birthYear: birthYear,
+          birthHour: birthHour,
+          updatedAt: new Date().toISOString(),
+        };
+        profiles.push(profile);
+        if (!getActiveProfileId()) setActiveProfileId(profile.id);
+        setStatus("Đã thêm profile mới.");
+      }
+      setProfiles(profiles);
+      renderProfiles();
+      clearForm();
+    }
+
+    document.getElementById("saveBtn").addEventListener("click", upsertProfile);
+    document.getElementById("resetBtn").addEventListener("click", function () {
+      clearForm();
+      setStatus("Đã làm mới form.");
+    });
+
+    document.getElementById("profilesBody").addEventListener("click", function (e) {
+      var target = e.target;
+      if (!target || !target.dataset) return;
+      var act = target.dataset.act;
+      var id = target.dataset.id;
+      if (!act || !id) return;
+
+      var profiles = getProfiles();
+      if (act === "use") {
+        setActiveProfileId(id);
+        renderProfiles();
+        setStatus("Đã chọn profile mặc định.");
+        return;
+      }
+
+      if (act === "edit") {
+        var p = profiles.find(function (x) { return x.id === id; });
+        fillForm(p);
+        setStatus("Đang sửa profile.");
+        return;
+      }
+
+      if (act === "del") {
+        var next = profiles.filter(function (x) { return x.id !== id; });
+        setProfiles(next);
+        if (getActiveProfileId() === id) {
+          setActiveProfileId(next[0] ? next[0].id : "");
+        }
+        renderProfiles();
+        setStatus("Đã xoá profile.");
+      }
+    });
+
+    function getMode() {
+      var q = new URLSearchParams(window.location.search).get("role");
+      if (q === "admin") return "admin";
+      if (q === "customer") return "customer";
+      var savedInvite = localStorage.getItem("daily_fortune_customer_invite") || "";
+      return savedInvite ? "customer" : "admin";
+    }
+    function setModeUI(mode) {
+      var isCustomer = mode === "customer";
+      document.getElementById("adminView").classList.toggle("hidden", isCustomer);
+      document.getElementById("customerView").classList.toggle("hidden", !isCustomer);
+      document.getElementById("modeBadge").textContent = isCustomer ? "CUSTOMER" : "ADMIN";
+      document.getElementById("pageTitle").textContent = isCustomer
+        ? "🪷 Daily fortune · Hồ sơ khách hàng"
+        : "🪷 Daily fortune · Quản lý Profile";
+    }
+    function customerKey(invite) { return "daily_fortune_customer_profile_" + invite; }
+    function customerDoneKey(invite) { return "daily_fortune_customer_profile_done_" + invite; }
+    function isProfileDone(invite) { return localStorage.getItem(customerDoneKey(invite)) === "1"; }
+    function markProfileDone(invite) { localStorage.setItem(customerDoneKey(invite), "1"); }
+    function isValidInvite(invite) { return !!getInviteCodes()[invite]; }
+    function resetTestFlow() {
+      var invite = "TEST-2026";
+      localStorage.removeItem(customerKey(invite));
+      localStorage.removeItem(customerDoneKey(invite));
+      localStorage.removeItem("daily_fortune_customer_invite");
+      localStorage.removeItem(usageKey(invite));
+    }
+    function saveCustomerProfile(invite, profile) {
+      localStorage.setItem(customerKey(invite), JSON.stringify(profile));
+      localStorage.setItem("daily_fortune_customer_invite", invite);
+    }
+    function syncCustomerProfileToAdminStore(invite, profile) {
+      var list = getProfiles();
+      var marker = "invite:" + invite;
+      var next = {
+        id: marker,
+        name: profile.name || "Khách hàng",
+        contact: profile.contact || "",
+        birthDay: profile.birthDay || "",
+        birthMonth: profile.birthMonth || "",
+        birthYear: profile.birthYear || "",
+        birthHour: profile.birthHour || "",
+        inviteCode: invite,
+        source: "customer_invite",
+        updatedAt: new Date().toISOString()
+      };
+      var found = false;
+      list = list.map(function (p) {
+        if (p.id !== marker) return p;
+        found = true;
+        return next;
+      });
+      if (!found) list.push(next);
+      setProfiles(list);
+    }
+    function loadCustomerProfile(invite) {
+      try {
+        var raw = localStorage.getItem(customerKey(invite));
+        return raw ? JSON.parse(raw) : null;
+      } catch (_) { return null; }
+    }
+    function setCustomerStatus(msg) { document.getElementById("customerStatus").textContent = msg; }
+    function showCustomerPanels(show) {
+      document.getElementById("customerProfileSection").classList.toggle("hidden", !show);
+      document.getElementById("customerPerkSection").classList.toggle("hidden", !show);
+    }
+    function setActiveInviteUI(invite) {
+      var wrap = document.getElementById("activeInviteCodeWrap");
+      var txt = document.getElementById("activeInviteCode");
+      if (!invite) {
+        wrap.classList.add("hidden");
+        txt.textContent = "-";
+        return;
+      }
+      txt.textContent = invite;
+      wrap.classList.remove("hidden");
+      var codes = getInviteCodes();
+      var meta = codes[invite] || {};
+      var limit = meta.tier === "admin" ? "không giới hạn" : String(parseInt(meta.totalLimit || "20", 10) || 20);
+      document.getElementById("dailyUsageCounter").textContent =
+        "Bạn được miễn phí theo quota của mã. Đã dùng: " + getDailyUsage(invite) + "/" + limit + ".";
+    }
+    function refreshContinue(invite) {
+      document.getElementById("goDashboardBtn").classList.toggle("hidden", !isProfileDone(invite));
+    }
+    function fillCustomerForm(profile) {
+      document.getElementById("customerName").value = (profile && profile.name) || "";
+      document.getElementById("customerContact").value = (profile && profile.contact) || "";
+      document.getElementById("customerDay").value = (profile && profile.birthDay) || "";
+      document.getElementById("customerMonth").value = (profile && profile.birthMonth) || "";
+      document.getElementById("customerYear").value = (profile && profile.birthYear) || "";
+      document.getElementById("customerHour").value = (profile && profile.birthHour) || "";
+    }
+    function initCustomerMode() {
+      var resetParam = new URLSearchParams(window.location.search).get("reset");
+      if (resetParam === "test") resetTestFlow();
+      var nextUrl = new URLSearchParams(window.location.search).get("next") || "/dashboard-purple.html?role=customer";
+      document.getElementById("goDashboardBtn").setAttribute("href", nextUrl);
+      var savedInvite = localStorage.getItem("daily_fortune_customer_invite") || "";
+      if (savedInvite) {
+        document.getElementById("inviteCode").value = savedInvite;
+        fillCustomerForm(loadCustomerProfile(savedInvite));
+        setActiveInviteUI(savedInvite);
+        showCustomerPanels(true);
+        refreshContinue(savedInvite);
+        setCustomerStatus(isProfileDone(savedInvite) ? "Đã mở hồ sơ. Bạn có thể vào Dashboard." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+      }
+      document.getElementById("unlockBtn").addEventListener("click", function () {
+        var invite = (document.getElementById("inviteCode").value || "").trim();
+        if (!invite) return setCustomerStatus("Vui lòng nhập invitation code.");
+        if (!isValidInvite(invite)) return setCustomerStatus("Invitation code không hợp lệ.");
+        fillCustomerForm(loadCustomerProfile(invite));
+        localStorage.setItem("daily_fortune_customer_invite", invite);
+        setActiveInviteUI(invite);
+        showCustomerPanels(true);
+        refreshContinue(invite);
+        setCustomerStatus(isProfileDone(invite) ? "Đã mở hồ sơ của bạn." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+      });
+      document.getElementById("customerSaveBtn").addEventListener("click", function () {
+        var invite = (document.getElementById("inviteCode").value || "").trim();
+        if (!invite) return setCustomerStatus("Cần invitation code trước khi lưu.");
+        var name = (document.getElementById("customerName").value || "").trim();
+        var contact = (document.getElementById("customerContact").value || "").trim();
+        var birthDay = (document.getElementById("customerDay").value || "").trim();
+        var birthMonth = (document.getElementById("customerMonth").value || "").trim();
+        var birthYear = (document.getElementById("customerYear").value || "").trim();
+        var birthHour = (document.getElementById("customerHour").value || "").trim();
+        if (!name) return setCustomerStatus("Vui lòng nhập họ và tên.");
+        if (!birthYear) return setCustomerStatus("Năm sinh là bắt buộc.");
+        saveCustomerProfile(invite, {
+          name: name,
+          contact: contact,
+          birthDay: birthDay,
+          birthMonth: birthMonth,
+          birthYear: birthYear,
+          birthHour: birthHour,
+          updatedAt: new Date().toISOString()
+        });
+        syncCustomerProfileToAdminStore(invite, {
+          name: name,
+          contact: contact,
+          birthDay: birthDay,
+          birthMonth: birthMonth,
+          birthYear: birthYear,
+          birthHour: birthHour
+        });
+        markProfileDone(invite);
+        refreshContinue(invite);
+        setCustomerStatus("Đã lưu hồ sơ. Bây giờ bạn có thể bấm \"Bắt đầu trải nghiệm\".");
+      });
+    }
+
+    document.getElementById("createInviteBtn").addEventListener("click", function () {
+      var code = (document.getElementById("newInviteCode").value || "").trim().toUpperCase();
+      var tier = (document.getElementById("newInviteTier").value || "test").trim();
+      var limitRaw = parseInt((document.getElementById("newInviteLimit").value || "20").trim(), 10);
+      if (!code) return setInviteStatus("Vui lòng nhập mã.");
+      var codes = getInviteCodes();
+      codes[code] = tier === "admin"
+        ? { tier: "admin" }
+        : { tier: "test", totalLimit: Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : 20 };
+      setInviteCodes(codes);
+      setInviteStatus("Đã lưu mã " + code + ".");
+      renderInviteCodes();
+    });
+    document.getElementById("inviteCodesBody").addEventListener("click", function (e) {
+      var t = e.target;
+      if (!t || !t.dataset) return;
+      var act = t.dataset.act;
+      var code = t.dataset.code;
+      if (!act || !code) return;
+      if (act === "resetUsage") {
+        localStorage.removeItem(usageKey(code));
+        setInviteStatus("Đã reset lượt của mã " + code + ".");
+        renderInviteCodes();
+        return;
+      }
+      if (act === "delCode") {
+        var codes = getInviteCodes();
+        delete codes[code];
+        setInviteCodes(codes);
+        setInviteStatus("Đã xoá mã " + code + ".");
+        renderInviteCodes();
+      }
+    });
+
+    renderProfiles();
+    renderInviteCodes();
+    var mode = getMode();
+    setModeUI(mode);
+    if (mode === "customer") initCustomerMode();
+  </script>
+</body>
+</html>
