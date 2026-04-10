@@ -255,10 +255,8 @@
 
     <section class="card">
       <h3>Quản lý invitation code</h3>
-      <p class="sub">Tạo mã mới để cấp cho khách, có thể đặt quota theo từng mã.</p>
+      <p class="sub">Tạo mã random dạng 3 số + 3 chữ (ví dụ: 482abc) để cấp cho khách.</p>
       <div class="birth">
-        <label for="newInviteCode">Mã mới</label>
-        <input id="newInviteCode" placeholder="Ví dụ: KHACH-001-2026" />
         <label for="newInviteTier">Loại mã</label>
         <select id="newInviteTier">
           <option value="test">Khách (giới hạn lượt)</option>
@@ -266,9 +264,11 @@
         </select>
         <label for="newInviteLimit">Quota tổng</label>
         <input id="newInviteLimit" type="number" min="1" value="20" />
+        <label for="newInviteCount">Số mã</label>
+        <input id="newInviteCount" type="number" min="1" max="500" value="1" />
       </div>
       <div class="actions">
-        <button class="btn primary" id="createInviteBtn" type="button">Tạo / Cập nhật mã</button>
+        <button class="btn primary" id="createInviteBtn" type="button">Tạo mã random</button>
       </div>
       <div class="status" id="inviteStatus">Sẵn sàng.</div>
       <div class="table-wrap">
@@ -382,6 +382,30 @@
         });
       } catch (_) {}
       return merged;
+    }
+    function normalizeInviteCode(code) {
+      return String(code || "").trim().toLowerCase();
+    }
+    function findInviteCodeKey(inputCode) {
+      var q = normalizeInviteCode(inputCode);
+      if (!q) return "";
+      var codes = getInviteCodes();
+      var keys = Object.keys(codes);
+      for (var i = 0; i < keys.length; i++) {
+        if (normalizeInviteCode(keys[i]) === q) return keys[i];
+      }
+      return "";
+    }
+    function randomInviteCode(existingSet) {
+      var letters = "abcdefghijklmnopqrstuvwxyz";
+      for (var attempt = 0; attempt < 5000; attempt++) {
+        var num = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+        var s = "";
+        for (var i = 0; i < 3; i++) s += letters[Math.floor(Math.random() * letters.length)];
+        var code = (num + s).toLowerCase();
+        if (!existingSet.has(normalizeInviteCode(code))) return code;
+      }
+      return "";
     }
     function setInviteCodes(codes) {
       localStorage.setItem(INVITE_CODES_KEY, JSON.stringify(codes || {}));
@@ -606,7 +630,7 @@
     function customerDoneKey(invite) { return "daily_fortune_customer_profile_done_" + invite; }
     function isProfileDone(invite) { return localStorage.getItem(customerDoneKey(invite)) === "1"; }
     function markProfileDone(invite) { localStorage.setItem(customerDoneKey(invite), "1"); }
-    function isValidInvite(invite) { return !!getInviteCodes()[invite]; }
+    function isValidInvite(invite) { return !!findInviteCodeKey(invite); }
     function resetTestFlow() {
       var invite = "TEST-2026";
       localStorage.removeItem(customerKey(invite));
@@ -698,16 +722,19 @@
         var invite = (document.getElementById("inviteCode").value || "").trim();
         if (!invite) return setCustomerStatus("Vui lòng nhập invitation code.");
         if (!isValidInvite(invite)) return setCustomerStatus("Invitation code không hợp lệ.");
-        fillCustomerForm(loadCustomerProfile(invite));
-        localStorage.setItem("daily_fortune_customer_invite", invite);
-        setActiveInviteUI(invite);
+        var inviteKey = findInviteCodeKey(invite);
+        fillCustomerForm(loadCustomerProfile(inviteKey));
+        localStorage.setItem("daily_fortune_customer_invite", inviteKey);
+        setActiveInviteUI(inviteKey);
         showCustomerPanels(true);
-        refreshContinue(invite);
-        setCustomerStatus(isProfileDone(invite) ? "Đã mở hồ sơ của bạn." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+        refreshContinue(inviteKey);
+        setCustomerStatus(isProfileDone(inviteKey) ? "Đã mở hồ sơ của bạn." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
       });
       document.getElementById("customerSaveBtn").addEventListener("click", function () {
         var invite = (document.getElementById("inviteCode").value || "").trim();
         if (!invite) return setCustomerStatus("Cần invitation code trước khi lưu.");
+        var inviteKey = findInviteCodeKey(invite);
+        if (!inviteKey) return setCustomerStatus("Invitation code không hợp lệ.");
         var name = (document.getElementById("customerName").value || "").trim();
         var contact = (document.getElementById("customerContact").value || "").trim();
         var birthDay = (document.getElementById("customerDay").value || "").trim();
@@ -716,7 +743,7 @@
         var birthHour = (document.getElementById("customerHour").value || "").trim();
         if (!name) return setCustomerStatus("Vui lòng nhập họ và tên.");
         if (!birthYear) return setCustomerStatus("Năm sinh là bắt buộc.");
-        saveCustomerProfile(invite, {
+        saveCustomerProfile(inviteKey, {
           name: name,
           contact: contact,
           birthDay: birthDay,
@@ -725,7 +752,7 @@
           birthHour: birthHour,
           updatedAt: new Date().toISOString()
         });
-        syncCustomerProfileToAdminStore(invite, {
+        syncCustomerProfileToAdminStore(inviteKey, {
           name: name,
           contact: contact,
           birthDay: birthDay,
@@ -733,23 +760,33 @@
           birthYear: birthYear,
           birthHour: birthHour
         });
-        markProfileDone(invite);
-        refreshContinue(invite);
+        markProfileDone(inviteKey);
+        refreshContinue(inviteKey);
         setCustomerStatus("Đã lưu hồ sơ. Bây giờ bạn có thể bấm \"Bắt đầu trải nghiệm\".");
       });
     }
 
     document.getElementById("createInviteBtn").addEventListener("click", function () {
-      var code = (document.getElementById("newInviteCode").value || "").trim().toUpperCase();
       var tier = (document.getElementById("newInviteTier").value || "test").trim();
       var limitRaw = parseInt((document.getElementById("newInviteLimit").value || "20").trim(), 10);
-      if (!code) return setInviteStatus("Vui lòng nhập mã.");
+      var countRaw = parseInt((document.getElementById("newInviteCount").value || "1").trim(), 10);
+      var count = Number.isFinite(countRaw) && countRaw > 0 ? Math.min(countRaw, 500) : 1;
       var codes = getInviteCodes();
-      codes[code] = tier === "admin"
-        ? { tier: "admin" }
-        : { tier: "test", totalLimit: Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : 20 };
+      var existing = new Set(Object.keys(codes).map(function (k) { return normalizeInviteCode(k); }));
+      var created = [];
+      var quota = Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : 20;
+      for (var i = 0; i < count; i++) {
+        var code = randomInviteCode(existing);
+        if (!code) break;
+        existing.add(normalizeInviteCode(code));
+        codes[code] = tier === "admin"
+          ? { tier: "admin" }
+          : { tier: "test", totalLimit: quota };
+        created.push(code);
+      }
       setInviteCodes(codes);
-      setInviteStatus("Đã lưu mã " + code + ".");
+      if (!created.length) return setInviteStatus("Không tạo được mã mới. Vui lòng thử lại.");
+      setInviteStatus("Đã tạo " + created.length + " mã: " + created.join(", "));
       renderInviteCodes();
     });
     document.getElementById("inviteCodesBody").addEventListener("click", function (e) {
