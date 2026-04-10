@@ -92,6 +92,15 @@
       color: #fff;
       background: rgba(0,0,0,.24);
     }
+    select {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: 16px;
+      color: #fff;
+      background: rgba(0,0,0,.24);
+    }
     input:focus {
       outline: none;
       border-color: var(--ring);
@@ -126,6 +135,41 @@
       font-size: 12px;
       cursor: pointer;
     }
+    .hidden { display: none !important; }
+    .mode-badge {
+      font-size: 12px;
+      font-weight: 800;
+      color: #f5d0fe;
+      border: 1px solid rgba(255,255,255,.24);
+      border-radius: 999px;
+      padding: 5px 10px;
+      background: rgba(255,255,255,.08);
+    }
+    .inline-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .note {
+      color: #e9d5ff;
+      font-size: 13px;
+      background: rgba(255,255,255,.06);
+      border: 1px dashed rgba(255,255,255,.2);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+    .locked-list { margin: 10px 0 0; padding-left: 18px; color: #e9d5ff; }
+    .locked-list li { margin: 4px 0; }
+    .invite-code-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      border: 1px solid rgba(255,255,255,.24);
+      border-radius: 999px;
+      padding: 6px 10px;
+      color: #f5d0fe;
+      background: rgba(255,255,255,.08);
+      font-size: 13px;
+      font-weight: 700;
+    }
     @media (min-width: 1500px) {
       .topbar .inner,
       .wrap { width: calc(100vw - 18px); }
@@ -149,12 +193,16 @@
 <body>
   <div class="topbar">
     <div class="inner">
-      <strong>🪷 Daily fortune · Quản lý Profile</strong>
-      <a href="/">Về Dashboard</a>
+      <strong id="pageTitle">🪷 Daily fortune · Quản lý Profile</strong>
+      <div class="inline-actions">
+        <span class="mode-badge" id="modeBadge">ADMIN</span>
+        <a href="/">Về Dashboard</a>
+      </div>
     </div>
   </div>
 
   <div class="wrap">
+    <div id="adminView">
     <section class="card">
       <h1>Profile Gia chủ</h1>
       <p class="sub">Tạo nhiều profile, chọn profile mặc định để dùng khi khám phá.</p>
@@ -177,6 +225,8 @@
         <input id="ownerMonth" type="number" min="1" max="12" placeholder="Tháng" />
         <label for="ownerYear">Năm sinh (*)</label>
         <input id="ownerYear" type="number" placeholder="Bắt buộc" />
+        <label for="ownerHour">Giờ sinh</label>
+        <input id="ownerHour" type="number" min="0" max="23" placeholder="0-23 (tuỳ chọn)" />
       </div>
       <div class="actions">
         <button class="btn primary" id="saveBtn" type="button">Lưu profile</button>
@@ -202,12 +252,173 @@
         </table>
       </div>
     </section>
+
+    <section class="card">
+      <h3>Quản lý invitation code</h3>
+      <p class="sub">Tạo mã mới để cấp cho khách, có thể đặt quota theo từng mã.</p>
+      <div class="birth">
+        <label for="newInviteCode">Mã mới</label>
+        <input id="newInviteCode" placeholder="Ví dụ: KHACH-001-2026" />
+        <label for="newInviteTier">Loại mã</label>
+        <select id="newInviteTier">
+          <option value="test">Khách (giới hạn lượt)</option>
+          <option value="admin">Admin (không giới hạn)</option>
+        </select>
+        <label for="newInviteLimit">Quota tổng</label>
+        <input id="newInviteLimit" type="number" min="1" value="20" />
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="createInviteBtn" type="button">Tạo / Cập nhật mã</button>
+      </div>
+      <div class="status" id="inviteStatus">Sẵn sàng.</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Mã</th>
+              <th>Loại</th>
+              <th>Quota</th>
+              <th>Đã dùng</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="inviteCodesBody"></tbody>
+        </table>
+      </div>
+    </section>
+    </div>
+
+    <div id="customerView" class="hidden">
+      <section class="card">
+        <h1>Hồ sơ của bạn</h1>
+        <p class="sub">Nhập invitation code để truy cập. Chỉ người có mã mới vào được.</p>
+        <div class="note">
+          Mã test tạm thời:
+          <br>- <strong>ADMIN-2026</strong> (admin/unlimited)
+          <br>- <strong>TEST-2026</strong> (khách, 20 lượt miễn phí tổng cộng)
+        </div>
+        <div class="grid">
+          <div>
+            <label for="inviteCode">Invitation code</label>
+            <input id="inviteCode" placeholder="Nhập mã mời của bạn" />
+          </div>
+          <div class="inline-actions" style="align-self:end;">
+            <button class="btn primary" id="unlockBtn" type="button">Mở hồ sơ</button>
+          </div>
+        </div>
+        <div class="status" id="customerStatus">Chưa mở hồ sơ.</div>
+        <div id="activeInviteCodeWrap" class="invite-code-chip hidden">Mã hiện tại: <strong id="activeInviteCode">-</strong></div>
+      </section>
+
+      <section class="card hidden" id="customerProfileSection">
+        <h3>Thông tin cá nhân</h3>
+        <div class="grid">
+          <div>
+            <label for="customerName">Họ và tên</label>
+            <input id="customerName" placeholder="Ví dụ: Nguyễn Văn A" />
+          </div>
+          <div>
+            <label for="customerContact">Liên hệ</label>
+            <input id="customerContact" placeholder="SĐT hoặc email" />
+          </div>
+        </div>
+        <div class="birth">
+          <label for="customerDay">Ngày sinh</label>
+          <input id="customerDay" type="number" min="1" max="31" />
+          <label for="customerMonth">Tháng sinh</label>
+          <input id="customerMonth" type="number" min="1" max="12" />
+          <label for="customerYear">Năm sinh (*)</label>
+          <input id="customerYear" type="number" />
+          <label for="customerHour">Giờ sinh</label>
+          <input id="customerHour" type="number" min="0" max="23" placeholder="0-23 (tuỳ chọn)" />
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="customerSaveBtn" type="button">Lưu hồ sơ</button>
+          <a class="btn soft hidden" id="goDashboardBtn" href="/dashboard-purple.html?role=customer">Bắt đầu trải nghiệm</a>
+        </div>
+        <div class="note">
+          Lần đầu với mỗi code, vui lòng điền hồ sơ (đặc biệt là năm sinh) rồi bấm Lưu trước khi vào Dashboard.
+        </div>
+      </section>
+
+      <section class="card hidden" id="customerPerkSection">
+        <h3>Quyền dùng miễn phí</h3>
+        <div class="note" id="dailyUsageCounter">Bạn được miễn phí theo quota của mã. Đã dùng: 0/20.</div>
+        <ul class="locked-list">
+          <li>Mỗi invitation code có bộ đếm tổng riêng biệt.</li>
+          <li>Hết 20 lượt sẽ cần nâng cấp để tiếp tục xem.</li>
+          <li>Số lượt đã dùng được cập nhật tự động trên Dashboard.</li>
+        </ul>
+      </section>
+    </div>
   </div>
 
   <script>
     var STORAGE_KEY = "daily_fortune_profiles";
     var STORAGE_ACTIVE = "daily_fortune_active_profile_id";
     var editingId = null;
+    var INVITE_CODES_KEY = "daily_fortune_invite_codes";
+    var INVITE_CODES = {
+      "ADMIN-2026": { tier: "admin" },
+      "TEST-2026": { tier: "test" }
+    };
+    function usageKey(invite) { return "daily_fortune_usage_total_" + invite; }
+    function getDailyUsage(invite) {
+      var raw = localStorage.getItem(usageKey(invite));
+      var n = parseInt(raw || "0", 10);
+      return Number.isFinite(n) ? n : 0;
+    }
+    function getInviteCodes() {
+      var merged = {};
+      Object.keys(INVITE_CODES).forEach(function (k) { merged[k] = INVITE_CODES[k]; });
+      try {
+        var raw = localStorage.getItem(INVITE_CODES_KEY);
+        if (!raw) return merged;
+        var parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return merged;
+        Object.keys(parsed).forEach(function (k) {
+          if (!parsed[k] || typeof parsed[k] !== "object") return;
+          merged[k] = parsed[k];
+        });
+      } catch (_) {}
+      return merged;
+    }
+    function setInviteCodes(codes) {
+      localStorage.setItem(INVITE_CODES_KEY, JSON.stringify(codes || {}));
+    }
+    function setInviteStatus(text) {
+      var el = document.getElementById("inviteStatus");
+      if (el) el.textContent = text;
+    }
+    function renderInviteCodes() {
+      var body = document.getElementById("inviteCodesBody");
+      if (!body) return;
+      var codes = getInviteCodes();
+      var rows = Object.keys(codes).sort();
+      body.innerHTML = "";
+      if (!rows.length) {
+        body.innerHTML = "<tr><td colspan='5'>Chưa có mã nào.</td></tr>";
+        return;
+      }
+      rows.forEach(function (code) {
+        var meta = codes[code] || {};
+        var tier = meta.tier || "test";
+        var limit = tier === "admin" ? "∞" : String(parseInt(meta.totalLimit || "20", 10) || 20);
+        var used = String(getDailyUsage(code));
+        var systemTag = (code === "ADMIN-2026" || code === "TEST-2026") ? " (mặc định)" : "";
+        var tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td>" + code + systemTag + "</td>" +
+          "<td>" + (tier === "admin" ? "admin" : "khách") + "</td>" +
+          "<td>" + limit + "</td>" +
+          "<td>" + used + "</td>" +
+          "<td><div class='row-actions'>" +
+          "<button data-act='resetUsage' data-code='" + code + "'>Reset lượt</button>" +
+          ((code === "ADMIN-2026" || code === "TEST-2026") ? "" : "<button data-act='delCode' data-code='" + code + "'>Xoá mã</button>") +
+          "</div></td>";
+        body.appendChild(tr);
+      });
+    }
 
     function uuid() {
       return "p-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
@@ -241,6 +452,7 @@
       document.getElementById("ownerDay").value = "";
       document.getElementById("ownerMonth").value = "";
       document.getElementById("ownerYear").value = "";
+      document.getElementById("ownerHour").value = "";
     }
 
     function setStatus(text) {
@@ -255,6 +467,7 @@
       document.getElementById("ownerDay").value = profile.birthDay || "";
       document.getElementById("ownerMonth").value = profile.birthMonth || "";
       document.getElementById("ownerYear").value = profile.birthYear || "";
+      document.getElementById("ownerHour").value = profile.birthHour || "";
     }
 
     function renderProfiles() {
@@ -293,6 +506,7 @@
       var birthDay = (document.getElementById("ownerDay").value || "").trim();
       var birthMonth = (document.getElementById("ownerMonth").value || "").trim();
       var birthYear = (document.getElementById("ownerYear").value || "").trim();
+      var birthHour = (document.getElementById("ownerHour").value || "").trim();
 
       if (!name) return setStatus("Vui lòng nhập họ và tên.");
       if (!birthYear) return setStatus("Năm sinh là bắt buộc.");
@@ -308,6 +522,7 @@
             birthDay: birthDay,
             birthMonth: birthMonth,
             birthYear: birthYear,
+            birthHour: birthHour,
             updatedAt: new Date().toISOString(),
           };
         });
@@ -320,6 +535,7 @@
           birthDay: birthDay,
           birthMonth: birthMonth,
           birthYear: birthYear,
+          birthHour: birthHour,
           updatedAt: new Date().toISOString(),
         };
         profiles.push(profile);
@@ -370,7 +586,198 @@
       }
     });
 
+    function getMode() {
+      var q = new URLSearchParams(window.location.search).get("role");
+      if (q === "admin") return "admin";
+      if (q === "customer") return "customer";
+      var savedInvite = localStorage.getItem("daily_fortune_customer_invite") || "";
+      return savedInvite ? "customer" : "admin";
+    }
+    function setModeUI(mode) {
+      var isCustomer = mode === "customer";
+      document.getElementById("adminView").classList.toggle("hidden", isCustomer);
+      document.getElementById("customerView").classList.toggle("hidden", !isCustomer);
+      document.getElementById("modeBadge").textContent = isCustomer ? "CUSTOMER" : "ADMIN";
+      document.getElementById("pageTitle").textContent = isCustomer
+        ? "🪷 Daily fortune · Hồ sơ khách hàng"
+        : "🪷 Daily fortune · Quản lý Profile";
+    }
+    function customerKey(invite) { return "daily_fortune_customer_profile_" + invite; }
+    function customerDoneKey(invite) { return "daily_fortune_customer_profile_done_" + invite; }
+    function isProfileDone(invite) { return localStorage.getItem(customerDoneKey(invite)) === "1"; }
+    function markProfileDone(invite) { localStorage.setItem(customerDoneKey(invite), "1"); }
+    function isValidInvite(invite) { return !!getInviteCodes()[invite]; }
+    function resetTestFlow() {
+      var invite = "TEST-2026";
+      localStorage.removeItem(customerKey(invite));
+      localStorage.removeItem(customerDoneKey(invite));
+      localStorage.removeItem("daily_fortune_customer_invite");
+      localStorage.removeItem(usageKey(invite));
+    }
+    function saveCustomerProfile(invite, profile) {
+      localStorage.setItem(customerKey(invite), JSON.stringify(profile));
+      localStorage.setItem("daily_fortune_customer_invite", invite);
+    }
+    function syncCustomerProfileToAdminStore(invite, profile) {
+      var list = getProfiles();
+      var marker = "invite:" + invite;
+      var next = {
+        id: marker,
+        name: profile.name || "Khách hàng",
+        contact: profile.contact || "",
+        birthDay: profile.birthDay || "",
+        birthMonth: profile.birthMonth || "",
+        birthYear: profile.birthYear || "",
+        birthHour: profile.birthHour || "",
+        inviteCode: invite,
+        source: "customer_invite",
+        updatedAt: new Date().toISOString()
+      };
+      var found = false;
+      list = list.map(function (p) {
+        if (p.id !== marker) return p;
+        found = true;
+        return next;
+      });
+      if (!found) list.push(next);
+      setProfiles(list);
+    }
+    function loadCustomerProfile(invite) {
+      try {
+        var raw = localStorage.getItem(customerKey(invite));
+        return raw ? JSON.parse(raw) : null;
+      } catch (_) { return null; }
+    }
+    function setCustomerStatus(msg) { document.getElementById("customerStatus").textContent = msg; }
+    function showCustomerPanels(show) {
+      document.getElementById("customerProfileSection").classList.toggle("hidden", !show);
+      document.getElementById("customerPerkSection").classList.toggle("hidden", !show);
+    }
+    function setActiveInviteUI(invite) {
+      var wrap = document.getElementById("activeInviteCodeWrap");
+      var txt = document.getElementById("activeInviteCode");
+      if (!invite) {
+        wrap.classList.add("hidden");
+        txt.textContent = "-";
+        return;
+      }
+      txt.textContent = invite;
+      wrap.classList.remove("hidden");
+      var codes = getInviteCodes();
+      var meta = codes[invite] || {};
+      var limit = meta.tier === "admin" ? "không giới hạn" : String(parseInt(meta.totalLimit || "20", 10) || 20);
+      document.getElementById("dailyUsageCounter").textContent =
+        "Bạn được miễn phí theo quota của mã. Đã dùng: " + getDailyUsage(invite) + "/" + limit + ".";
+    }
+    function refreshContinue(invite) {
+      document.getElementById("goDashboardBtn").classList.toggle("hidden", !isProfileDone(invite));
+    }
+    function fillCustomerForm(profile) {
+      document.getElementById("customerName").value = (profile && profile.name) || "";
+      document.getElementById("customerContact").value = (profile && profile.contact) || "";
+      document.getElementById("customerDay").value = (profile && profile.birthDay) || "";
+      document.getElementById("customerMonth").value = (profile && profile.birthMonth) || "";
+      document.getElementById("customerYear").value = (profile && profile.birthYear) || "";
+      document.getElementById("customerHour").value = (profile && profile.birthHour) || "";
+    }
+    function initCustomerMode() {
+      var resetParam = new URLSearchParams(window.location.search).get("reset");
+      if (resetParam === "test") resetTestFlow();
+      var nextUrl = new URLSearchParams(window.location.search).get("next") || "/dashboard-purple.html?role=customer";
+      document.getElementById("goDashboardBtn").setAttribute("href", nextUrl);
+      var savedInvite = localStorage.getItem("daily_fortune_customer_invite") || "";
+      if (savedInvite) {
+        document.getElementById("inviteCode").value = savedInvite;
+        fillCustomerForm(loadCustomerProfile(savedInvite));
+        setActiveInviteUI(savedInvite);
+        showCustomerPanels(true);
+        refreshContinue(savedInvite);
+        setCustomerStatus(isProfileDone(savedInvite) ? "Đã mở hồ sơ. Bạn có thể vào Dashboard." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+      }
+      document.getElementById("unlockBtn").addEventListener("click", function () {
+        var invite = (document.getElementById("inviteCode").value || "").trim();
+        if (!invite) return setCustomerStatus("Vui lòng nhập invitation code.");
+        if (!isValidInvite(invite)) return setCustomerStatus("Invitation code không hợp lệ.");
+        fillCustomerForm(loadCustomerProfile(invite));
+        localStorage.setItem("daily_fortune_customer_invite", invite);
+        setActiveInviteUI(invite);
+        showCustomerPanels(true);
+        refreshContinue(invite);
+        setCustomerStatus(isProfileDone(invite) ? "Đã mở hồ sơ của bạn." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+      });
+      document.getElementById("customerSaveBtn").addEventListener("click", function () {
+        var invite = (document.getElementById("inviteCode").value || "").trim();
+        if (!invite) return setCustomerStatus("Cần invitation code trước khi lưu.");
+        var name = (document.getElementById("customerName").value || "").trim();
+        var contact = (document.getElementById("customerContact").value || "").trim();
+        var birthDay = (document.getElementById("customerDay").value || "").trim();
+        var birthMonth = (document.getElementById("customerMonth").value || "").trim();
+        var birthYear = (document.getElementById("customerYear").value || "").trim();
+        var birthHour = (document.getElementById("customerHour").value || "").trim();
+        if (!name) return setCustomerStatus("Vui lòng nhập họ và tên.");
+        if (!birthYear) return setCustomerStatus("Năm sinh là bắt buộc.");
+        saveCustomerProfile(invite, {
+          name: name,
+          contact: contact,
+          birthDay: birthDay,
+          birthMonth: birthMonth,
+          birthYear: birthYear,
+          birthHour: birthHour,
+          updatedAt: new Date().toISOString()
+        });
+        syncCustomerProfileToAdminStore(invite, {
+          name: name,
+          contact: contact,
+          birthDay: birthDay,
+          birthMonth: birthMonth,
+          birthYear: birthYear,
+          birthHour: birthHour
+        });
+        markProfileDone(invite);
+        refreshContinue(invite);
+        setCustomerStatus("Đã lưu hồ sơ. Bây giờ bạn có thể bấm \"Bắt đầu trải nghiệm\".");
+      });
+    }
+
+    document.getElementById("createInviteBtn").addEventListener("click", function () {
+      var code = (document.getElementById("newInviteCode").value || "").trim().toUpperCase();
+      var tier = (document.getElementById("newInviteTier").value || "test").trim();
+      var limitRaw = parseInt((document.getElementById("newInviteLimit").value || "20").trim(), 10);
+      if (!code) return setInviteStatus("Vui lòng nhập mã.");
+      var codes = getInviteCodes();
+      codes[code] = tier === "admin"
+        ? { tier: "admin" }
+        : { tier: "test", totalLimit: Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : 20 };
+      setInviteCodes(codes);
+      setInviteStatus("Đã lưu mã " + code + ".");
+      renderInviteCodes();
+    });
+    document.getElementById("inviteCodesBody").addEventListener("click", function (e) {
+      var t = e.target;
+      if (!t || !t.dataset) return;
+      var act = t.dataset.act;
+      var code = t.dataset.code;
+      if (!act || !code) return;
+      if (act === "resetUsage") {
+        localStorage.removeItem(usageKey(code));
+        setInviteStatus("Đã reset lượt của mã " + code + ".");
+        renderInviteCodes();
+        return;
+      }
+      if (act === "delCode") {
+        var codes = getInviteCodes();
+        delete codes[code];
+        setInviteCodes(codes);
+        setInviteStatus("Đã xoá mã " + code + ".");
+        renderInviteCodes();
+      }
+    });
+
     renderProfiles();
+    renderInviteCodes();
+    var mode = getMode();
+    setModeUI(mode);
+    if (mode === "customer") initCustomerMode();
   </script>
 </body>
 </html>
