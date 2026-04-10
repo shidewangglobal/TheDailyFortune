@@ -611,9 +611,11 @@
     });
 
     function getMode() {
-      var q = new URLSearchParams(window.location.search).get("role");
+      var params = new URLSearchParams(window.location.search);
+      var q = params.get("entry") || params.get("role");
       if (q === "admin") return "admin";
       if (q === "customer") return "customer";
+      if ((params.get("code") || "").trim()) return "customer";
       var savedInvite = localStorage.getItem("daily_fortune_customer_invite") || "";
       return savedInvite ? "customer" : "admin";
     }
@@ -707,7 +709,8 @@
     function initCustomerMode() {
       var resetParam = new URLSearchParams(window.location.search).get("reset");
       if (resetParam === "test") resetTestFlow();
-      var nextUrl = new URLSearchParams(window.location.search).get("next") || "/dashboard-purple.html?role=customer";
+      var params = new URLSearchParams(window.location.search);
+      var nextUrl = params.get("next") || "/dashboard-purple.html";
       document.getElementById("goDashboardBtn").setAttribute("href", nextUrl);
       var savedInvite = localStorage.getItem("daily_fortune_customer_invite") || "";
       if (savedInvite) {
@@ -717,6 +720,17 @@
         showCustomerPanels(true);
         refreshContinue(savedInvite);
         setCustomerStatus(isProfileDone(savedInvite) ? "Đã mở hồ sơ. Bạn có thể vào Dashboard." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+      }
+      var codeFromUrl = (params.get("code") || "").trim();
+      if (codeFromUrl && isValidInvite(codeFromUrl)) {
+        var inviteKeyFromUrl = findInviteCodeKey(codeFromUrl);
+        document.getElementById("inviteCode").value = inviteKeyFromUrl;
+        fillCustomerForm(loadCustomerProfile(inviteKeyFromUrl));
+        localStorage.setItem("daily_fortune_customer_invite", inviteKeyFromUrl);
+        setActiveInviteUI(inviteKeyFromUrl);
+        showCustomerPanels(true);
+        refreshContinue(inviteKeyFromUrl);
+        setCustomerStatus(isProfileDone(inviteKeyFromUrl) ? "Đã mở hồ sơ của bạn." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
       }
       document.getElementById("unlockBtn").addEventListener("click", function () {
         var invite = (document.getElementById("inviteCode").value || "").trim();

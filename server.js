@@ -150,7 +150,29 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  const urlPath = req.url === "/" ? "/dashboard-purple.html" : req.url;
+  if (req.method === "GET") {
+    const incomingPath = decodeURIComponent((req.url || "/").split("?")[0] || "/");
+    if (incomingPath === "/") {
+      res.writeHead(302, { Location: "/profile.html?entry=customer" });
+      return res.end();
+    }
+    if (incomingPath === "/admin") {
+      res.writeHead(302, { Location: "/profile.html?entry=admin" });
+      return res.end();
+    }
+    if (incomingPath === "/customer") {
+      res.writeHead(302, { Location: "/profile.html?entry=customer" });
+      return res.end();
+    }
+    const shortCodeMatch = incomingPath.match(/^\/([a-zA-Z0-9]{6})\/?$/);
+    if (shortCodeMatch) {
+      const code = shortCodeMatch[1].toLowerCase();
+      res.writeHead(302, { Location: "/profile.html?entry=customer&code=" + encodeURIComponent(code) });
+      return res.end();
+    }
+  }
+
+  const urlPath = req.url || "/";
   const reqPath = safePath(urlPath);
   const filePath = path.join(PUBLIC_DIR, reqPath);
 
