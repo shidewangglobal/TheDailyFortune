@@ -49,6 +49,80 @@ function clearAdminCookieHeader() {
   return `${COOKIE_ADMIN.split("=")[0]}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax`;
 }
 
+const DATA_DIR = path.join(__dirname, "data");
+const INVITE_CODES_FILE = path.join(DATA_DIR, "invite_codes.json");
+const INVITE_DEFAULTS = {
+  "ADMIN-2026": { tier: "admin" },
+  "TEST-2026": { tier: "admin" },
+};
+
+function normalizeInviteCodeServer(code) {
+  return String(code || "")
+    .trim()
+    .toLowerCase();
+}
+
+function mergeInviteCodesFromDisk() {
+  let disk = {};
+  try {
+    if (fs.existsSync(INVITE_CODES_FILE)) {
+      const raw = fs.readFileSync(INVITE_CODES_FILE, "utf8");
+      disk = JSON.parse(raw || "{}");
+      if (!disk || typeof disk !== "object") disk = {};
+    }
+  } catch (e) {
+    console.error("[invite] read disk", e);
+    disk = {};
+  }
+  return { ...INVITE_DEFAULTS, ...disk };
+}
+
+function writeInviteCodesToDisk(codes) {
+  if (!codes || typeof codes !== "object") throw new Error("Invalid codes");
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(INVITE_CODES_FILE, JSON.stringify(codes, null, 2), "utf8");
+}
+
+function inviteLookupHandler(req, res) {
+  readJsonBody(req)
+    .then((body) => {
+      const q = normalizeInviteCodeServer(body && body.code);
+      if (!q) return send(res, 400, JSON.stringify({ ok: false }), "application/json; charset=utf-8");
+      const merged = mergeInviteCodesFromDisk();
+      const keys = Object.keys(merged);
+      const key = keys.find((k) => normalizeInviteCodeServer(k) === q);
+      if (!key) return send(res, 200, JSON.stringify({ ok: false }));
+      const meta = merged[key];
+      if (!meta || typeof meta !== "object") return send(res, 200, JSON.stringify({ ok: false }));
+      send(res, 200, JSON.stringify({ ok: true, key, meta }), "application/json; charset=utf-8");
+    })
+    .catch(() => send(res, 400, JSON.stringify({ ok: false, error: "Bad request" }), "application/json; charset=utf-8"));
+}
+
+function inviteCodesGetHandler(req, res) {
+  if (adminProtectionActive() && !hasAdminSession(req)) {
+    return send(res, 403, JSON.stringify({ ok: false, error: "Cần đăng nhập admin." }), "application/json; charset=utf-8");
+  }
+  send(res, 200, JSON.stringify({ ok: true, codes: mergeInviteCodesFromDisk() }), "application/json; charset=utf-8");
+}
+
+function inviteCodesPostHandler(req, res) {
+  if (adminProtectionActive() && !hasAdminSession(req)) {
+    return send(res, 403, JSON.stringify({ ok: false, error: "Cần đăng nhập admin để lưu mã." }), "application/json; charset=utf-8");
+  }
+  readJsonBody(req)
+    .then((body) => {
+      const codes = body && body.codes;
+      if (!codes || typeof codes !== "object") {
+        return send(res, 400, JSON.stringify({ ok: false, error: "Thiếu codes" }), "application/json; charset=utf-8");
+      }
+      const merged = { ...INVITE_DEFAULTS, ...codes };
+      writeInviteCodesToDisk(merged);
+      send(res, 200, JSON.stringify({ ok: true }), "application/json; charset=utf-8");
+    })
+    .catch(() => send(res, 400, JSON.stringify({ ok: false }), "application/json; charset=utf-8"));
+}
+
 function safePath(urlPath) {
   const clean = decodeURIComponent(urlPath.split("?")[0]);
   const normalized = path.normalize(clean).replace(/^(\.\.[/\\])+/, "");
@@ -192,6 +266,20 @@ const server = http.createServer((req, res) => {
   if (req.method === "GET" && (req.url || "").split("?")[0] === "/api/admin/logout") {
     res.writeHead(302, { Location: "/", "Set-Cookie": clearAdminCookieHeader() });
     return res.end();
+  }
+
+  const pathOnly = (req.url || "").split("?")[0];
+  if (req.method === "POST" && pathOnly === "/api/invite/lookup") {
+    inviteLookupHandler(req, res);
+    return;
+  }
+  if (req.method === "GET" && pathOnly === "/api/invite-codes") {
+    inviteCodesGetHandler(req, res);
+    return;
+  }
+  if (req.method === "POST" && pathOnly === "/api/invite-codes") {
+    inviteCodesPostHandler(req, res);
+    return;
   }
 
   if (req.method === "POST" && req.url === "/api/fortune/analyze") {

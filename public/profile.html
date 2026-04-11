@@ -522,8 +522,59 @@
       }
       return "";
     }
+    function syncInviteCodesToServer(codes) {
+      fetch("/api/invite-codes", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codes: codes || {} })
+      }).then(function (r) {
+        if (r.status === 403) {
+          var el = document.getElementById("inviteStatus");
+          if (el && el.textContent.indexOf("đồng bộ") === -1) {
+            el.textContent = el.textContent + " Đăng nhập admin để đồng bộ mã lên server (khách mới vào được).";
+          }
+        }
+      }).catch(function () {});
+    }
     function setInviteCodes(codes) {
       localStorage.setItem(INVITE_CODES_KEY, JSON.stringify(codes || {}));
+      syncInviteCodesToServer(codes);
+    }
+    function lookupInviteFromServer(raw) {
+      return fetch("/api/invite/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: raw })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (!j || !j.ok || !j.key) return "";
+          var merged = getInviteCodes();
+          merged[j.key] = j.meta && typeof j.meta === "object" ? j.meta : { tier: "test", totalLimit: 20 };
+          localStorage.setItem(INVITE_CODES_KEY, JSON.stringify(merged));
+          return j.key;
+        })
+        .catch(function () { return ""; });
+    }
+    async function hydrateInvitesFromServer() {
+      try {
+        var r = await fetch("/api/invite-codes", { credentials: "same-origin" });
+        if (!r.ok) return;
+        var j = await r.json();
+        if (!j || !j.ok || !j.codes) return;
+        var local = {};
+        try {
+          var raw = localStorage.getItem(INVITE_CODES_KEY);
+          if (raw) local = JSON.parse(raw) || {};
+        } catch (_) {}
+        var merged = {};
+        Object.keys(INVITE_CODES).forEach(function (k) { merged[k] = INVITE_CODES[k]; });
+        Object.keys(local).forEach(function (k) { merged[k] = local[k]; });
+        Object.keys(j.codes).forEach(function (k) { merged[k] = j.codes[k]; });
+        setInviteCodes(merged);
+        renderInviteCodes();
+      } catch (_) {}
     }
     function setInviteStatus(text) {
       var el = document.getElementById("inviteStatus");
@@ -1004,31 +1055,22 @@
       var params = new URLSearchParams(window.location.search);
       var nextUrl = params.get("next") || "/dashboard-purple.html";
       document.getElementById("goDashboardBtn").setAttribute("href", nextUrl);
-      var savedInvite = localStorage.getItem("daily_fortune_customer_invite") || "";
-      if (savedInvite) {
-        document.getElementById("inviteCode").value = savedInvite;
-        fillCustomerForm(loadCustomerProfile(savedInvite));
-        setActiveInviteUI(savedInvite);
-        showCustomerPanels(true);
-        refreshContinue(savedInvite);
-        setCustomerStatus(isProfileDone(savedInvite) ? "Đã mở hồ sơ. Bạn có thể vào Dashboard." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
-      }
-      var codeFromUrl = (params.get("code") || "").trim();
-      if (codeFromUrl && isValidInvite(codeFromUrl)) {
-        var inviteKeyFromUrl = findInviteCodeKey(codeFromUrl);
-        document.getElementById("inviteCode").value = inviteKeyFromUrl;
-        fillCustomerForm(loadCustomerProfile(inviteKeyFromUrl));
-        localStorage.setItem("daily_fortune_customer_invite", inviteKeyFromUrl);
-        setActiveInviteUI(inviteKeyFromUrl);
-        showCustomerPanels(true);
-        refreshContinue(inviteKeyFromUrl);
-        setCustomerStatus(isProfileDone(inviteKeyFromUrl) ? "Đã mở hồ sơ của bạn." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
-      }
       document.getElementById("unlockBtn").addEventListener("click", function () {
         var invite = (document.getElementById("inviteCode").value || "").trim();
         if (!invite) return setCustomerStatus("Vui lòng nhập invitation code.");
-        if (!isValidInvite(invite)) return setCustomerStatus("Invitation code không hợp lệ.");
-        var inviteKey = findInviteCodeKey(invite);
+        setCustomerStatus("Đang kiểm tra mã…");
+        var localKey = findInviteCodeKey(invite);
+        if (localKey) {
+          applyUnlockedInvite(localKey);
+          return;
+        }
+        lookupInviteFromServer(invite).then(function (serverKey) {
+          if (!serverKey) return setCustomerStatus("Invitation code không hợp lệ.");
+          applyUnlockedInvite(serverKey);
+        });
+      });
+      function applyUnlockedInvite(inviteKey) {
+        document.getElementById("inviteCode").value = inviteKey;
         fillCustomerForm(loadCustomerProfile(inviteKey));
         localStorage.setItem("daily_fortune_customer_invite", inviteKey);
         setActiveInviteUI(inviteKey);
@@ -1036,11 +1078,40 @@
         refreshContinue(inviteKey);
         setCustomerStatus(isProfileDone(inviteKey) ? "Đã mở hồ sơ của bạn." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
         refreshTopbarNav("customer");
-      });
-      document.getElementById("customerSaveBtn").addEventListener("click", function () {
+      }
+      (async function hydrateCustomerEntry() {
+        var savedInvite = localStorage.getItem("daily_fortune_customer_invite") || "";
+        if (savedInvite) {
+          var sk = findInviteCodeKey(savedInvite) || (await lookupInviteFromServer(savedInvite));
+          if (sk) {
+            document.getElementById("inviteCode").value = sk;
+            fillCustomerForm(loadCustomerProfile(sk));
+            localStorage.setItem("daily_fortune_customer_invite", sk);
+            setActiveInviteUI(sk);
+            showCustomerPanels(true);
+            refreshContinue(sk);
+            setCustomerStatus(isProfileDone(sk) ? "Đã mở hồ sơ. Bạn có thể vào Dashboard." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+          }
+        }
+        var codeFromUrl = (params.get("code") || "").trim();
+        if (codeFromUrl) {
+          var uk = findInviteCodeKey(codeFromUrl) || (await lookupInviteFromServer(codeFromUrl));
+          if (uk) {
+            document.getElementById("inviteCode").value = uk;
+            fillCustomerForm(loadCustomerProfile(uk));
+            localStorage.setItem("daily_fortune_customer_invite", uk);
+            setActiveInviteUI(uk);
+            showCustomerPanels(true);
+            refreshContinue(uk);
+            setCustomerStatus(isProfileDone(uk) ? "Đã mở hồ sơ của bạn." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+          }
+        }
+        refreshTopbarNav("customer");
+      })();
+      document.getElementById("customerSaveBtn").addEventListener("click", async function () {
         var invite = (document.getElementById("inviteCode").value || "").trim();
         if (!invite) return setCustomerStatus("Cần invitation code trước khi lưu.");
-        var inviteKey = findInviteCodeKey(invite);
+        var inviteKey = findInviteCodeKey(invite) || (await lookupInviteFromServer(invite));
         if (!inviteKey) return setCustomerStatus("Invitation code không hợp lệ.");
         var name = (document.getElementById("customerName").value || "").trim();
         var contact = (document.getElementById("customerContact").value || "").trim();
@@ -1072,7 +1143,6 @@
         setCustomerStatus("Đã lưu hồ sơ. Bây giờ bạn có thể bấm \"Bắt đầu trải nghiệm\".");
         refreshTopbarNav("customer");
       });
-      refreshTopbarNav("customer");
     }
 
     document.getElementById("createInviteBtn").addEventListener("click", function () {
@@ -1162,6 +1232,7 @@
     var mode = getMode();
     setModeUI(mode);
     if (mode === "customer") initCustomerMode();
+    else hydrateInvitesFromServer();
   </script>
 </body>
 </html>

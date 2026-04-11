@@ -855,7 +855,22 @@
       } catch (_) {}
       return merged;
     }
-    var INVITE_CODES = getInviteCodes();
+    function lookupInviteFromServer(raw) {
+      return fetch("/api/invite/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: raw })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (!j || !j.ok || !j.key) return "";
+          var merged = getInviteCodes();
+          merged[j.key] = j.meta && typeof j.meta === "object" ? j.meta : { tier: "test", totalLimit: 20 };
+          localStorage.setItem(INVITE_CODES_KEY, JSON.stringify(merged));
+          return j.key;
+        })
+        .catch(function () { return ""; });
+    }
     var cungs = ["Đại An","Lưu Liên","Tốc Hỷ","Xích Khẩu","Tiểu Cát","Không Vong"];
     var cls = ["da","ll","th","xk","tc","kv"];
     var hours = [["Tý","23:00 - 00:59"],["Sửu","01:00 - 02:59"],["Dần","03:00 - 04:59"],["Mão","05:00 - 06:59"],["Thìn","07:00 - 08:59"],["Tỵ","09:00 - 10:59"],["Ngọ","11:00 - 12:59"],["Mùi","13:00 - 14:59"],["Thân","15:00 - 16:59"],["Dậu","17:00 - 18:59"],["Tuất","19:00 - 20:59"],["Hợi","21:00 - 22:59"]];
@@ -914,7 +929,7 @@
         el.textContent = "Admin mode: không giới hạn lượt xem.";
         return;
       }
-      var codeInfo = INVITE_CODES[customerInviteCode] || {};
+      var codeInfo = getInviteCodes()[customerInviteCode] || {};
       var limit = Number.isFinite(parseInt(codeInfo.totalLimit, 10)) ? parseInt(codeInfo.totalLimit, 10) : totalLimit;
       if (codeInfo.tier === "admin") {
         el.textContent = "Mã " + customerInviteCode + " - Không giới hạn lượt xem.";
@@ -922,16 +937,22 @@
       }
       el.textContent = "Mã " + customerInviteCode + " - Đã dùng: " + getDailyUsage(customerInviteCode) + "/" + limit + " lượt miễn phí.";
     }
-    function ensureCustomerAccess() {
+    async function ensureCustomerAccessAsync() {
       if (roleParam !== "customer") return true;
       var invite = localStorage.getItem("daily_fortune_customer_invite") || "";
       if (!invite) {
         location.href = "/profile.html?role=customer&next=" + encodeURIComponent(location.pathname + location.search);
         return false;
       }
-      if (!INVITE_CODES[invite]) {
-        location.href = "/profile.html?role=customer&next=" + encodeURIComponent(location.pathname + location.search);
-        return false;
+      var codes = getInviteCodes();
+      if (!codes[invite]) {
+        var serverKey = await lookupInviteFromServer(invite);
+        if (!serverKey) {
+          location.href = "/profile.html?role=customer&next=" + encodeURIComponent(location.pathname + location.search);
+          return false;
+        }
+        localStorage.setItem("daily_fortune_customer_invite", serverKey);
+        invite = serverKey;
       }
       var profile = getCustomerProfile(invite);
       if (!profile || !profile.birthYear || !profile.name) {
@@ -1295,7 +1316,7 @@
       var topic = (document.getElementById("topic").value || "").trim();
       var focusHour = (document.getElementById("focusHour").value || "").trim();
       if (consume && customerInviteCode) {
-        var codeInfo = INVITE_CODES[customerInviteCode] || {};
+        var codeInfo = getInviteCodes()[customerInviteCode] || {};
         var tier = codeInfo.tier;
         var limit = Number.isFinite(parseInt(codeInfo.totalLimit, 10)) ? parseInt(codeInfo.totalLimit, 10) : totalLimit;
         if (tier !== "admin") {
@@ -1643,7 +1664,9 @@
       el.addEventListener("input", scheduleAutoSaveOwnerProfile);
     });
 
-    if (ensureCustomerAccess()) {
+    (async function bootDashboard() {
+      var ok = await ensureCustomerAccessAsync();
+      if (!ok) return;
       updateProfileNavLink();
       var today = new Date();
       var initYmd = dateToYMD(today);
@@ -1655,7 +1678,7 @@
       renderBySelectedDate(ymdToDate(initYmd.y, initYmd.m, initYmd.d));
       updateUsageReadonly();
       document.getElementById("dailyResult").innerText = "Nhập chủ đề và bấm Khám phá để xem phân tích.";
-    }
+    })();
   </script>
 </body>
 </html>
