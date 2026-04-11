@@ -245,7 +245,7 @@
       .actions { display: grid; grid-template-columns: 1fr; }
       .btn { width: 100%; }
       .table-wrap { overflow-x: auto; }
-      table { min-width: 700px; font-size: 14px; }
+      table { min-width: 820px; font-size: 14px; }
     }
   </style>
 </head>
@@ -253,9 +253,12 @@
   <div class="topbar">
     <div class="inner">
       <strong id="pageTitle">🪷 Daily fortune · Quản lý Profile</strong>
-      <div class="inline-actions hidden" id="topbarNav" aria-label="Điều hướng">
-        <span class="mode-badge" id="modeBadge">ADMIN</span>
-        <a id="topbarDashboardLink" href="/dashboard-purple.html">Về Dashboard</a>
+      <div class="inline-actions" style="gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+        <a class="hidden" id="adminLogoutLink" href="/api/admin/logout">Đăng xuất admin</a>
+        <div class="inline-actions hidden" id="topbarNav" aria-label="Điều hướng">
+          <span class="mode-badge" id="modeBadge">ADMIN</span>
+          <a id="topbarDashboardLink" href="/dashboard-purple.html">Về Dashboard</a>
+        </div>
       </div>
     </div>
   </div>
@@ -301,6 +304,7 @@
           <thead>
             <tr>
               <th>Tên</th>
+              <th>Mã mời</th>
               <th>Ngày sinh</th>
               <th>Liên hệ</th>
               <th>Mặc định</th>
@@ -323,9 +327,9 @@
             <span class="pkg-name">20 lượt</span>
             <span class="pkg-price">Miễn phí</span>
           </button>
-          <button type="button" class="pkg-chip" data-pkg="p30" title="Gói phổ biến cho cá nhân">
+          <button type="button" class="pkg-chip" data-pkg="p30" title="Giá gốc 5k/lượt, gói cố định giảm còn ~3k">
             <span class="pkg-name">30 lượt</span>
-            <span class="pkg-price">90.000đ · ~3.000đ/lượt</span>
+            <span class="pkg-price">90.000đ · gốc 5k → còn ~3k/lượt</span>
           </button>
           <button type="button" class="pkg-chip" data-pkg="p180" title="Ưu đãi gói dài">
             <span class="pkg-name">180 lượt</span>
@@ -335,11 +339,15 @@
             <span class="pkg-name">365 lượt</span>
             <span class="pkg-price">799.000đ · ~2.190đ/lượt</span>
           </button>
-          <button type="button" class="pkg-chip" data-pkg="custom" title="Nhập quota — 5.000đ mỗi lượt">
+          <button type="button" class="pkg-chip" data-pkg="custom" title="Mức gốc 5k/lượt — khi quota không trùng gói cố định">
             <span class="pkg-name">Tuỳ chỉnh</span>
-            <span class="pkg-price">5.000đ × số lượt / mã</span>
+            <span class="pkg-price">5.000đ × lượt (mức gốc / lượt)</span>
           </button>
         </div>
+        <p class="sub" style="margin:10px 0 0;font-size:13px;line-height:1.45;max-width:52rem;">
+          <strong>Giải thích nhanh:</strong> gói 30 lượt dùng mức gốc <strong>5.000đ/lượt</strong> rồi <strong>giảm giá</strong> xuống còn <strong>~3.000đ/lượt</strong> trong gói.
+          Gói tuỳ chỉnh áp <strong>5.000đ × tổng lượt trên mã</strong> khi không nằm trong các gói cố định phía trên.
+        </p>
         <div class="combo-section">
           <h4>Combo nhanh (chọn để điền quota + số mã)</h4>
           <p class="sub" style="margin:0 0 6px;font-size:14px;">Gợi ý bán / cấp — chỉnh lại số mã nếu cần.</p>
@@ -575,10 +583,10 @@
       var total = per * count;
       var pkgTitle = {
         p20: "20 lượt (miễn phí)",
-        p30: "30 lượt — 90.000đ/mã",
+        p30: "30 lượt — 90.000đ/mã (mức gốc 5k/lượt, giảm còn ~3k/lượt trong gói)",
         p180: "180 lượt — 449.000đ/mã",
         p365: "365 lượt — 799.000đ/mã",
-        custom: "Tuỳ chỉnh — " + formatVnd(CUSTOM_PER_TURN_VND) + "/lượt × " + limit + " lượt"
+        custom: "Tuỳ chỉnh — mức gốc " + formatVnd(CUSTOM_PER_TURN_VND) + "/lượt × " + limit + " (khi không trùng gói cố định)"
       }[inviteSelectedPkg] || "";
       textEl.innerHTML =
         "Gói: <strong>" + pkgTitle + "</strong> · <strong>" + count + "</strong> mã → tham khảo <strong>" + formatVnd(total) + "</strong> " +
@@ -655,17 +663,30 @@
         var used = String(getDailyUsage(code));
         var systemTag = (code === "ADMIN-2026" || code === "TEST-2026") ? " (mặc định)" : "";
         var tr = document.createElement("tr");
+        var extendBtn =
+          tier === "admin"
+            ? ""
+            : "<button type='button' data-act='extendQuota' data-code='" + code + "'>Gia hạn</button>";
         tr.innerHTML =
           "<td>" + code + systemTag + "</td>" +
           "<td>" + (tier === "admin" ? "admin" : "khách") + "</td>" +
           "<td>" + limit + "</td>" +
           "<td>" + used + "</td>" +
           "<td><div class='row-actions'>" +
+          extendBtn +
           "<button data-act='resetUsage' data-code='" + code + "'>Reset lượt</button>" +
           ((code === "ADMIN-2026" || code === "TEST-2026") ? "" : "<button data-act='delCode' data-code='" + code + "'>Xoá mã</button>") +
           "</div></td>";
         body.appendChild(tr);
       });
+    }
+
+    function escapeHtml(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
     }
 
     function uuid() {
@@ -726,7 +747,7 @@
 
       if (!profiles.length) {
         var empty = document.createElement("tr");
-        empty.innerHTML = "<td colspan='5'>Chưa có profile nào.</td>";
+        empty.innerHTML = "<td colspan='6'>Chưa có profile nào.</td>";
         body.appendChild(empty);
         return;
       }
@@ -734,10 +755,14 @@
       profiles.forEach(function (p) {
         var tr = document.createElement("tr");
         var birth = [p.birthDay, p.birthMonth, p.birthYear].filter(Boolean).join("/");
+        var inviteHtml = p.inviteCode
+          ? "<code style=\"font-size:13px;color:#f5d0fe;font-weight:700\">" + escapeHtml(p.inviteCode) + "</code>"
+          : "—";
         tr.innerHTML =
-          "<td>" + (p.name || "-") + "</td>" +
+          "<td>" + escapeHtml(p.name || "-") + "</td>" +
+          "<td>" + inviteHtml + "</td>" +
           "<td>" + (birth || "-") + "</td>" +
-          "<td>" + (p.contact || "-") + "</td>" +
+          "<td>" + escapeHtml(p.contact || "-") + "</td>" +
           "<td>" + (p.id === activeId ? "✓" : "") + "</td>" +
           "<td><div class='row-actions'>" +
             "<button data-act='use' data-id='" + p.id + "'>Dùng</button>" +
@@ -771,6 +796,8 @@
             birthMonth: birthMonth,
             birthYear: birthYear,
             birthHour: birthHour,
+            inviteCode: p.inviteCode,
+            source: p.source,
             updatedAt: new Date().toISOString(),
           };
         });
@@ -860,12 +887,17 @@
         dash.classList.remove("hidden");
         badge.textContent = "ADMIN";
         dash.setAttribute("href", "/dashboard-purple.html");
+        var lo = document.getElementById("adminLogoutLink");
+        if (lo) lo.classList.remove("hidden");
         return;
       }
+      var loOut = document.getElementById("adminLogoutLink");
+      if (loOut) loOut.classList.add("hidden");
       var inviteKey = getActiveCustomerInviteKey();
       var done = inviteKey && isProfileDone(inviteKey);
       if (!done) {
         nav.classList.add("hidden");
+        if (loOut) loOut.classList.add("hidden");
         return;
       }
       nav.classList.remove("hidden");
@@ -1060,6 +1092,29 @@
       if (act === "resetUsage") {
         localStorage.removeItem(usageKey(code));
         setInviteStatus("Đã reset lượt của mã " + code + ".");
+        renderInviteCodes();
+        return;
+      }
+      if (act === "extendQuota") {
+        var codes = getInviteCodes();
+        var meta = codes[code] || {};
+        if ((meta.tier || "test") === "admin") {
+          setInviteStatus("Mã admin không giới hạn — không cần gia hạn.");
+          return;
+        }
+        var addRaw = window.prompt("Gia hạn thêm bao nhiêu lượt cho mã " + code + "? (cộng vào quota hiện tại)", "30");
+        if (addRaw == null) return;
+        var add = parseInt(String(addRaw).trim(), 10);
+        if (!Number.isFinite(add) || add < 1) {
+          setInviteStatus("Số lượt gia hạn không hợp lệ.");
+          return;
+        }
+        var cur = parseInt(meta.totalLimit || "20", 10) || 20;
+        meta.tier = "test";
+        meta.totalLimit = cur + add;
+        codes[code] = meta;
+        setInviteCodes(codes);
+        setInviteStatus("Đã gia hạn mã " + code + ": +" + add + " lượt → quota mới: " + meta.totalLimit + ".");
         renderInviteCodes();
         return;
       }

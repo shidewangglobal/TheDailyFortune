@@ -19,9 +19,34 @@ const CONTENT_TYPES = {
   ".ico": "image/x-icon",
 };
 
-function send(res, status, body, type = "text/plain; charset=utf-8") {
-  res.writeHead(status, { "Content-Type": type });
+function send(res, status, body, type = "text/plain; charset=utf-8", extraHeaders = {}) {
+  res.writeHead(status, { "Content-Type": type, ...extraHeaders });
   res.end(body);
+}
+
+const COOKIE_ADMIN = "fortune_admin=1";
+
+function adminProtectionActive() {
+  return !!String(process.env.ADMIN_PIN || "").trim();
+}
+
+function hasAdminSession(req) {
+  if (!adminProtectionActive()) return true;
+  const c = req.headers.cookie || "";
+  return /(?:^|;\s*)fortune_admin=1(?:;|$)/.test(c);
+}
+
+function adminCookieHeader(req) {
+  const parts = [`${COOKIE_ADMIN}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24 * 14}; SameSite=Lax`];
+  const xfProto = req.headers["x-forwarded-proto"];
+  if (xfProto === "https" || process.env.FORCE_SECURE_COOKIE === "1") {
+    parts[0] += "; Secure";
+  }
+  return parts[0];
+}
+
+function clearAdminCookieHeader() {
+  return `${COOKIE_ADMIN.split("=")[0]}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax`;
 }
 
 function safePath(urlPath) {
@@ -138,6 +163,37 @@ async function callGeminiAnalysis(payload) {
 }
 
 const server = http.createServer((req, res) => {
+  if (req.method === "POST" && req.url === "/api/admin/login") {
+    readJsonBody(req)
+      .then((body) => {
+        const expected = String(process.env.ADMIN_PIN || "").trim();
+        if (!expected) {
+          return send(
+            res,
+            503,
+            JSON.stringify({ ok: false, error: "Server chưa cấu hình ADMIN_PIN." }),
+            "application/json; charset=utf-8"
+          );
+        }
+        const pin = String((body && body.pin) || "").trim();
+        if (pin !== expected) {
+          return send(res, 401, JSON.stringify({ ok: false, error: "Mã PIN không đúng." }), "application/json; charset=utf-8");
+        }
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+          "Set-Cookie": adminCookieHeader(req),
+        });
+        res.end(JSON.stringify({ ok: true }));
+      })
+      .catch(() => send(res, 400, JSON.stringify({ ok: false, error: "Bad request" }), "application/json; charset=utf-8"));
+    return;
+  }
+
+  if (req.method === "GET" && (req.url || "").split("?")[0] === "/api/admin/logout") {
+    res.writeHead(302, { Location: "/", "Set-Cookie": clearAdminCookieHeader() });
+    return res.end();
+  }
+
   if (req.method === "POST" && req.url === "/api/fortune/analyze") {
     readJsonBody(req)
       .then((payload) => callGeminiAnalysis(payload))
@@ -151,7 +207,18 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === "GET") {
-    const incomingPath = decodeURIComponent((req.url || "/").split("?")[0] || "/");
+    const u = new URL(req.url || "/", "http://localhost");
+    const incomingPath = decodeURIComponent(u.pathname || "/");
+
+    if (incomingPath === "/profile.html") {
+      const entry = u.searchParams.get("entry") || u.searchParams.get("role") || "";
+      if (entry === "admin" && !hasAdminSession(req)) {
+        const next = u.pathname + (u.search || "");
+        res.writeHead(302, { Location: "/admin-login.html?next=" + encodeURIComponent(next) });
+        return res.end();
+      }
+    }
+
     if (incomingPath === "/") {
       res.writeHead(302, { Location: "/profile.html?entry=customer" });
       return res.end();
