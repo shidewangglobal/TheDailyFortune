@@ -200,8 +200,24 @@ const server = http.createServer((req, res) => {
       .then((analysis) => send(res, 200, JSON.stringify({ ok: true, analysis, source: "gemini" }), "application/json; charset=utf-8"))
       .catch((err) => {
         const message = String(err && err.message ? err.message : err);
-        const status = message.includes("Missing GEMINI_API_KEY") ? 503 : 500;
-        send(res, status, JSON.stringify({ ok: false, error: message }), "application/json; charset=utf-8");
+        console.error("[fortune/analyze]", message);
+        let status = 500;
+        let body = {
+          ok: false,
+          errorCode: "gemini_error",
+          error:
+            "Luận giải AI tạm không khả dụng. Phần phân tích nội bộ bên dưới vẫn đầy đủ — vui lòng thử lại sau.",
+        };
+        if (message.includes("Missing GEMINI_API_KEY")) {
+          status = 503;
+          body.errorCode = "gemini_not_configured";
+          body.error =
+            "Luận giải AI chưa bật trên máy chủ (chưa cấu hình khoá). Bạn vẫn xem được phân tích nội bộ đầy đủ. Admin: thêm biến GEMINI_API_KEY trên Render.";
+        }
+        if (process.env.NODE_ENV !== "production") {
+          body.debug = message.slice(0, 500);
+        }
+        send(res, status, JSON.stringify(body), "application/json; charset=utf-8");
       });
     return;
   }

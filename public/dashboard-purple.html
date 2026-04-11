@@ -838,7 +838,7 @@
     var customerInviteCode = "";
     var DEFAULT_INVITE_CODES = {
       "ADMIN-2026": { tier: "admin" },
-      "TEST-2026": { tier: "test" }
+      "TEST-2026": { tier: "admin" }
     };
     function getInviteCodes() {
       var merged = {};
@@ -924,10 +924,6 @@
     }
     function ensureCustomerAccess() {
       if (roleParam !== "customer") return true;
-      var resetParam = new URLSearchParams(window.location.search).get("reset");
-      if (resetParam === "test") {
-        localStorage.removeItem("daily_fortune_usage_total_TEST-2026");
-      }
       var invite = localStorage.getItem("daily_fortune_customer_invite") || "";
       if (!invite) {
         location.href = "/profile.html?role=customer&next=" + encodeURIComponent(location.pathname + location.search);
@@ -1408,18 +1404,23 @@
         if (resp.ok && json && json.ok && json.analysis) {
           resultEl.innerText = reasoningTrace + "\n\n" + json.analysis;
         } else {
-          var backendErr = json && json.error ? ("Lý do: " + json.error) : "";
-          resultEl.innerText =
-            "Gemini chưa phản hồi đúng chuẩn lúc này, hệ thống tạm dùng phân tích nội bộ.\n\n" +
-            reasoningTrace + "\n\n" + fallbackText +
-            (backendErr ? ("\n\n(" + backendErr + ")") : "");
+          var intro =
+            json && json.error
+              ? json.error
+              : "Luận giải AI tạm không phản hồi — đang dùng phân tích nội bộ.";
+          var dev = json && json.debug ? ("\n\n[dev] " + json.debug) : "";
+          resultEl.innerText = intro + "\n\n" + reasoningTrace + "\n\n" + fallbackText + dev;
         }
       } catch (err) {
-        var msg = (err && err.message) ? err.message : "Kết nối tạm thời không ổn định.";
+        var raw = (err && err.message) ? err.message : "";
+        var msg =
+          /failed to fetch|networkerror|load failed/i.test(raw)
+            ? "Mạng tạm gián đoạn — không gọi được máy chủ."
+            : "Lỗi kết nối tạm thời.";
         resultEl.innerText =
-          "Gemini đang bận hoặc chưa sẵn sàng, hệ thống tạm dùng phân tích nội bộ.\n\n" +
+          "Luận giải AI không gửi được lúc này — đang dùng phân tích nội bộ.\n\n" +
           reasoningTrace + "\n\n" + fallbackText +
-          "\n\n(" + msg + ")";
+          "\n\n" + msg;
       }
       if (consume) resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
       updateUsageReadonly();
