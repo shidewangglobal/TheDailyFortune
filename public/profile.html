@@ -229,6 +229,13 @@
     }
     .invite-quote strong { color: #fce7ff; }
     .invite-quote .muted { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .invite-sent-cell { text-align: center; vertical-align: middle; }
+    .invite-sent-toggle {
+      width: 1.2rem;
+      height: 1.2rem;
+      accent-color: #c084fc;
+      cursor: pointer;
+    }
     @media (min-width: 1500px) {
       .topbar .inner,
       .wrap { width: calc(100vw - 18px); }
@@ -391,6 +398,7 @@
               <th>Loại</th>
               <th>Quota</th>
               <th>Đã dùng</th>
+              <th title="Tick khi đã gửi mã mời cho khách">Đã gửi</th>
               <th>Thao tác</th>
             </tr>
           </thead>
@@ -653,7 +661,7 @@
       var rows = Object.keys(codes).sort();
       body.innerHTML = "";
       if (!rows.length) {
-        body.innerHTML = "<tr><td colspan='5'>Chưa có mã nào.</td></tr>";
+        body.innerHTML = "<tr><td colspan='6'>Chưa có mã nào.</td></tr>";
         return;
       }
       rows.forEach(function (code) {
@@ -661,17 +669,24 @@
         var tier = meta.tier || "test";
         var limit = tier === "admin" ? "∞" : String(parseInt(meta.totalLimit || "20", 10) || 20);
         var used = String(getDailyUsage(code));
+        var sent = !!meta.sentToCustomer;
         var systemTag = (code === "ADMIN-2026" || code === "TEST-2026") ? " (mặc định)" : "";
         var tr = document.createElement("tr");
         var extendBtn =
           tier === "admin"
             ? ""
             : "<button type='button' data-act='extendQuota' data-code='" + code + "'>Gia hạn</button>";
+        var safeCodeAttr = escapeHtml(code).replace(/"/g, "&quot;");
         tr.innerHTML =
           "<td>" + code + systemTag + "</td>" +
           "<td>" + (tier === "admin" ? "admin" : "khách") + "</td>" +
           "<td>" + limit + "</td>" +
           "<td>" + used + "</td>" +
+          "<td class=\"invite-sent-cell\">" +
+          "<input type=\"checkbox\" class=\"invite-sent-toggle\" data-act=\"toggleSent\" data-code=\"" + safeCodeAttr + "\" " +
+          (sent ? "checked " : "") +
+          "title=\"Đã gửi mã này cho khách\" aria-label=\"Đã gửi mã " + safeCodeAttr + "\" />" +
+          "</td>" +
           "<td><div class='row-actions'>" +
           extendBtn +
           "<button data-act='resetUsage' data-code='" + code + "'>Reset lượt</button>" +
@@ -1082,6 +1097,18 @@
       if (!created.length) return setInviteStatus("Không tạo được mã mới. Vui lòng thử lại.");
       setInviteStatus("Đã tạo " + created.length + " mã: " + created.join(", "));
       renderInviteCodes();
+    });
+    document.getElementById("inviteCodesBody").addEventListener("change", function (e) {
+      var t = e.target;
+      if (!t || t.type !== "checkbox" || !t.dataset || t.dataset.act !== "toggleSent") return;
+      var code = t.dataset.code;
+      if (!code) return;
+      var codes = getInviteCodes();
+      var meta = codes[code] || {};
+      meta.sentToCustomer = !!t.checked;
+      codes[code] = meta;
+      setInviteCodes(codes);
+      setInviteStatus(t.checked ? ("Đã đánh dấu đã gửi: " + code) : ("Đã bỏ tick gửi: " + code));
     });
     document.getElementById("inviteCodesBody").addEventListener("click", function (e) {
       var t = e.target;
