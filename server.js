@@ -5,6 +5,7 @@ const path = require("path");
 const PORT = process.env.PORT || 4180;
 const PUBLIC_DIR = path.join(__dirname, "public");
 const GEMINI_PLAYBOOK_PATH = path.join(__dirname, "docs", "GEMINI_ENGINE_PLAYBOOK_V1.md");
+const GEMINI_CORE_TRONG_NGAM_PATH = path.join(__dirname, "docs", "GEMINI_CORE_TRONG_NGAM_CUNG.md");
 let geminiPlaybook = "";
 
 const CONTENT_TYPES = {
@@ -242,7 +243,14 @@ function safePath(urlPath) {
 
 function loadGeminiPlaybook() {
   try {
-    geminiPlaybook = fs.readFileSync(GEMINI_PLAYBOOK_PATH, "utf-8");
+    const base = fs.readFileSync(GEMINI_PLAYBOOK_PATH, "utf-8");
+    let core = "";
+    try {
+      core = fs.readFileSync(GEMINI_CORE_TRONG_NGAM_PATH, "utf-8");
+    } catch (_) {
+      core = "";
+    }
+    geminiPlaybook = core ? base + "\n\n---\n\n" + core : base;
   } catch (_) {
     geminiPlaybook = "";
   }

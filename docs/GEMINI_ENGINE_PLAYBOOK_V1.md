@@ -53,6 +53,8 @@ You must **chain** meaning from **Hoa Giáp layer** (Can Chi + Nạp âm + hành
 
 **Anti-lazy rule:** If `relations_equal` is true (same `relation_day` and `relation_hour` text), you must **merge** the ngũ hành explanation into **one** clear passage and spend saved space on **Hoa Giáp × cung** detail and **topic-specific** tactics — do **not** paste the same “Đồng hành / ổn định / đồng thuận” twice.
 
+**Doctrine extension (same SYSTEM message):** A second markdown block is appended after this file: **`GEMINI_CORE_TRONG_NGAM_CUNG.md`**. It defines **mandatory synthesis** of **trời (Hoa Giáp) × cung (Lục Nhâm) × tuổi**, anti-patterns (no isolated layer analysis), and **sample combined motifs** (e.g. Lưu Liên + Không Vong, Bạch Lạp Kim on Lưu Liên, Trường Lưu Thủy + Không Vong) **only when payload matches**. Follow it strictly.
+
 ---
 
 ## Output goal
