@@ -390,6 +390,11 @@
         <button class="btn primary" id="createInviteBtn" type="button">Tạo mã random</button>
       </div>
       <div class="status" id="inviteStatus">Sẵn sàng.</div>
+      <p class="sub" style="margin-top:8px;font-size:13px;line-height:1.45;opacity:0.92;">
+        <strong>Mã cho khách dùng được khi nào?</strong> Khi mã đã <strong>lưu lên máy chủ</strong> (sau bấm &quot;Tạo mã random&quot; hoặc sửa bảng mã, dòng trạng thái phải báo đã lưu server).
+        Nếu site có <strong>PIN admin</strong>, bạn cần <a href="/admin-login.html?next=%2Fprofile.html%3Fentry%3Dadmin">đăng nhập admin</a> trước — nếu không, mã chỉ nằm trên trình duyệt của bạn và khách sẽ báo &quot;không hợp lệ&quot;.
+        Hồ sơ khách trên cloud (Supabase) dùng đúng <strong>mã đó</strong> làm khóa (<code>invite_code</code>) — không cần thêm cột &quot;mã đang dùng&quot; riêng.
+      </p>
       <div class="table-wrap">
         <table>
           <thead>
@@ -523,23 +528,22 @@
       return "";
     }
     function syncInviteCodesToServer(codes) {
-      fetch("/api/invite-codes", {
+      return fetch("/api/invite-codes", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ codes: codes || {} })
-      }).then(function (r) {
-        if (r.status === 403) {
-          var el = document.getElementById("inviteStatus");
-          if (el && el.textContent.indexOf("đồng bộ") === -1) {
-            el.textContent = el.textContent + " Đăng nhập admin để đồng bộ mã lên server (khách mới vào được).";
-          }
-        }
-      }).catch(function () {});
+      })
+        .then(function (r) {
+          return !!r.ok;
+        })
+        .catch(function () {
+          return false;
+        });
     }
     function setInviteCodes(codes) {
       localStorage.setItem(INVITE_CODES_KEY, JSON.stringify(codes || {}));
-      syncInviteCodesToServer(codes);
+      return syncInviteCodesToServer(codes);
     }
     function lookupInviteFromServer(raw) {
       return fetch("/api/invite/lookup", {
@@ -572,7 +576,7 @@
         Object.keys(INVITE_CODES).forEach(function (k) { merged[k] = INVITE_CODES[k]; });
         Object.keys(local).forEach(function (k) { merged[k] = local[k]; });
         Object.keys(j.codes).forEach(function (k) { merged[k] = j.codes[k]; });
-        setInviteCodes(merged);
+        await setInviteCodes(merged);
         renderInviteCodes();
       } catch (_) {}
     }
@@ -1218,7 +1222,7 @@
       });
     }
 
-    document.getElementById("createInviteBtn").addEventListener("click", function () {
+    document.getElementById("createInviteBtn").addEventListener("click", async function () {
       var tier = (document.getElementById("newInviteTier").value || "test").trim();
       var limitRaw = parseInt((document.getElementById("newInviteLimit").value || "20").trim(), 10);
       var countRaw = parseInt((document.getElementById("newInviteCount").value || "1").trim(), 10);
@@ -1236,10 +1240,18 @@
           : { tier: "test", totalLimit: quota };
         created.push(code);
       }
-      setInviteCodes(codes);
       if (!created.length) return setInviteStatus("Không tạo được mã mới. Vui lòng thử lại.");
-      setInviteStatus("Đã tạo " + created.length + " mã: " + created.join(", "));
+      setInviteStatus("Đang lưu mã lên server…");
+      var serverOk = await setInviteCodes(codes);
       renderInviteCodes();
+      if (serverOk) {
+        setInviteStatus("Đã tạo " + created.length + " mã và ĐÃ lưu lên server — gửi cho khách dùng được: " + created.join(", "));
+      } else {
+        setInviteStatus(
+          "Đã tạo " + created.length + " mã (" + created.join(", ") + ") nhưng CHƯA lưu lên server. Khách sẽ báo không hợp lệ. " +
+            "Hãy mở /admin-login.html?next=%2Fprofile.html%3Fentry%3Dadmin — đăng nhập PIN — quay lại trang này và bấm \"Tạo mã random\" thêm 1 mã (hoặc tick/bỏ tick \"Đã gửi\") để đồng bộ lại toàn bộ."
+        );
+      }
     });
     document.getElementById("inviteCodesBody").addEventListener("change", function (e) {
       var t = e.target;
@@ -1250,8 +1262,11 @@
       var meta = codes[code] || {};
       meta.sentToCustomer = !!t.checked;
       codes[code] = meta;
-      setInviteCodes(codes);
-      setInviteStatus(t.checked ? ("Đã đánh dấu đã gửi: " + code) : ("Đã bỏ tick gửi: " + code));
+      setInviteStatus("Đang đồng bộ…");
+      setInviteCodes(codes).then(function (ok) {
+        if (ok) setInviteStatus(t.checked ? ("Đã đánh dấu đã gửi (đã lưu server): " + code) : ("Đã bỏ tick gửi (đã lưu server): " + code));
+        else setInviteStatus("Chưa lưu được lên server — đăng nhập admin PIN rồi thử tick lại.");
+      });
     });
     document.getElementById("inviteCodesBody").addEventListener("click", function (e) {
       var t = e.target;
@@ -1283,16 +1298,22 @@
         meta.tier = "test";
         meta.totalLimit = cur + add;
         codes[code] = meta;
-        setInviteCodes(codes);
-        setInviteStatus("Đã gia hạn mã " + code + ": +" + add + " lượt → quota mới: " + meta.totalLimit + ".");
+        setInviteStatus("Đang đồng bộ…");
+        setInviteCodes(codes).then(function (ok) {
+          if (ok) setInviteStatus("Đã gia hạn mã " + code + ": +" + add + " lượt → quota mới: " + meta.totalLimit + " (đã lưu server).");
+          else setInviteStatus("Gia hạn chỉ trên máy bạn — đăng nhập admin PIN rồi bấm gia hạn lại.");
+        });
         renderInviteCodes();
         return;
       }
       if (act === "delCode") {
         var codes = getInviteCodes();
         delete codes[code];
-        setInviteCodes(codes);
-        setInviteStatus("Đã xoá mã " + code + ".");
+        setInviteStatus("Đang đồng bộ…");
+        setInviteCodes(codes).then(function (ok) {
+          if (ok) setInviteStatus("Đã xoá mã " + code + " (đã lưu server).");
+          else setInviteStatus("Đã xoá trên trình duyệt nhưng chưa lưu server — đăng nhập admin PIN rồi xoá lại.");
+        });
         renderInviteCodes();
       }
     });
