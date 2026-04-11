@@ -1114,6 +1114,43 @@
       if (/(hôn|cưới|tình cảm|gia đình)/.test(t)) return "relationship";
       return "general";
     }
+    function domainLabelVi(domain) {
+      var map = {
+        real_estate: "Bất động sản / tài sản",
+        sales: "Kinh doanh / chào hàng",
+        relationship: "Tình duyên / gia đình",
+        general: "Chung"
+      };
+      return map[domain] || "Chung";
+    }
+    /** Gợi ý cho model — ưu tiên nghĩa đen chủ đề, tránh đổi «khách» thành «đối tác». */
+    function inferTopicIntent(topic) {
+      var t = (topic || "").toLowerCase();
+      if (/(khách hàng|khách hang|tìm khách|tim khach|lead|pipeline|prospect|chào hàng|chao hang|telesales|cold call|goi lanh|gọi lạnh)/.test(t)) {
+        return "customer_acquisition";
+      }
+      if (/(đối tác|doi tac|hợp tác|hop tac|liên kết|lien ket|partnership|jv|liên doanh|lien doanh)/.test(t)) {
+        return "partner_seek";
+      }
+      if (/(kiện|kien|pháp lý|phap ly|luật su|luat su|tòa|toa án)/.test(t)) return "legal";
+      if (/(đi xa|di xa|xuất hành|xuat hanh|du lịch|du lich)/.test(t)) return "travel";
+      if (/(nhà|đất|bđs|bất động sản|mua bán nhà|mua biet)/.test(t)) return "real_estate";
+      if (/(hôn|cưới|tình duyên|nhân duyên)/.test(t)) return "marriage";
+      return "general";
+    }
+    function buildContextGuidanceVi(opts) {
+      var parts = [];
+      if (opts.viewingForOther && (!opts.topic || opts.topic.length < 20)) {
+        parts.push("Đang xem cho người khác với mô tả ngắn: nêu giả định rõ, tránh chi tiết không có trong dữ liệu.");
+      }
+      if (opts.topic && opts.topic.length < 12) {
+        parts.push("Chủ đề rất ngắn: ưu tiên khung an toàn và câu hỏi làm rõ thay vì khẳng định mạnh.");
+      }
+      if (opts.participant && opts.pYear) {
+        parts.push("Có người tham gia (đã có năm sinh): có thể thêm một lớp tương quan phụ; nếu thiếu ngày giờ sinh thì chỉ luận nhẹ, không ép sâu.");
+      }
+      return parts.join(" ");
+    }
     function buildSituationalTactics(ctx) {
       var tactics = [];
       var hardHours = (ctx.cautions || []).slice(0, 2).join(", ");
@@ -1341,6 +1378,25 @@
         positives: positives,
         cautions: cautions
       });
+      var topicIntent = inferTopicIntent(topic);
+      var viewingForOther = selectedTarget !== "owner";
+      var pYearNum = hasParticipant && pYear ? parseInt(pYear, 10) : 0;
+      var participantCanChi = hasParticipant && pYearNum ? getCanChiByYear(pYearNum) : "";
+      var participantNapAm = participantCanChi ? getNapAm(participantCanChi) : "";
+      var participantEl = participantNapAm ? getElement(participantNapAm) : "";
+      var contextSparse =
+        (topic.length > 0 && topic.length < 18) ||
+        (viewingForOther && topic.length > 0 && topic.length < 40);
+      var contextGuidanceVi = buildContextGuidanceVi({
+        viewingForOther: viewingForOther,
+        topic: topic,
+        participant: hasParticipant,
+        pYear: pYear
+      });
+      var userContextNote = "";
+      try {
+        userContextNote = (localStorage.getItem("daily_fortune_user_context_note") || "").trim();
+      } catch (_) {}
       var statusText = engine.status === "thanh_cong_mot_phan" ? "khả năng chốt tích cực có điều kiện" :
         (engine.status === "can_tranh_chot" ? "rủi ro cao, nên tránh ép chốt" : "khó chốt ngay, cần đi theo lộ trình");
       var statusLabelVi = engine.status === "thanh_cong_mot_phan" ? "có thể tiến hành có điều kiện" :
@@ -1384,9 +1440,23 @@
         owner_element: ownerEl,
         relation_day: relation,
         relation_hour: relationHour,
+        relations_equal: relation === relationHour,
         special_pattern: engine.specialPattern || "",
         topic: topicLine,
+        topic_verbatim: topic,
+        topic_intent: topicIntent,
+        domain: engine.domain,
+        domain_label_vi: domainLabelVi(engine.domain),
         subject_target: who,
+        viewing_for_other: viewingForOther,
+        participant_present: hasParticipant,
+        participant_brief: p,
+        participant_can_chi: participantCanChi || "",
+        participant_nap_am: participantNapAm || "",
+        participant_element: participantEl || "",
+        context_sparse: contextSparse,
+        context_guidance_vi: contextGuidanceVi,
+        user_context_note: userContextNote,
         focus_hour: focusHour !== "" ? (hours[parseInt(focusHour, 10)][0] + " " + hours[parseInt(focusHour, 10)][1]) : "",
         suggested_hours: positives.slice(0, 2),
         avoid_hours: cautions.slice(0, 1),

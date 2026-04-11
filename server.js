@@ -98,7 +98,7 @@ async function callGeminiAnalysis(payload) {
     "Do not output bullet list.",
     "Focus on relation between day/hour and owner fate for this specific event.",
     "Do NOT use generic sales templates if topic is not sales.",
-    "Output MUST be 170-260 Vietnamese words.",
+    "Output MUST be 260-400 Vietnamese words (three continuous paragraphs).",
     "",
     "INPUT JSON:",
     JSON.stringify(payload)
@@ -107,7 +107,7 @@ async function callGeminiAnalysis(payload) {
     contents: [{ role: "user", parts: [{ text: textPrompt }] }],
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 1200,
+      maxOutputTokens: 2048,
       thinkingConfig: {
         thinkingBudget: 0
       }
@@ -135,10 +135,10 @@ async function callGeminiAnalysis(payload) {
 
   let text = await generate(prompt);
   const words = text.split(/\s+/).filter(Boolean).length;
-  if (words < 120) {
+  if (words < 180) {
     const retryPrompt = [
       "Bạn vừa trả lời quá ngắn và chưa đạt chuẩn dashboard.",
-      "Hãy viết lại thành 3 đoạn văn liên tục, 180-260 từ, có chiều sâu, không bullet, không lặp.",
+      "Hãy viết lại thành 3 đoạn văn liên tục, 260-400 từ, có chiều sâu, không bullet, không lặp.",
       "Bắt buộc giải thích rõ: quẻ chính, mệnh ngày/gia chủ, giờ thuận-tránh và hành động cụ thể.",
       "",
       "INPUT JSON:",
@@ -149,9 +149,9 @@ async function callGeminiAnalysis(payload) {
   }
   // Avoid returning obviously cut-off one-liners.
   const sentenceEnd = /[.!?…]$/.test(text);
-  if (!sentenceEnd && text.split(/\s+/).filter(Boolean).length < 80) {
+  if (!sentenceEnd && text.split(/\s+/).filter(Boolean).length < 120) {
     const finalizePrompt = [
-      "Nội dung trước bị cụt. Hãy viết lại trọn vẹn 3 đoạn tiếng Việt, không bullet, 170-260 từ.",
+      "Nội dung trước bị cụt. Hãy viết lại trọn vẹn 3 đoạn tiếng Việt, không bullet, 260-400 từ.",
       "Bám đúng dữ liệu input, tập trung lý giải vì sao và gợi ý hành động phù hợp.",
       "",
       "INPUT JSON:",
