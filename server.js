@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -277,6 +279,9 @@ function readJsonBody(req) {
 }
 
 async function callGeminiAnalysis(payload) {
+  if (process.env.GEMINI_PLAYBOOK_HOT_RELOAD === "1") {
+    loadGeminiPlaybook();
+  }
   const apiKey = process.env.GEMINI_API_KEY || "";
   if (!apiKey) {
     throw new Error("Missing GEMINI_API_KEY");

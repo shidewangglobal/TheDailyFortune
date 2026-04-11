@@ -1,1 +1,3 @@
 data/invite_codes.json
+.env
+.env.local

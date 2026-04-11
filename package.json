@@ -5,9 +5,11 @@
   "description": "Standalone Daily fortune dashboard preview",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "gemini:trial": "node scripts/gemini-trial.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.103.0"
+    "@supabase/supabase-js": "^2.103.0",
+    "dotenv": "^17.4.1"
   }
 }
