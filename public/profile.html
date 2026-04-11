@@ -488,6 +488,14 @@
       var n = parseInt(raw || "0", 10);
       return Number.isFinite(n) ? n : 0;
     }
+    function getInviteUsageDisplay(invite) {
+      var m = getInviteCodes()[invite];
+      if (m && m.usageCount != null && m.usageCount !== "") {
+        var u = parseInt(m.usageCount, 10);
+        if (Number.isFinite(u)) return u;
+      }
+      return getDailyUsage(invite);
+    }
     function getInviteCodes() {
       var merged = {};
       Object.keys(INVITE_CODES).forEach(function (k) { merged[k] = INVITE_CODES[k]; });
@@ -723,7 +731,7 @@
         var meta = codes[code] || {};
         var tier = meta.tier || "test";
         var limit = tier === "admin" ? "∞" : String(parseInt(meta.totalLimit || "20", 10) || 20);
-        var used = String(getDailyUsage(code));
+        var used = String(getInviteUsageDisplay(code));
         var sent = !!meta.sentToCustomer;
         var systemTag = (code === "ADMIN-2026" || code === "TEST-2026") ? " (mặc định)" : "";
         var tr = document.createElement("tr");
@@ -1091,7 +1099,7 @@
       var meta = codes[invite] || {};
       var limit = meta.tier === "admin" ? "không giới hạn" : String(parseInt(meta.totalLimit || "20", 10) || 20);
       document.getElementById("dailyUsageCounter").textContent =
-        "Bạn được miễn phí theo quota của mã. Đã dùng: " + getDailyUsage(invite) + "/" + limit + ".";
+        "Bạn được miễn phí theo quota của mã. Đã dùng: " + getInviteUsageDisplay(invite) + "/" + limit + ".";
     }
     function refreshContinue(invite) {
       document.getElementById("goDashboardBtn").classList.toggle("hidden", !isProfileDone(invite));
@@ -1275,8 +1283,16 @@
       var code = t.dataset.code;
       if (!act || !code) return;
       if (act === "resetUsage") {
+        var codesReset = getInviteCodes();
+        var metaR = codesReset[code] || {};
+        metaR.usageCount = 0;
+        codesReset[code] = metaR;
         localStorage.removeItem(usageKey(code));
-        setInviteStatus("Đã reset lượt của mã " + code + ".");
+        setInviteStatus("Đang đồng bộ reset lượt…");
+        setInviteCodes(codesReset).then(function (ok) {
+          if (ok) setInviteStatus("Đã reset lượt mã " + code + " (đã lưu server).");
+          else setInviteStatus("Đã reset trên máy — đăng nhập admin PIN rồi bấm Reset lại để lưu server.");
+        });
         renderInviteCodes();
         return;
       }

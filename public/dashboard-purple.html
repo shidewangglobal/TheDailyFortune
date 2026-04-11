@@ -941,6 +941,37 @@
       var n = parseInt(localStorage.getItem(usageKey(invite)) || "0", 10);
       return Number.isFinite(n) ? n : 0;
     }
+    function getInviteUsageDisplay(invite) {
+      var m = getInviteCodes()[invite];
+      if (m && m.usageCount != null && m.usageCount !== "") {
+        var u = parseInt(m.usageCount, 10);
+        if (Number.isFinite(u)) return u;
+      }
+      return getDailyUsage(invite);
+    }
+    function patchInviteMetaUsage(inviteKey, usageCount) {
+      try {
+        var merged = getInviteCodes();
+        var meta = merged[inviteKey] || {};
+        meta.usageCount = usageCount;
+        merged[inviteKey] = meta;
+        localStorage.setItem(INVITE_CODES_KEY, JSON.stringify(merged));
+      } catch (_) {}
+    }
+    async function recordInviteUsageOnServer(code) {
+      try {
+        var r = await fetch("/api/invite/record-usage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ code: code })
+        });
+        var j = await r.json().catch(function () { return {}; });
+        return { http: r.status, ok: !!j.ok, skipped: !!j.skipped, usageCount: j.usageCount, limit: j.limit, error: j.error };
+      } catch (_) {
+        return { ok: false, network: true };
+      }
+    }
     function setDailyUsage(invite, value) {
       localStorage.setItem(usageKey(invite), String(value));
     }
@@ -962,7 +993,7 @@
         el.textContent = "Mã " + customerInviteCode + " - Không giới hạn lượt xem.";
         return;
       }
-      el.textContent = "Mã " + customerInviteCode + " - Đã dùng: " + getDailyUsage(customerInviteCode) + "/" + limit + " lượt miễn phí.";
+      el.textContent = "Mã " + customerInviteCode + " - Đã dùng: " + getInviteUsageDisplay(customerInviteCode) + "/" + limit + " lượt miễn phí.";
     }
     async function ensureCustomerAccessAsync() {
       if (roleParam !== "customer") return true;
@@ -980,6 +1011,8 @@
         }
         localStorage.setItem("daily_fortune_customer_invite", serverKey);
         invite = serverKey;
+      } else {
+        await lookupInviteFromServer(invite);
       }
       await mergeRemoteCustomerProfileToLocal(invite);
       var profile = getCustomerProfile(invite);
@@ -1348,12 +1381,23 @@
         var tier = codeInfo.tier;
         var limit = Number.isFinite(parseInt(codeInfo.totalLimit, 10)) ? parseInt(codeInfo.totalLimit, 10) : totalLimit;
         if (tier !== "admin") {
-          var used = getDailyUsage(customerInviteCode);
-          if (used >= limit) {
+          var rec = await recordInviteUsageOnServer(customerInviteCode);
+          if (rec.ok && !rec.skipped && rec.usageCount != null) {
+            patchInviteMetaUsage(customerInviteCode, rec.usageCount);
+            setDailyUsage(customerInviteCode, rec.usageCount);
+          } else if (rec.error === "quota_exceeded") {
             updateUsageReadonly();
-            return resultEl.innerHTML = "Bạn đã dùng hết " + limit + " lượt miễn phí tổng cộng. Vui lòng nâng cấp gói để tiếp tục xem.";
+            return (resultEl.innerHTML =
+              "Bạn đã dùng hết " + (rec.limit || limit) + " lượt miễn phí tổng cộng. Vui lòng nâng cấp gói để tiếp tục xem.");
+          } else {
+            var usedLocal = getInviteUsageDisplay(customerInviteCode);
+            if (usedLocal >= limit) {
+              updateUsageReadonly();
+              return (resultEl.innerHTML =
+                "Bạn đã dùng hết " + limit + " lượt miễn phí tổng cộng. Vui lòng nâng cấp gói để tiếp tục xem.");
+            }
+            setDailyUsage(customerInviteCode, usedLocal + 1);
           }
-          setDailyUsage(customerInviteCode, used + 1);
         }
       }
       if (!ownerYear) return resultEl.innerHTML = "Vui lòng nhập năm sinh Gia chủ (bắt buộc).";

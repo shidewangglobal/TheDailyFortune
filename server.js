@@ -208,7 +208,9 @@ function inviteLookupHandler(req, res) {
       if (!key) return send(res, 200, JSON.stringify({ ok: false }));
       const meta = merged[key];
       if (!meta || typeof meta !== "object") return send(res, 200, JSON.stringify({ ok: false }));
-      send(res, 200, JSON.stringify({ ok: true, key, meta }), "application/json; charset=utf-8");
+      const usageCount = Math.max(0, parseInt(meta.usageCount, 10) || 0);
+      const metaOut = { ...meta, usageCount };
+      send(res, 200, JSON.stringify({ ok: true, key, meta: metaOut }), "application/json; charset=utf-8");
     })
     .catch(() => send(res, 400, JSON.stringify({ ok: false, error: "Bad request" }), "application/json; charset=utf-8"));
 }
@@ -235,6 +237,46 @@ function inviteCodesPostHandler(req, res) {
       send(res, 200, JSON.stringify({ ok: true }), "application/json; charset=utf-8");
     })
     .catch(() => send(res, 400, JSON.stringify({ ok: false }), "application/json; charset=utf-8"));
+}
+
+function inviteRecordUsageHandler(req, res) {
+  readJsonBody(req)
+    .then((body) => {
+      const key = resolveInviteKeyForProfile(body && body.code);
+      if (!key) {
+        return send(res, 403, JSON.stringify({ ok: false, error: "invalid_code" }), "application/json; charset=utf-8");
+      }
+      const merged = mergeInviteCodesFromDisk();
+      const meta = { ...(merged[key] || {}) };
+      if (meta.tier === "admin") {
+        return send(res, 200, JSON.stringify({ ok: true, skipped: true }), "application/json; charset=utf-8");
+      }
+      const limit = Math.max(1, parseInt(meta.totalLimit, 10) || 20);
+      const cur = Math.max(0, parseInt(meta.usageCount, 10) || 0);
+      if (cur >= limit) {
+        return send(
+          res,
+          403,
+          JSON.stringify({ ok: false, error: "quota_exceeded", usageCount: cur, limit }),
+          "application/json; charset=utf-8"
+        );
+      }
+      const next = cur + 1;
+      merged[key] = { ...meta, usageCount: next };
+      try {
+        writeInviteCodesToDisk(merged);
+      } catch (e) {
+        console.error("[invite/record-usage]", e);
+        return send(res, 500, JSON.stringify({ ok: false, error: "write_failed" }), "application/json; charset=utf-8");
+      }
+      send(
+        res,
+        200,
+        JSON.stringify({ ok: true, usageCount: next, limit }),
+        "application/json; charset=utf-8"
+      );
+    })
+    .catch(() => send(res, 400, JSON.stringify({ ok: false, error: "bad_request" }), "application/json; charset=utf-8"));
 }
 
 function safePath(urlPath) {
@@ -403,6 +445,10 @@ const server = http.createServer((req, res) => {
   }
   if (req.method === "POST" && pathOnly === "/api/invite-codes") {
     inviteCodesPostHandler(req, res);
+    return;
+  }
+  if (req.method === "POST" && pathOnly === "/api/invite/record-usage") {
+    inviteRecordUsageHandler(req, res);
     return;
   }
 
