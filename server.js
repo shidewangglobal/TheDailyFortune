@@ -83,6 +83,117 @@ function writeInviteCodesToDisk(codes) {
   fs.writeFileSync(INVITE_CODES_FILE, JSON.stringify(codes, null, 2), "utf8");
 }
 
+let supabaseClientMemo = undefined;
+function getSupabaseClient() {
+  const url = String(process.env.SUPABASE_URL || "").trim();
+  const key = String(
+    process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+  ).trim();
+  if (!url || !key) return null;
+  if (supabaseClientMemo === undefined) {
+    try {
+      const { createClient } = require("@supabase/supabase-js");
+      supabaseClientMemo = createClient(url, key, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      });
+    } catch (e) {
+      console.error("[supabase] init", e);
+      supabaseClientMemo = null;
+    }
+  }
+  return supabaseClientMemo || null;
+}
+
+function resolveInviteKeyForProfile(code) {
+  const q = normalizeInviteCodeServer(code);
+  if (!q) return null;
+  const merged = mergeInviteCodesFromDisk();
+  const keys = Object.keys(merged);
+  const key = keys.find((k) => normalizeInviteCodeServer(k) === q);
+  if (!key) return null;
+  const meta = merged[key];
+  if (!meta || typeof meta !== "object") return null;
+  return key;
+}
+
+function customerRowToProfile(row) {
+  if (!row) return null;
+  return {
+    name: row.name || "",
+    contact: row.contact || "",
+    birthDay: row.birth_day || "",
+    birthMonth: row.birth_month || "",
+    birthYear: row.birth_year || "",
+    birthHour: row.birth_hour || "",
+    updatedAt: row.updated_at || null,
+  };
+}
+
+function customerProfileLoadHandler(req, res) {
+  const supa = getSupabaseClient();
+  if (!supa) {
+    return send(
+      res,
+      503,
+      JSON.stringify({ ok: false, error: "not_configured" }),
+      "application/json; charset=utf-8"
+    );
+  }
+  readJsonBody(req)
+    .then(async (body) => {
+      const key = resolveInviteKeyForProfile(body && body.code);
+      if (!key) return send(res, 200, JSON.stringify({ ok: false }));
+      const { data, error } = await supa
+        .from("customer_profiles")
+        .select("*")
+        .eq("invite_code", key)
+        .maybeSingle();
+      if (error) {
+        console.error("[customer-profile/load]", error);
+        return send(res, 500, JSON.stringify({ ok: false, error: "db_error" }), "application/json; charset=utf-8");
+      }
+      if (!data) return send(res, 200, JSON.stringify({ ok: true, profile: null }));
+      send(res, 200, JSON.stringify({ ok: true, profile: customerRowToProfile(data) }), "application/json; charset=utf-8");
+    })
+    .catch(() => send(res, 400, JSON.stringify({ ok: false }), "application/json; charset=utf-8"));
+}
+
+function customerProfileSaveHandler(req, res) {
+  const supa = getSupabaseClient();
+  if (!supa) {
+    return send(
+      res,
+      503,
+      JSON.stringify({ ok: false, error: "not_configured" }),
+      "application/json; charset=utf-8"
+    );
+  }
+  readJsonBody(req)
+    .then(async (body) => {
+      const key = resolveInviteKeyForProfile(body && body.code);
+      if (!key) {
+        return send(res, 403, JSON.stringify({ ok: false, error: "invalid_invite" }), "application/json; charset=utf-8");
+      }
+      const row = {
+        invite_code: key,
+        name: String((body && body.name) || "").slice(0, 500),
+        contact: String((body && body.contact) || "").slice(0, 500),
+        birth_day: String((body && body.birthDay) || "").slice(0, 50),
+        birth_month: String((body && body.birthMonth) || "").slice(0, 50),
+        birth_year: String((body && body.birthYear) || "").slice(0, 50),
+        birth_hour: String((body && body.birthHour) || "").slice(0, 100),
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supa.from("customer_profiles").upsert(row, { onConflict: "invite_code" });
+      if (error) {
+        console.error("[customer-profile/save]", error);
+        return send(res, 500, JSON.stringify({ ok: false, error: "db_error" }), "application/json; charset=utf-8");
+      }
+      send(res, 200, JSON.stringify({ ok: true }), "application/json; charset=utf-8");
+    })
+    .catch(() => send(res, 400, JSON.stringify({ ok: false }), "application/json; charset=utf-8"));
+}
+
 function inviteLookupHandler(req, res) {
   readJsonBody(req)
     .then((body) => {
@@ -279,6 +390,15 @@ const server = http.createServer((req, res) => {
   }
   if (req.method === "POST" && pathOnly === "/api/invite-codes") {
     inviteCodesPostHandler(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && pathOnly === "/api/customer-profile/load") {
+    customerProfileLoadHandler(req, res);
+    return;
+  }
+  if (req.method === "POST" && pathOnly === "/api/customer-profile/save") {
+    customerProfileSaveHandler(req, res);
     return;
   }
 

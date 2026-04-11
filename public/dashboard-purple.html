@@ -909,6 +909,33 @@
       "Nhâm Tuất":"Đại Hải Thủy","Quý Hợi":"Đại Hải Thủy"
     };
     function customerProfileKey(invite) { return "daily_fortune_customer_profile_" + invite; }
+    function customerProfileDoneKey(invite) { return "daily_fortune_customer_profile_done_" + invite; }
+    async function mergeRemoteCustomerProfileToLocal(invite) {
+      try {
+        var r = await fetch("/api/customer-profile/load", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ code: invite })
+        });
+        var j = await r.json();
+        if (!j || !j.ok || !j.profile) return;
+        var p = j.profile;
+        localStorage.setItem(
+          customerProfileKey(invite),
+          JSON.stringify({
+            name: p.name || "",
+            contact: p.contact || "",
+            birthDay: p.birthDay || "",
+            birthMonth: p.birthMonth || "",
+            birthYear: p.birthYear || "",
+            birthHour: p.birthHour || "",
+            updatedAt: p.updatedAt || new Date().toISOString()
+          })
+        );
+        if (p.name && p.birthYear) localStorage.setItem(customerProfileDoneKey(invite), "1");
+      } catch (_) {}
+    }
     function usageKey(invite) { return "daily_fortune_usage_total_" + invite; }
     function getDailyUsage(invite) {
       var n = parseInt(localStorage.getItem(usageKey(invite)) || "0", 10);
@@ -954,6 +981,7 @@
         localStorage.setItem("daily_fortune_customer_invite", serverKey);
         invite = serverKey;
       }
+      await mergeRemoteCustomerProfileToLocal(invite);
       var profile = getCustomerProfile(invite);
       if (!profile || !profile.birthYear || !profile.name) {
         location.href = "/profile.html?role=customer&next=" + encodeURIComponent(location.pathname + location.search);

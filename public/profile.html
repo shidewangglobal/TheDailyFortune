@@ -1019,6 +1019,55 @@
         return raw ? JSON.parse(raw) : null;
       } catch (_) { return null; }
     }
+    function profileFromServerPayload(p) {
+      if (!p) return null;
+      return {
+        name: p.name || "",
+        contact: p.contact || "",
+        birthDay: p.birthDay || "",
+        birthMonth: p.birthMonth || "",
+        birthYear: p.birthYear || "",
+        birthHour: p.birthHour || "",
+        updatedAt: p.updatedAt || new Date().toISOString()
+      };
+    }
+    function mergeRemoteCustomerProfile(inviteKey) {
+      return fetch("/api/customer-profile/load", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ code: inviteKey })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (!j || !j.ok || !j.profile) return null;
+          var prof = profileFromServerPayload(j.profile);
+          saveCustomerProfile(inviteKey, prof);
+          if (prof.name && prof.birthYear) markProfileDone(inviteKey);
+          syncCustomerProfileToAdminStore(inviteKey, prof);
+          return prof;
+        })
+        .catch(function () { return null; });
+    }
+    function pushCustomerProfileToServer(inviteKey, profile) {
+      return fetch("/api/customer-profile/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          code: inviteKey,
+          name: profile.name,
+          contact: profile.contact,
+          birthDay: profile.birthDay,
+          birthMonth: profile.birthMonth,
+          birthYear: profile.birthYear,
+          birthHour: profile.birthHour
+        })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { return !!(j && j.ok); })
+        .catch(function () { return false; });
+    }
     function setCustomerStatus(msg) { document.getElementById("customerStatus").textContent = msg; }
     function showCustomerPanels(show) {
       document.getElementById("customerProfileSection").classList.toggle("hidden", !show);
@@ -1078,6 +1127,12 @@
         refreshContinue(inviteKey);
         setCustomerStatus(isProfileDone(inviteKey) ? "Đã mở hồ sơ của bạn." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
         refreshTopbarNav("customer");
+        mergeRemoteCustomerProfile(inviteKey).then(function (prof) {
+          if (!prof) return;
+          fillCustomerForm(prof);
+          refreshContinue(inviteKey);
+          setCustomerStatus(isProfileDone(inviteKey) ? "Đã mở hồ sơ của bạn." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+        });
       }
       (async function hydrateCustomerEntry() {
         var savedInvite = localStorage.getItem("daily_fortune_customer_invite") || "";
@@ -1091,6 +1146,12 @@
             showCustomerPanels(true);
             refreshContinue(sk);
             setCustomerStatus(isProfileDone(sk) ? "Đã mở hồ sơ. Bạn có thể vào Dashboard." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+            var rmSk = await mergeRemoteCustomerProfile(sk);
+            if (rmSk) {
+              fillCustomerForm(rmSk);
+              refreshContinue(sk);
+              setCustomerStatus(isProfileDone(sk) ? "Đã mở hồ sơ. Bạn có thể vào Dashboard." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+            }
           }
         }
         var codeFromUrl = (params.get("code") || "").trim();
@@ -1104,6 +1165,12 @@
             showCustomerPanels(true);
             refreshContinue(uk);
             setCustomerStatus(isProfileDone(uk) ? "Đã mở hồ sơ của bạn." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+            var rmUk = await mergeRemoteCustomerProfile(uk);
+            if (rmUk) {
+              fillCustomerForm(rmUk);
+              refreshContinue(uk);
+              setCustomerStatus(isProfileDone(uk) ? "Đã mở hồ sơ của bạn." : "Lần đầu với mã này: vui lòng nhập hồ sơ và bấm Lưu.");
+            }
           }
         }
         refreshTopbarNav("customer");
@@ -1121,7 +1188,7 @@
         var birthHour = (document.getElementById("customerHour").value || "").trim();
         if (!name) return setCustomerStatus("Vui lòng nhập họ và tên.");
         if (!birthYear) return setCustomerStatus("Năm sinh là bắt buộc.");
-        saveCustomerProfile(inviteKey, {
+        var payload = {
           name: name,
           contact: contact,
           birthDay: birthDay,
@@ -1129,7 +1196,8 @@
           birthYear: birthYear,
           birthHour: birthHour,
           updatedAt: new Date().toISOString()
-        });
+        };
+        saveCustomerProfile(inviteKey, payload);
         syncCustomerProfileToAdminStore(inviteKey, {
           name: name,
           contact: contact,
@@ -1140,7 +1208,12 @@
         });
         markProfileDone(inviteKey);
         refreshContinue(inviteKey);
-        setCustomerStatus("Đã lưu hồ sơ. Bây giờ bạn có thể bấm \"Bắt đầu trải nghiệm\".");
+        var synced = await pushCustomerProfileToServer(inviteKey, payload);
+        setCustomerStatus(
+          synced
+            ? "Đã lưu hồ sơ (đã đồng bộ cloud). Bạn có thể bấm \"Bắt đầu trải nghiệm\"."
+            : "Đã lưu trên trình duyệt. Cloud chưa nhận — kiểm tra SUPABASE_URL và secret trên Render, rồi bấm Lưu lại."
+        );
         refreshTopbarNav("customer");
       });
     }
