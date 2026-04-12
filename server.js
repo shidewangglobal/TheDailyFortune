@@ -336,6 +336,19 @@ function isTransientGeminiError(err) {
   );
 }
 
+/** Tiếng Việt: đếm từ theo khoảng trắng không đủ; thêm số ký tự và số đoạn để bắt bản một câu. */
+function fortuneAnalysisTooShort(text) {
+  const t = String(text || "").trim();
+  if (!t) return true;
+  const words = t.split(/\s+/).filter(Boolean).length;
+  const noSpaceLen = t.replace(/\s/g, "").length;
+  const paragraphs = t
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 40).length;
+  return words < 140 || noSpaceLen < 720 || paragraphs < 2;
+}
+
 async function callGeminiAnalysis(payload) {
   if (process.env.GEMINI_PLAYBOOK_HOT_RELOAD === "1") {
     loadGeminiPlaybook();
@@ -355,7 +368,9 @@ async function callGeminiAnalysis(payload) {
     "Do not output bullet list.",
     "Focus on relation between day/hour and owner fate for this specific event.",
     "Do NOT use generic sales templates if topic is not sales.",
-    "Output MUST be 260-400 Vietnamese words (three continuous paragraphs).",
+    "Output MUST be 260-400 Vietnamese words as THREE separate paragraphs (blank line between paragraphs).",
+    "FORBIDDEN: a single-sentence reply, a single short paragraph, or ending the whole text with only (~NN%) or (NN%) as the main content.",
+    "You may mention a rough alignment percentage ONCE in the last sentence of the third paragraph if it fits — it must not replace full reasoning.",
     "Weave topic_verbatim into natural prose — do NOT wrap the whole topic in « », quotes, or parentheses as a title.",
     "If the situation is sensitive (health, missing person, accident, welfare): avoid business jargon (chốt, deal, pipeline); prefer neutral words: liên hệ, phối hợp, an toàn, kiểm chứng.",
     "",
@@ -365,8 +380,8 @@ async function callGeminiAnalysis(payload) {
   const buildBody = (textPrompt) => ({
     contents: [{ role: "user", parts: [{ text: textPrompt }] }],
     generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 2048,
+      temperature: 0.72,
+      maxOutputTokens: 4096,
       thinkingConfig: {
         thinkingBudget: 0
       }
@@ -413,25 +428,25 @@ async function callGeminiAnalysis(payload) {
   };
 
   let text = await generate(prompt);
-  const words = text.split(/\s+/).filter(Boolean).length;
-  if (words < 180) {
+  if (fortuneAnalysisTooShort(text)) {
     const retryPrompt = [
-      "Bạn vừa trả lời quá ngắn và chưa đạt chuẩn dashboard.",
-      "Hãy viết lại thành 3 đoạn văn liên tục, 260-400 từ, có chiều sâu, không bullet, không lặp.",
-      "Bắt buộc giải thích rõ: quẻ chính, mệnh ngày/gia chủ, giờ thuận-tránh và hành động cụ thể.",
+      "Bản trước KHÔNG ĐẠT: quá ngắn hoặc chỉ một đoạn / một câu.",
+      "Viết lại ĐÚNG 3 đoạn tiếng Việt (mỗi đoạn 4-8 câu), để một dòng trống giữa các đoạn, tổng 260-400 từ.",
+      "Đoạn 1: bối cảnh ngày–tháng–giờ (lục cung, mệnh ngày so với gia chủ).",
+      "Đoạn 2: diễn giải vì sao ảnh hưởng tới chủ đề topic_verbatim (không liệt kê bullet).",
+      "Đoạn 3: hành động cụ thể, giờ nên dùng/tránh; có thể kết bằng một cụm mức thuận (~NN%) ở cuối đoạn 3.",
+      "Không markdown, không tiêu đề, không JSON.",
       "",
       "INPUT JSON:",
       JSON.stringify(payload)
     ].join("\n");
     const retryText = await generate(retryPrompt);
-    if (retryText.split(/\s+/).filter(Boolean).length > words) text = retryText;
+    if (!fortuneAnalysisTooShort(retryText) || retryText.length > text.length) text = retryText;
   }
-  const sentenceEnd = /[.!?…]$/.test(text);
-  if (!sentenceEnd && text.split(/\s+/).filter(Boolean).length < 120) {
+  if (fortuneAnalysisTooShort(text)) {
     const finalizePrompt = [
-      "Nội dung trước bị cụt. Hãy viết lại trọn vẹn 3 đoạn tiếng Việt, không bullet, 260-400 từ.",
-      "Bám đúng dữ liệu input, tập trung lý giải vì sao và gợi ý hành động phù hợp.",
-      "",
+      "Vẫn quá ngắn. Bắt buộc: 3 đoạn văn xuôi, tổng tối thiểu ~220 từ tiếng Việt, không bullet.",
+      "Mở đầu mỗi đoạn bằng ý mới; không lặp nguyên câu từ bản trước.",
       "INPUT JSON:",
       JSON.stringify(payload)
     ].join("\n");
