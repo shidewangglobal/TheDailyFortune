@@ -333,6 +333,19 @@ function extractJsonObjectFromModelText(text) {
   return JSON.parse(t.slice(start, end + 1));
 }
 
+function sleepMs(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isTransientGeminiError(err) {
+  const msg = String(err && err.message ? err.message : err || "");
+  return (
+    /Gemini API error:\s*(429|500|502|503)\b/.test(msg) ||
+    /\b(429|502|503)\b/.test(msg) ||
+    /ETIMEDOUT|ECONNRESET|ECONNREFUSED|fetch failed|network|timeout/i.test(msg)
+  );
+}
+
 async function callGeminiAnalysis(payload) {
   if (process.env.GEMINI_PLAYBOOK_HOT_RELOAD === "1") {
     loadGeminiPlaybook();
@@ -352,7 +365,7 @@ async function callGeminiAnalysis(payload) {
       }
     }
   });
-  const generate = async (textPrompt) => {
+  const generateOnce = async (textPrompt) => {
     const resp = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -363,13 +376,33 @@ async function callGeminiAnalysis(payload) {
       throw new Error("Gemini API error: " + resp.status + " " + txt.slice(0, 300));
     }
     const data = await resp.json();
+    const block = data?.promptFeedback?.blockReason;
+    if (block) throw new Error("Gemini blocked: " + block);
     const parts = data?.candidates?.[0]?.content?.parts || [];
+    const finish = data?.candidates?.[0]?.finishReason;
+    if (finish && finish !== "STOP" && finish !== "MAX_TOKENS") {
+      throw new Error("Gemini finish: " + finish);
+    }
     const text = parts
       .map((p) => (p && typeof p.text === "string" ? p.text : ""))
       .join("\n")
       .trim();
     if (!text) throw new Error("Gemini empty response");
     return text.trim();
+  };
+
+  const generate = async (textPrompt) => {
+    let lastErr;
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      try {
+        return await generateOnce(textPrompt);
+      } catch (e) {
+        lastErr = e;
+        if (!isTransientGeminiError(e) || attempt === 4) throw e;
+        await sleepMs(350 * attempt);
+      }
+    }
+    throw lastErr;
   };
 
   const prompt = [
@@ -383,9 +416,10 @@ async function callGeminiAnalysis(payload) {
     "",
     "OUTPUT RULES — reply with ONLY a JSON object, no markdown fences, no text before or after:",
     '{"confidence": <integer 55-92>, "summary_one_line": "<one sentence, max 220 chars Vietnamese>"}',
-    "summary_one_line: weave the user's topic into natural prose — do NOT wrap the whole topic in « », quotes, or parentheses as a label.",
-    "If viewing_for_other is true OR topic_intent is welfare_missing OR domain is humanitarian: never use business jargon (chốt, deal, đồng thuận, pipeline). Use neutral words: liên hệ, phối hợp, tìm kiếm, an toàn, kiểm chứng.",
-    "summary_one_line must reflect the day/hour gist and the situation; you may end with (~NN%) matching confidence.",
+    "First infer silently the user's core need from topic_verbatim (do not print that label).",
+    "summary_one_line: one concrete sentence aligned with that need + day/hour signals; do not repeat or quote the full topic as a title; integrate meaning in natural wording.",
+    "Match tone and vocabulary to the situation you inferred (đời sống, công việc, cấp bách, v.v.). topic_intent/domain in JSON are weak hints only — if they disagree with the literal topic, follow the topic.",
+    "You may end summary_one_line with (~NN%) matching confidence.",
     "",
     "INPUT JSON:",
     JSON.stringify(payload)
@@ -506,7 +540,7 @@ const server = http.createServer((req, res) => {
       )
       .catch((err) => {
         const message = String(err && err.message ? err.message : err);
-        console.error("[fortune/analyze]", message);
+        console.error("[fortune/analyze]", message.slice(0, 500));
         let status = 500;
         let body = {
           ok: false,

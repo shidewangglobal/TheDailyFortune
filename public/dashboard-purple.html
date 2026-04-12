@@ -1096,6 +1096,33 @@
       await sleepMs(900);
       return recordInviteUsageOnServer(code);
     }
+    async function fetchFortuneAnalyzeWithRetry(payload) {
+      var last = { resp: null, json: {} };
+      for (var attempt = 1; attempt <= 3; attempt++) {
+        try {
+          var resp = await fetch("/api/fortune/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          var json = await resp.json().catch(function () { return {}; });
+          last = { resp: resp, json: json };
+          if (resp.ok && json && json.ok) return last;
+          if (attempt < 3 && (resp.status === 429 || resp.status === 502 || resp.status === 503 || resp.status === 504)) {
+            await sleepMs(350 * attempt);
+            continue;
+          }
+          return last;
+        } catch (_) {
+          if (attempt < 3) {
+            await sleepMs(350 * attempt);
+            continue;
+          }
+          throw _;
+        }
+      }
+      return last;
+    }
     function setDailyUsage(invite, value) {
       localStorage.setItem(usageKey(invite), String(value));
     }
@@ -1410,7 +1437,6 @@
     }
     function detectDomain(topic) {
       var t = (topic || "").toLowerCase();
-      if (/(lạc|mất\s*tích|mất\s*liên\s*lạc|tìm\s*người|tìm\s*con|nhập\s*viện|bệnh\s*viện|tai\s*nạn|khẩn\s*cấp|an\s*sinh)/.test(t)) return "humanitarian";
       if (/(nhà|đất|bđs|bất động sản|mua bán|xem nhà)/.test(t)) return "real_estate";
       if (/(công việc|sales|khách|hợp đồng|chốt|bán)/.test(t)) return "sales";
       if (/(hôn|cưới|tình cảm|gia đình)/.test(t)) return "relationship";
@@ -1418,7 +1444,6 @@
     }
     function domainLabelVi(domain) {
       var map = {
-        humanitarian: "An sinh / tìm kiếm / khẩn cấp",
         real_estate: "Bất động sản / tài sản",
         sales: "Kinh doanh / chào hàng",
         relationship: "Tình duyên / gia đình",
@@ -1426,20 +1451,8 @@
       };
       return map[domain] || "Chung";
     }
-    /** Gợi ý cho model — ưu tiên nghĩa đen chủ đề, tránh đổi «khách» thành «đối tác». */
+    /** Gợi ý yếu cho model; trọng tâm nên do model suy từ topic_verbatim. */
     function inferTopicIntent(topic) {
-      var t = (topic || "").toLowerCase();
-      if (/(khách hàng|khách hang|tìm khách|tim khach|lead|pipeline|prospect|chào hàng|chao hang|telesales|cold call|goi lanh|gọi lạnh)/.test(t)) {
-        return "customer_acquisition";
-      }
-      if (/(đối tác|doi tac|hợp tác|hop tac|liên kết|lien ket|partnership|jv|liên doanh|lien doanh)/.test(t)) {
-        return "partner_seek";
-      }
-      if (/(kiện|kien|pháp lý|phap ly|luật su|luat su|tòa|toa án)/.test(t)) return "legal";
-      if (/(đi xa|di xa|xuất hành|xuat hanh|du lịch|du lich)/.test(t)) return "travel";
-      if (/(nhà|đất|bđs|bất động sản|mua bán nhà|mua biet)/.test(t)) return "real_estate";
-      if (/(hôn|cưới|tình duyên|nhân duyên)/.test(t)) return "marriage";
-      if (/(lạc|mất\s*tích|mất\s*liên|tìm\s*người|tìm\s*con|gia\s*đình\s*tìm|nhập\s*viện|bệnh\s*viện|tai\s*nạn)/.test(t)) return "welfare_missing";
       return "general";
     }
     function buildContextGuidanceVi(opts) {
@@ -1459,41 +1472,21 @@
       var tactics = [];
       var hardHours = (ctx.cautions || []).slice(0, 2).join(", ");
       var goodHours = (ctx.positives || []).slice(0, 3).join(", ");
-      var hum = !!ctx.humanitarian;
-      if (hum) {
-        if (ctx.status === "can_tranh_chot") {
-          tactics.push("Ưu tiên an toàn và kênh chính thống; tránh tự hành động rủi ro một mình khi tin còn mơ hồ.");
-          tactics.push("Ghi rõ thời điểm, địa điểm, người liên quan — mỗi manh mối nên có nguồn kiểm được.");
-          if (hardHours) tactics.push("Nếu phải di chuyển hoặc liên hệ, có thể tránh các khung giờ " + hardHours + " (dễ hụt nhịp hoặc hiểu lầm).");
-        } else if (ctx.status === "kho_chot") {
-          tactics.push("Có thể có tin rời rạc; kiểm chứng chéo trước khi tin hoặc chuyển tiền cho người lạ.");
-          tactics.push("Chia nhỏ việc: liên hệ song song vài kênh (người thân, cơ quan, nơi từng đi qua) thay vì chờ một cuộc gọi duy nhất.");
-          if (goodHours) tactics.push("Các khung " + goodHours + " thuận hơn để gọi điện, nhờ người quen hỏi giùm hoặc điều phối tìm kiếm.");
-        } else {
-          tactics.push("Dấu hiệu khí trời có phần thuận cho phối hợp tìm kiếm; vẫn giữ bình tĩnh, tránh hy vọng vội rồi thất vọng.");
-          tactics.push("Nên lập nhịp liên lạc ngắn (vài giờ một lần) thay vì một lần dồn hết — dễ bỏ sót manh mối.");
-          if (goodHours) tactics.push("Ưu tiên hành động thực tế (gọi, nhờ hỏi, kiểm tra địa điểm) trong các khung " + goodHours + ".");
-        }
-        if (/(Ngày|Giờ) khắc gia chủ|hao sức/.test(ctx.relationDay + " " + ctx.relationHour)) {
-          tactics.push("Thể trạng tinh thần dễ căng; nghỉ ngắn, nhờ người tin cậy đồng hành khi quyết định quan trọng.");
-        }
-        return tactics.slice(0, 3);
-      }
       if (ctx.status === "can_tranh_chot") {
-        tactics.push("Không đặt mục tiêu chốt ngay; ưu tiên giữ nhịp đối thoại và lấy thêm dữ kiện quyết định.");
-        if (/Xích Khẩu|Không Vong/.test(ctx.hourCung)) tactics.push("Giờ hiện tại có tính va chạm/hụt nhịp, nên chuyển sang bước xác nhận nhu cầu thay vì tranh luận điều kiện.");
-        if (hardHours) tactics.push("Nếu có thể đổi giờ, tránh các khung " + hardHours + " để giảm rủi ro đứt mạch.");
+        tactics.push("Không ép quyết định gấp; ưu tiên làm rõ thông tin và giữ nhịp trao đổi.");
+        if (/Xích Khẩu|Không Vong/.test(ctx.hourCung)) tactics.push("Giờ hiện tại dễ va chạm hoặc hụt nhịp — nên xác nhận lại ý định thay vì tranh luận dài.");
+        if (hardHours) tactics.push("Nếu có thể đổi giờ, có thể tránh các khung " + hardHours + " để giảm rủi ro hiểu lầm.");
       } else if (ctx.status === "kho_chot") {
-        tactics.push("Mục tiêu phù hợp là chốt mềm: thống nhất bước tiếp theo thay vì ép quyết định cuối ngay lập tức.");
-        tactics.push("Tách buổi trao đổi thành 2 nhịp: xác nhận nhu cầu -> xác nhận điều kiện, tránh dồn quá nhiều luận điểm một lúc.");
-        if (goodHours) tactics.push("Ưu tiên xử lý điểm chốt chính ở các khung " + goodHours + ".");
+        tactics.push("Thích hợp thống nhất bước tiếp theo thay vì ép quyết định dứt điểm ngay.");
+        tactics.push("Chia nhỏ: làm rõ nhu cầu → điều kiện → việc cần làm, tránh dồn quá nhiều ý một lúc.");
+        if (goodHours) tactics.push("Có thể ưu tiên các khung " + goodHours + " cho việc cần phối hợp.");
       } else {
-        tactics.push("Có thể tiến hành chốt có điều kiện, nhưng vẫn giữ phương án dự phòng để tránh đảo chiều cuối buổi.");
-        tactics.push("Giữ cấu trúc trao đổi ngắn gọn: lợi ích cốt lõi -> điều kiện -> hành động kế tiếp.");
-        if (goodHours) tactics.push("Chọn một trong các khung " + goodHours + " để tăng xác suất đồng thuận.");
+        tactics.push("Có thể tiến hành khi đã rõ điều kiện; giữ phương án dự phòng nếu tình hình đổi.");
+        tactics.push("Trao đổi ngắn gọn: điểm chính → điều kiện → việc kế tiếp.");
+        if (goodHours) tactics.push("Có thể chọn một trong các khung " + goodHours + " để phối hợp thuận hơn.");
       }
       if (/(Ngày|Giờ) khắc gia chủ|hao sức/.test(ctx.relationDay + " " + ctx.relationHour)) {
-        tactics.push("Do thế ngũ hành đang hao lực, nên giảm tốc độ nói và tăng thời lượng lắng nghe phản hồi thực tế.");
+        tactics.push("Thế ngũ hành đang hao lực: nên đi chậm, lắng nghe nhiều hơn và tránh quyết định vội.");
       }
       return tactics.slice(0, 3);
     }
@@ -1519,8 +1512,7 @@
         relationDay: input.relationDay,
         relationHour: input.relationHour,
         positives: input.positives || [],
-        cautions: input.cautions || [],
-        humanitarian: domain === "humanitarian"
+        cautions: input.cautions || []
       });
       return {
         status: status,
@@ -1691,27 +1683,6 @@
       renderBySelectedDate(ymdToDate(ymd.y, ymd.m, ymd.d));
     }
 
-    function fortuneIntroForUser(json) {
-      if (!json || typeof json !== "object") {
-        return "Lớp luận giải AI (Gemini) chưa trả lời. Phần dưới là tóm tắt nội bộ theo lịch — vẫn dùng được.";
-      }
-      var c = json.errorCode || "";
-      if (c === "gemini_not_configured" || c === "gemini_error") {
-        if (c === "gemini_not_configured") {
-          return (
-            json.error ||
-            "Chưa bật Gemini trên máy chủ (thiếu GEMINI_API_KEY). Phần dưới là tóm tắt nội bộ theo lịch — vẫn dùng được."
-          );
-        }
-        return (
-          json.error ||
-          "Gemini tạm lỗi hoặc quá tải. Phần dưới là tóm tắt nội bộ theo lịch — thử bấm Khám phá lại sau vài phút."
-        );
-      }
-      var t = (json.error && String(json.error).trim()) || "";
-      if (t && t.length <= 200 && !/GEMINI|SUPABASE|Render|API_KEY|admin_pin/i.test(t)) return t;
-      return "Không nhận được câu luận từ AI. Phần dưới là tóm tắt nội bộ theo lịch.";
-    }
     async function renderSummary(consume) {
       if (consume === undefined) consume = false;
       var resultEl = document.getElementById("dailyResult");
@@ -1814,24 +1785,12 @@
       try {
         userContextNote = (localStorage.getItem("daily_fortune_user_context_note") || "").trim();
       } catch (_) {}
-      var humTopic = engine.domain === "humanitarian";
-      var statusLabelVi = humTopic
-        ? (engine.status === "thanh_cong_mot_phan"
-          ? "có thể có manh mối hoặc tiến triển từng phần — vẫn kiểm chứng kỹ"
-          : engine.status === "can_tranh_chot"
-            ? "nên thận trọng, ưu tiên an toàn và kênh chính thống"
-            : "nên đi chậm, phối hợp nhiều kênh tìm kiếm")
-        : (engine.status === "thanh_cong_mot_phan"
+      var statusLabelVi =
+        engine.status === "thanh_cong_mot_phan"
           ? "có thể tiến hành có điều kiện"
           : engine.status === "can_tranh_chot"
-            ? "nên tránh chốt vội"
-            : "cần đi chậm và quan sát thêm");
-      var topicPhrase =
-        topicLine === "chưa nhập cụ thể"
-          ? "chưa ghi rõ chủ đề"
-          : viewingForOther
-            ? "đang xem giúp người khác về: " + topicLine
-            : topicLine;
+            ? "nên tránh quyết định gấp"
+            : "cần đi chậm và quan sát thêm";
       var shortLocalLine =
         dayDate.toLocaleDateString("vi-VN") +
         " (" +
@@ -1840,8 +1799,7 @@
         dayCung +
         "+" +
         hourCung +
-        " · " +
-        topicPhrase +
+        (viewingForOther ? " · góc nhìn người khác" : "") +
         " — " +
         statusLabelVi +
         " (~" +
@@ -1892,14 +1850,11 @@
         confidence: engine.confidence
       };
       try {
-        var resp = await fetch("/api/fortune/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(analysisPayload)
-        });
-        var json = await resp.json().catch(function () { return {}; });
+        var fr = await fetchFortuneAnalyzeWithRetry(analysisPayload);
+        var resp = fr.resp;
+        var json = fr.json || {};
         var outLine = shortLocalLine;
-        if (resp.ok && json && json.ok) {
+        if (resp && resp.ok && json && json.ok) {
           var gLine = (json.summary_one_line || json.analysis || "").trim();
           var gConf = parseInt(json.confidence, 10);
           if (gLine) outLine = gLine;
@@ -1907,20 +1862,14 @@
             outLine = outLine.replace(/\s*\.\s*$/, "") + " (~" + gConf + "%).";
           }
         } else {
-          resultEl.innerText = fortuneIntroForUser(json) + "\n\n" + shortLocalLine;
+          resultEl.innerText = shortLocalLine;
           if (consume) resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
           await syncCustomerServerState();
           return;
         }
         resultEl.innerText = outLine;
       } catch (err) {
-        var raw = (err && err.message) ? err.message : "";
-        var msg =
-          /failed to fetch|networkerror|load failed/i.test(raw)
-            ? "Trình duyệt không gọi được máy chủ (mạng yếu, offline, hoặc sai địa chỉ trang). Kiểm tra wifi/4G rồi thử lại."
-            : "Lỗi kết nối tạm thời — thử lại sau ít phút.";
-        resultEl.innerText =
-          "Không gửi được yêu cầu tới lớp luận giải AI. Phần dưới vẫn là tóm tắt nội bộ theo lịch.\n\n" + shortLocalLine + "\n\n" + msg;
+        resultEl.innerText = shortLocalLine;
       }
       if (consume) resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
       await syncCustomerServerState();
