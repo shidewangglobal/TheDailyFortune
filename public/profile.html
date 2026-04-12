@@ -339,6 +339,9 @@
 
   <div class="wrap">
     <div id="adminView">
+    <div id="adminLoginNote" class="card hidden" style="border-color: rgba(168, 85, 247, 0.45); margin-bottom: 14px;">
+      <p class="sub" style="margin: 0; line-height: 1.55; font-size: 14px;"></p>
+    </div>
     <section class="card">
       <h1>Profile Gia chủ</h1>
       <p class="sub">Tạo nhiều profile, chọn profile mặc định để dùng khi khám phá.</p>
@@ -1102,6 +1105,24 @@
       dash.classList.remove("hidden");
       dash.setAttribute("href", "/dashboard-purple.html?role=customer");
     }
+    function refreshAdminLoginNote() {
+      var box = document.getElementById("adminLoginNote");
+      if (!box) return;
+      var p = box.querySelector("p");
+      if (!p) return;
+      box.classList.add("hidden");
+      fetch("/api/public-config")
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (j) {
+          if (!j || !j.ok || !j.adminLoginRequired) return;
+          p.textContent =
+            "Hai luồng tách bạch: (1) Khách — trang chủ, nhập mã mời. (2) Admin — /admin, nhập mã quản trị (trùng biến ADMIN_PIN trên Render). " +
+            "Mã quản trị là một, server một; nhưng mỗi trình duyệt / điện thoại phải làm luồng (2) một lần (cookie không đồng bộ giữa máy). " +
+            "Đã vào admin trên máy tính mà điện thoại chỉ thấy 2 mặc định → mở /admin trên điện thoại, nhập cùng mã quản trị, rồi «Tải mã từ server».";
+          box.classList.remove("hidden");
+        })
+        .catch(function () {});
+    }
     function setModeUI(mode) {
       var isCustomer = mode === "customer";
       document.getElementById("adminView").classList.toggle("hidden", isCustomer);
@@ -1110,6 +1131,7 @@
         ? "🪷 Daily fortune · Hồ sơ khách hàng"
         : "🪷 Daily fortune · Quản lý Profile";
       refreshTopbarNav(mode);
+      if (!isCustomer) refreshAdminLoginNote();
     }
     function customerKey(invite) { return "daily_fortune_customer_profile_" + invite; }
     function customerDoneKey(invite) { return "daily_fortune_customer_profile_done_" + invite; }

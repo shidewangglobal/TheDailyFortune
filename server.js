@@ -463,7 +463,7 @@ const server = http.createServer((req, res) => {
         }
         const pin = String((body && body.pin) || "").trim();
         if (pin !== expected) {
-          return send(res, 401, JSON.stringify({ ok: false, error: "Mã PIN không đúng." }), "application/json; charset=utf-8");
+          return send(res, 401, JSON.stringify({ ok: false, error: "Mã quản trị không đúng." }), "application/json; charset=utf-8");
         }
         res.writeHead(200, {
           "Content-Type": "application/json; charset=utf-8",
@@ -503,6 +503,7 @@ const server = http.createServer((req, res) => {
       200,
       JSON.stringify({
         ok: true,
+        adminLoginRequired: adminProtectionActive(),
         supportEmail: String(process.env.SUPPORT_EMAIL || "").trim(),
         supportPhone: String(process.env.SUPPORT_PHONE || "").trim(),
         supportWhatsappUrl: String(process.env.SUPPORT_WHATSAPP_URL || "").trim(),
