@@ -1064,15 +1064,17 @@
     var DASHBOARD_ROLE_KEY = "daily_fortune_dashboard_role";
     function getMode() {
       var params = new URLSearchParams(window.location.search);
-      var q = params.get("entry") || params.get("role");
+      var q = (params.get("entry") || params.get("role") || "").trim();
       if (q === "admin") return "admin";
       if (q === "customer") return "customer";
       if ((params.get("code") || "").trim()) return "customer";
+      if (params.get("profile") === "1" || params.get("stay") === "1") return "customer";
+      var savedInvite = localStorage.getItem("daily_fortune_customer_invite") || "";
+      if (savedInvite) return "customer";
       var lastDash = localStorage.getItem(DASHBOARD_ROLE_KEY) || "";
       if (lastDash === "admin") return "admin";
       if (lastDash === "customer") return "customer";
-      var savedInvite = localStorage.getItem("daily_fortune_customer_invite") || "";
-      return savedInvite ? "customer" : "admin";
+      return "admin";
     }
     function getActiveCustomerInviteKey() {
       var raw = localStorage.getItem("daily_fortune_customer_invite") || "";

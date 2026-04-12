@@ -730,7 +730,7 @@
     <div class="topbar">
       <div class="brand">Daily fortune</div>
       <div class="top-actions">
-        <a id="profileNavLink" href="/profile.html">Quản lý Profile</a>
+        <a id="profileNavLink" href="/profile.html?role=customer&amp;profile=1">Hồ sơ / Profile</a>
       </div>
     </div>
 
@@ -1229,14 +1229,16 @@
       if (roleParam !== "customer") return true;
       var invite = localStorage.getItem("daily_fortune_customer_invite") || "";
       if (!invite) {
-        location.href = "/profile.html?role=customer&next=" + encodeURIComponent(location.pathname + location.search);
+        location.href =
+          "/profile.html?role=customer&profile=1&next=" + encodeURIComponent(location.pathname + location.search);
         return false;
       }
       var codes = getInviteCodes();
       if (!codes[invite]) {
         var serverKey = await lookupInviteFromServer(invite);
         if (!serverKey) {
-          location.href = "/profile.html?role=customer&next=" + encodeURIComponent(location.pathname + location.search);
+          location.href =
+            "/profile.html?role=customer&profile=1&next=" + encodeURIComponent(location.pathname + location.search);
           return false;
         }
         localStorage.setItem("daily_fortune_customer_invite", serverKey);
@@ -1245,7 +1247,8 @@
       await mergeRemoteCustomerProfileToLocal(invite);
       var profile = getCustomerProfile(invite);
       if (!profile || !profile.birthYear || !profile.name) {
-        location.href = "/profile.html?role=customer&next=" + encodeURIComponent(location.pathname + location.search);
+        location.href =
+          "/profile.html?role=customer&profile=1&next=" + encodeURIComponent(location.pathname + location.search);
         return false;
       }
       customerInviteCode = invite;
@@ -2098,6 +2101,8 @@
       void syncCustomerServerState();
     });
 
+    updateProfileNavLink();
+
     (async function bootDashboard() {
       await loadPublicConfig();
       var ok = await ensureCustomerAccessAsync();
@@ -2107,7 +2112,6 @@
           localStorage.setItem("daily_fortune_customer_first_dash_" + customerInviteCode, "1");
         } catch (e) {}
       }
-      updateProfileNavLink();
       var today = new Date();
       var initYmd = dateToYMD(today);
       initYmd = normalizeYMD(initYmd.y, initYmd.m, initYmd.d);
