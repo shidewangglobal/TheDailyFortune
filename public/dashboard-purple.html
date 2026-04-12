@@ -761,7 +761,7 @@
               </div>
             </div>
             <div class="energy-analysis-col">
-              <p class="energy-body" id="energyMessage">Chọn ngày và nhập năm sinh gia chủ để xem một dòng gợi ý theo lịch.</p>
+              <p class="energy-body" id="energyMessage">Chọn ngày và nhập năm sinh gia chủ để xem gợi ý nhanh về thuận lợi trong ngày.</p>
               <div class="energy-summary-footer"><span class="seal" id="ownerSeal">Gia chủ</span> Điểm dự báo theo hồ sơ hiện tại</div>
             </div>
           </div>
@@ -1388,29 +1388,33 @@
       };
       return map[cung] || "trung tính";
     }
-    /** Một cụm ngắn kiểu lịch treo tường (không giải thích dài). */
-    function getCungCalendarHint(cung) {
-      var map = {
-        "Đại An": "thuận việc bền, đi chậm",
-        "Lưu Liên": "dễ kéo dài",
-        "Tốc Hỷ": "thuận tin nhanh",
-        "Xích Khẩu": "dễ tranh cãi",
-        "Tiểu Cát": "lợi nhỏ, khá ổn",
-        "Không Vong": "dễ hụt nhịp"
-      };
-      return map[cung] || "bình thường";
-    }
-    function buildShortEnergyLine(dayDate, dayCanChi, dayCung, hourCung, hourIdx, confidence) {
-      var d = dayDate.toLocaleDateString("vi-VN");
-      var dayHint = getCungCalendarHint(dayCung);
-      var hourHint = getCungCalendarHint(hourCung);
-      var label = hours[hourIdx] && hours[hourIdx][0] ? hours[hourIdx][0] : "";
-      var s = d + " (" + dayCanChi + "), quẻ ngày " + dayCung + " — " + dayHint;
-      if (label) {
-        s += "; giờ " + label + " (" + hourCung + ") — " + hourHint;
+    /** Một câu quote thuần ý (không lặp Can Chi/quẻ — đã hiển thị ở chip ngày / chi tiết). */
+    function buildEnergySuccessQuote(engine) {
+      var c = engine.confidence;
+      var s = engine.status;
+      if (s === "thanh_cong_mot_phan") {
+        if (c >= 82) {
+          return "Hôm nay khá thuận để đẩy việc: có thể chủ động liên hệ và chốt bước quan trọng khi đã rõ điều kiện.";
+        }
+        if (c >= 72) {
+          return "Ngày có xu hướng xuôi—hợp mở đầu, đàm phán gọn và tiến bước có kiểm soát.";
+        }
+        return "Có điểm tích cực trong ngày; nên dùng để dọn việc nhỏ và chuẩn bị, tránh ép quyết hết một lúc.";
       }
-      s += ". Điểm " + confidence + "%.";
-      return s;
+      if (s === "can_tranh_chot") {
+        return "Hôm nay dễ căng hoặc thiếu nhịp—nên đi chậm, chia nhỏ việc và tránh quyết định lớn khi còn thiếu tin.";
+      }
+      if (c >= 72) {
+        return "Ngày ổn thường: làm rõ điều kiện trước khi chốt sẽ an toàn hơn là vội vàng.";
+      }
+      return "Ngày không đặc biệt thuận cũng không xấu—phù hợp việc thường nhật; chốt hạ nên để khi mọi thứ đã rõ ràng.";
+    }
+    function buildEnergyPanelMessage(engine) {
+      var quote = buildEnergySuccessQuote(engine);
+      var pct = engine.confidence;
+      var scoreHint =
+        "Điểm " + pct + "%: độ thuận lợi tương đối trong ngày (theo mệnh và giờ đang xem; càng cao càng xuôi—không phải chắc chắn).";
+      return quote + " " + scoreHint;
     }
     function getPairMeaning(dayCung, hourCung) {
       var key = dayCung + "|" + hourCung;
@@ -1543,7 +1547,7 @@
       if (!birth.ok) {
         if (scoreEl) scoreEl.textContent = "—";
         if (msgEl) {
-          msgEl.textContent = "Nhập năm sinh gia chủ (đủ 4 số, 1900–2099) để hiện điểm và dòng gợi ý.";
+          msgEl.textContent = "Nhập năm sinh gia chủ (đủ 4 số, 1900–2099) để hiện điểm và gợi ý thuận lợi.";
         }
         syncOwnerYearGate();
         return;
@@ -1596,14 +1600,7 @@
       );
       if (scoreEl) scoreEl.textContent = engine.confidence + "%";
       if (msgEl) {
-        msgEl.textContent = buildShortEnergyLine(
-          dayDate,
-          dayCanChi,
-          dayCung,
-          hourCung,
-          hourIdxForCalc,
-          engine.confidence
-        );
+        msgEl.textContent = buildEnergyPanelMessage(engine);
       }
       syncOwnerYearGate();
     }
