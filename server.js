@@ -383,7 +383,9 @@ async function callGeminiAnalysis(payload) {
     "",
     "OUTPUT RULES — reply with ONLY a JSON object, no markdown fences, no text before or after:",
     '{"confidence": <integer 55-92>, "summary_one_line": "<one sentence, max 220 chars Vietnamese>"}',
-    "summary_one_line must mention the topic (use topic_verbatim) and the day gist; you may end with (~NN%) matching confidence.",
+    "summary_one_line: weave the user's topic into natural prose — do NOT wrap the whole topic in « », quotes, or parentheses as a label.",
+    "If viewing_for_other is true OR topic_intent is welfare_missing OR domain is humanitarian: never use business jargon (chốt, deal, đồng thuận, pipeline). Use neutral words: liên hệ, phối hợp, tìm kiếm, an toàn, kiểm chứng.",
+    "summary_one_line must reflect the day/hour gist and the situation; you may end with (~NN%) matching confidence.",
     "",
     "INPUT JSON:",
     JSON.stringify(payload)
