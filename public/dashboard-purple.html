@@ -853,6 +853,7 @@
     var totalLimit = 20;
     var INVITE_CODES_KEY = "daily_fortune_invite_codes";
     var DASHBOARD_ROLE_KEY = "daily_fortune_dashboard_role";
+    var SESSION_PROFILE_AUTODASH_DONE = "daily_fortune_sess_profile_autodash_done";
     var roleQuery = new URLSearchParams(window.location.search).get("role") || "";
     var roleParam;
     if (roleQuery === "admin" || roleQuery === "customer") {
@@ -2110,6 +2111,7 @@
       if (roleParam === "customer" && customerInviteCode) {
         try {
           localStorage.setItem("daily_fortune_customer_first_dash_" + customerInviteCode, "1");
+          sessionStorage.setItem(SESSION_PROFILE_AUTODASH_DONE, "1");
         } catch (e) {}
       }
       var today = new Date();

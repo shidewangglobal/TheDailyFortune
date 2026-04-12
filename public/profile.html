@@ -532,7 +532,7 @@
           <a class="btn btn-cta-important hidden" id="goDashboardBtn" href="/dashboard-purple.html?role=customer">Bắt đầu trải nghiệm</a>
         </div>
         <div class="note">
-          Lần đầu với mỗi mã: điền hồ sơ (đặc biệt năm sinh) rồi bấm Lưu. Nút vàng «Bắt đầu trải nghiệm» chỉ gợi ý <strong>một lần</strong> cho tới khi bạn mở Dashboard lần đầu; sau đó dùng «Dashboard» trên thanh trên cùng để quay lại app.
+          Lần đầu trong phiên (tab): nếu hồ sơ đã đủ, hệ thống có thể chuyển bạn sang Dashboard <strong>một lần</strong> để vào app nhanh. Cùng phiên, lần sau mở «Hồ sơ» sẽ <strong>ở lại</strong> trang này (hoặc dùng URL có <code>?profile=1</code>). Nút vàng chỉ hiện tới khi bạn chưa mở Dashboard lần đầu (theo mã).
         </div>
       </section>
 
@@ -1062,6 +1062,20 @@
     });
 
     var DASHBOARD_ROLE_KEY = "daily_fortune_dashboard_role";
+    /** Cùng một tab: sau khi đã auto-chuyển profile→dashboard hoặc đã mở dashboard khách, không auto-chuyển nữa. */
+    var SESSION_PROFILE_AUTODASH_DONE = "daily_fortune_sess_profile_autodash_done";
+    function isProfileAutodashDoneThisSession() {
+      try {
+        return sessionStorage.getItem(SESSION_PROFILE_AUTODASH_DONE) === "1";
+      } catch (e) {
+        return true;
+      }
+    }
+    function markProfileAutodashDoneThisSession() {
+      try {
+        sessionStorage.setItem(SESSION_PROFILE_AUTODASH_DONE, "1");
+      } catch (e) {}
+    }
     function getMode() {
       var params = new URLSearchParams(window.location.search);
       var q = (params.get("entry") || params.get("role") || "").trim();
@@ -1315,6 +1329,7 @@
       var nextUrl = resolveCustomerDashboardUrl(params);
       document.getElementById("goDashboardBtn").setAttribute("href", nextUrl);
       document.getElementById("goDashboardBtn").addEventListener("click", function () {
+        markProfileAutodashDoneThisSession();
         var rawInv = (document.getElementById("inviteCode").value || "").trim();
         var canon = rawInv ? findInviteCodeKey(rawInv) || rawInv : "";
         if (canon) markCustomerDashboardVisited(canon);
@@ -1389,6 +1404,23 @@
           }
         }
         refreshTopbarNav("customer");
+        var forceStayOnProfile = params.get("profile") === "1" || params.get("stay") === "1";
+        if (!forceStayOnProfile && !isProfileAutodashDoneThisSession()) {
+          var storedInv = (localStorage.getItem("daily_fortune_customer_invite") || "").trim();
+          var canonInv = storedInv ? findInviteCodeKey(storedInv) || storedInv : "";
+          var profCheck = canonInv ? loadCustomerProfile(canonInv) : null;
+          if (
+            canonInv &&
+            isProfileDone(canonInv) &&
+            profCheck &&
+            profCheck.birthYear &&
+            profCheck.name
+          ) {
+            markProfileAutodashDoneThisSession();
+            window.location.replace(resolveCustomerDashboardUrl(params));
+            return;
+          }
+        }
       })();
       document.getElementById("customerSaveBtn").addEventListener("click", async function () {
         var invite = (document.getElementById("inviteCode").value || "").trim();
