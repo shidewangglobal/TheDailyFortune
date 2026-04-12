@@ -24,6 +24,10 @@
       --ring: rgba(168, 85, 247, 0.45);
     }
     * { box-sizing: border-box; }
+    html {
+      min-height: 100%;
+      background: linear-gradient(135deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3));
+    }
     body {
       margin: 0;
       color: var(--text);
@@ -33,6 +37,7 @@
         radial-gradient(circle at 80% 20%, rgba(126, 34, 206, 0.30), transparent 35%),
         linear-gradient(135deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3));
       min-height: 100vh;
+      min-height: 100dvh;
       position: relative;
       overflow-x: hidden;
     }
@@ -69,7 +74,7 @@
     .shell {
       width: min(1680px, calc(100vw - 24px));
       margin: 12px auto;
-      padding: 0 6px 24px;
+      padding: 0 6px max(24px, env(safe-area-inset-bottom, 0px));
       position: relative;
       z-index: 1;
     }
@@ -633,7 +638,7 @@
       .daily-ref-card textarea { font-size: 14px; }
     }
     @media (max-width: 920px) {
-      .shell { width: calc(100vw - 12px); padding: 0 2px 16px; margin-top: 8px; }
+      .shell { width: calc(100vw - 12px); padding: 0 2px max(16px, env(safe-area-inset-bottom, 0px)); margin-top: 8px; }
       .topbar { padding: 10px 12px; }
       .brand { font-size: 22px; }
       .card { padding: 12px; }
@@ -705,6 +710,18 @@
     @media (max-width: 420px) {
       .hours-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
+    .quota-banner {
+      margin: 10px 0 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      background: rgba(239, 68, 68, 0.12);
+      color: #fecaca;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .quota-banner.hidden { display: none !important; }
+    .quota-banner a { color: #fde68a; font-weight: 700; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -722,7 +739,7 @@
         <div class="energy-head-inline">
           <div class="energy-success">
             <div class="subtitle">Điểm thành công</div>
-            <div class="num" id="energyScore">85%</div>
+            <div class="num" id="energyScore">—</div>
           </div>
           <div class="energy-date-chip">
             <span id="todayDate">09/04/2026</span>
@@ -810,6 +827,7 @@
         <div class="btn-row">
           <button class="btn primary" id="previewBtn" type="button">Khám phá</button>
         </div>
+        <div id="quotaLockBanner" class="quota-banner hidden" role="status"></div>
       </section>
 
       <section class="card forecast-card">
@@ -836,6 +854,73 @@
     var roleQuery = new URLSearchParams(window.location.search).get("role") || "";
     var roleParam = roleQuery || (localStorage.getItem("daily_fortune_customer_invite") ? "customer" : "admin");
     var customerInviteCode = "";
+    var supportConfig = { supportEmail: "", supportPhone: "", supportWhatsappUrl: "" };
+    function escapeCfg(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+    function escapeCfgAttr(s) {
+      return escapeCfg(s);
+    }
+    async function loadPublicConfig() {
+      try {
+        var r = await fetch("/api/public-config");
+        var j = await r.json();
+        if (j && j.ok) supportConfig = j;
+      } catch (_) {}
+    }
+    function buildSupportLinksHtml() {
+      var parts = [];
+      if (supportConfig.supportEmail) {
+        var em = String(supportConfig.supportEmail).trim();
+        parts.push('<a href="mailto:' + escapeCfgAttr(em) + '">Gửi email</a>');
+      }
+      if (supportConfig.supportPhone) {
+        var rawP = String(supportConfig.supportPhone).trim();
+        var tel = rawP.replace(/\s+/g, "");
+        parts.push('<a href="tel:' + escapeCfgAttr(tel) + '">Gọi ' + escapeCfg(rawP) + "</a>");
+      }
+      if (supportConfig.supportWhatsappUrl) {
+        var u = String(supportConfig.supportWhatsappUrl).trim();
+        parts.push('<a href="' + escapeCfgAttr(u) + '" target="_blank" rel="noopener">Nhắn Zalo / WhatsApp</a>');
+      }
+      if (!parts.length) {
+        return "Liên hệ quản trị viên (admin) để mua thêm lượt hoặc gia hạn mã.";
+      }
+      return "Để mua thêm lượt: " + parts.join(" · ") + ".";
+    }
+    function applyCustomerQuotaLock() {
+      var banner = document.getElementById("quotaLockBanner");
+      var btn = document.getElementById("previewBtn");
+      if (!banner || !btn) return;
+      if (roleParam !== "customer" || !customerInviteCode) {
+        banner.classList.add("hidden");
+        btn.disabled = false;
+        banner.innerHTML = "";
+        return;
+      }
+      var info = getInviteCodes()[customerInviteCode] || {};
+      if (info.tier === "admin") {
+        banner.classList.add("hidden");
+        btn.disabled = false;
+        banner.innerHTML = "";
+        return;
+      }
+      var limit = Number.isFinite(parseInt(info.totalLimit, 10)) ? parseInt(info.totalLimit, 10) : totalLimit;
+      var used = getInviteUsageDisplay(customerInviteCode);
+      if (used >= limit) {
+        banner.classList.remove("hidden");
+        btn.disabled = true;
+        banner.innerHTML = "<strong>Đã hết " + limit + " lượt miễn phí.</strong> " + buildSupportLinksHtml();
+      } else {
+        banner.classList.add("hidden");
+        btn.disabled = false;
+        banner.innerHTML = "";
+      }
+    }
     var DEFAULT_INVITE_CODES = {
       "ADMIN-2026": { tier: "admin" },
       "TEST-2026": { tier: "admin" }
@@ -1093,28 +1178,60 @@
       if (/Thổ/.test(napAm)) return "Thổ";
       return "";
     }
-    function compareElements(ownerEl, dayEl) {
-      if (!ownerEl || !dayEl) return "Chưa đủ dữ liệu để so ngũ hành.";
-      if (ownerEl === dayEl) return "Đồng hành: năng lượng ổn định, dễ giữ nhịp.";
+    function compareElements(ownerEl, otherEl, scopeLabel) {
+      scopeLabel = scopeLabel || "ngày";
+      var cap = function (s) {
+        return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+      };
+      if (!ownerEl || !otherEl) return "Chưa đủ dữ liệu để so ngũ hành.";
+      if (ownerEl === otherEl) return "Đồng hành: năng lượng ổn định, dễ giữ nhịp.";
       var born = {
         "Mộc":"Hỏa","Hỏa":"Thổ","Thổ":"Kim","Kim":"Thủy","Thủy":"Mộc"
       };
       var control = {
         "Mộc":"Thổ","Thổ":"Thủy","Thủy":"Hỏa","Hỏa":"Kim","Kim":"Mộc"
       };
-      if (born[ownerEl] === dayEl) return "Gia chủ sinh cho ngày (" + ownerEl + " sinh " + dayEl + "): dễ hao sức, nên chọn việc trọng điểm.";
-      if (born[dayEl] === ownerEl) return "Ngày sinh cho gia chủ (" + dayEl + " sinh " + ownerEl + "): thuận lực, dễ có trợ lực.";
-      if (control[ownerEl] === dayEl) return "Gia chủ khắc ngày (" + ownerEl + " khắc " + dayEl + "): có thể chủ động dẫn dắt nhưng dễ căng.";
-      if (control[dayEl] === ownerEl) return "Ngày khắc gia chủ (" + dayEl + " khắc " + ownerEl + "): nên đi chậm, ưu tiên an toàn.";
+      if (born[ownerEl] === otherEl) {
+        return "Gia chủ sinh cho " + scopeLabel + " (" + ownerEl + " sinh " + otherEl + "): dễ hao sức, nên chọn việc trọng điểm.";
+      }
+      if (born[otherEl] === ownerEl) {
+        return cap(scopeLabel) + " sinh cho gia chủ (" + otherEl + " sinh " + ownerEl + "): thuận lực, dễ có trợ lực.";
+      }
+      if (control[ownerEl] === otherEl) {
+        return "Gia chủ khắc " + scopeLabel + " (" + ownerEl + " khắc " + otherEl + "): có thể chủ động dẫn dắt nhưng dễ căng.";
+      }
+      if (control[otherEl] === ownerEl) {
+        return cap(scopeLabel) + " khắc gia chủ (" + otherEl + " khắc " + ownerEl + "): nên đi chậm, ưu tiên an toàn.";
+      }
       return "Quan hệ ngũ hành trung tính.";
     }
     function getCungClassByName(cungName) {
       var idx = cungs.indexOf(cungName);
       return idx >= 0 ? cls[idx] : "";
     }
+    /** Năm sinh gia chủ (ô Năm sinh) — bắt buộc để mọi tính theo mệnh hoạt động. */
+    function isValidOwnerBirthYear() {
+      var y = (document.getElementById("ownerYear").value || "").trim();
+      var n = parseInt(y, 10);
+      var ok = y.length >= 4 && Number.isFinite(n) && n >= 1900 && n <= 2099;
+      return { ok: ok, str: y, num: n };
+    }
+    function syncOwnerYearGate() {
+      var v = isValidOwnerBirthYear();
+      var btn = document.getElementById("previewBtn");
+      if (btn) {
+        btn.disabled = !v.ok;
+        btn.title = v.ok ? "" : "Nhập năm sinh gia chủ: đủ 4 số (1900–2099). Không có năm sinh hợp lệ thì phân tích và điểm năng lượng không chạy.";
+      }
+    }
     function updateForecastFocusLine(ymd) {
       var el = document.getElementById("forecastFocusReadonly");
       if (!el) return;
+      var birth = isValidOwnerBirthYear();
+      if (!birth.ok) {
+        el.textContent = "Nhập năm sinh gia chủ (4 số, 1900–2099) để bật gợi ý giờ theo mệnh và lục cung.";
+        return;
+      }
       var focusHour = (document.getElementById("focusHour").value || "").trim();
       if (focusHour === "") {
         el.textContent = "Giờ xem: Tự gợi ý theo giờ tốt trong ngày.";
@@ -1183,9 +1300,10 @@
       return 0;
     }
     function relationScore(text) {
+      if (!text || /Chưa đủ dữ liệu/.test(text)) return 0;
       if (/thuận lực|trợ lực|Đồng hành/.test(text)) return 2;
-      if (/khắc/.test(text) && /Ngày khắc gia chủ/.test(text)) return -2;
-      if (/khắc/.test(text) && /Gia chủ khắc ngày/.test(text)) return -1;
+      if (/khắc/.test(text) && /khắc gia chủ/.test(text)) return -2;
+      if (/khắc/.test(text) && /Gia chủ khắc/.test(text)) return -1;
       if (/hao sức/.test(text)) return -1;
       return 0;
     }
@@ -1250,16 +1368,22 @@
         tactics.push("Giữ cấu trúc trao đổi ngắn gọn: lợi ích cốt lõi -> điều kiện -> hành động kế tiếp.");
         if (goodHours) tactics.push("Chọn một trong các khung " + goodHours + " để tăng xác suất đồng thuận.");
       }
-      if (/Ngày khắc gia chủ|hao sức/.test(ctx.relationDay + " " + ctx.relationHour)) {
+      if (/(Ngày|Giờ) khắc gia chủ|hao sức/.test(ctx.relationDay + " " + ctx.relationHour)) {
         tactics.push("Do thế ngũ hành đang hao lực, nên giảm tốc độ nói và tăng thời lượng lắng nghe phản hồi thực tế.");
       }
       return tactics.slice(0, 3);
     }
-    function buildEngineV2(input) {
+    function buildEngineV2(input, opts) {
+      opts = opts || {};
       var quPair = input.dayCung + "|" + input.hourCung;
       var pairMeaning = getPairMeaning(input.dayCung, input.hourCung);
       var special = getSpecialPattern(input.ownerCanChi, input.dayCanChi, input.hourCanChi);
-      var base = scoreHourByCung(input.hourCung) + relationScore(input.relationDay) + relationScore(input.relationHour);
+      var dayAdj = input.dayCung ? Math.round(scoreHourByCung(input.dayCung) * 0.45) : 0;
+      var monthAdj = input.monthCung ? Math.round(scoreHourByCung(input.monthCung) * 0.35) : 0;
+      var rel = relationScore(input.relationDay) + relationScore(input.relationHour);
+      var cungLayer = scoreHourByCung(input.hourCung) + dayAdj + monthAdj;
+      /** Panel năng lượng: ưu tiên lớp Can Chi năm sinh (lục thập hoa giáp) so ngày/giờ; lục cung là tinh chỉnh. */
+      var base = opts.yearFirstEnergy ? (rel + Math.round(cungLayer * 0.52)) : (cungLayer + rel);
       var status = "kho_chot";
       if (base >= 2) status = "thanh_cong_mot_phan";
       if (base <= -2) status = "can_tranh_chot";
@@ -1282,6 +1406,84 @@
         tactics: tactics,
         quPair: quPair
       };
+    }
+    function updateEnergySuccessPanel() {
+      var scoreEl = document.getElementById("energyScore");
+      var msgEl = document.getElementById("energyMessage");
+      var raw = getYMDFrom("global");
+      if (!raw.m || !raw.d || !raw.y) {
+        if (scoreEl) scoreEl.textContent = "—";
+        syncOwnerYearGate();
+        return;
+      }
+      var birth = isValidOwnerBirthYear();
+      if (!birth.ok) {
+        if (scoreEl) scoreEl.textContent = "—";
+        if (msgEl) {
+          msgEl.textContent =
+            "Ưu tiên năm sinh gia chủ: nhập đủ 4 số (1900–2099) vào ô «Năm sinh (*)». Không có năm sinh hợp lệ thì điểm năng lượng, gợi ý giờ theo mệnh và phân tích không được tính — lục thập hoa giáp và so ngũ hành cần gốc năm sinh.";
+        }
+        syncOwnerYearGate();
+        return;
+      }
+      var ymd = normalizeYMD(raw.y, raw.m, raw.d);
+      var dayDate = ymdToDate(ymd.y, ymd.m, ymd.d);
+      var dayCanChi = getCanChiByDate(dayDate);
+      var dayNapAm = getNapAm(dayCanChi);
+      var ownerYearNum = birth.num;
+      var ownerCanChi = getCanChiByYear(ownerYearNum);
+      var ownerNapAm = ownerCanChi ? getNapAm(ownerCanChi) : "";
+      var ownerEl = getElement(ownerNapAm);
+      var dayEl = getElement(dayNapAm);
+      var relationDay = compareElements(ownerEl, dayEl, "ngày");
+      var monthCung = getMonthCung(ymd.m);
+      var dayCung = getDayCung(ymd.m, ymd.d);
+      var focusHour = (document.getElementById("focusHour").value || "").trim();
+      var hourIdxForCalc = focusHour !== "" ? parseInt(focusHour, 10) : new Date().getHours() % 12;
+      if (!Number.isFinite(hourIdxForCalc) || hourIdxForCalc < 0 || hourIdxForCalc > 11) {
+        hourIdxForCalc = new Date().getHours() % 12;
+      }
+      var hourCung = getHourCungByInput(ymd.m, ymd.d, hourIdxForCalc);
+      var hourCanChi = getHourCanChi(dayCanChi, hourIdxForCalc);
+      var hourNapAm = getNapAm(hourCanChi);
+      var relationHour = compareElements(ownerEl, getElement(hourNapAm), "giờ");
+      var positives = [];
+      var cautions = [];
+      for (var i = 0; i < hours.length; i++) {
+        var hn = getHourCung(i);
+        var slot = hours[i][0] + " (" + hours[i][1] + ")";
+        if (hn === "Tiểu Cát" || hn === "Tốc Hỷ" || hn === "Đại An") positives.push(slot);
+        if (hn === "Không Vong" || hn === "Xích Khẩu") cautions.push(slot);
+      }
+      var topic = (document.getElementById("topic").value || "").trim();
+      var engine = buildEngineV2(
+        {
+          dayCung: dayCung,
+          hourCung: hourCung,
+          monthCung: monthCung,
+          ownerCanChi: ownerCanChi,
+          dayCanChi: dayCanChi,
+          hourCanChi: hourCanChi,
+          relationDay: relationDay,
+          relationHour: relationHour,
+          topic: topic,
+          positives: positives,
+          cautions: cautions
+        },
+        { yearFirstEnergy: true }
+      );
+      if (scoreEl) scoreEl.textContent = engine.confidence + "%";
+      if (msgEl) {
+        var sp = getSpecialPattern(ownerCanChi, dayCanChi, hourCanChi);
+        msgEl.textContent =
+          "Gốc năm sinh (lục thập hoa giáp): " + ownerCanChi + " (" + ownerNapAm + "). So ngũ hành với ngày " + dayCanChi + " và giờ " + hourCanChi + ": " +
+          relationDay + " / " + relationHour +
+          ". Lục cung trong ngày: tháng " + monthCung + ", quẻ ngày " + dayCung + ", giờ đang xem " + hourCung + " — " +
+          engine.pairMeaning +
+          (sp ? " " + sp : "") +
+          " Điểm " + engine.confidence + "% ưu tiên thế mệnh–ngày/giờ; lục cung tinh chỉnh thêm (cùng hướng barem phân tích).";
+      }
+      syncOwnerYearGate();
     }
     function compactHourJudgement(list, maxItems) {
       return list.slice(0, maxItems).map(function (x) { return x.slot + " (" + x.cung + ")"; }).join("; ");
@@ -1351,6 +1553,7 @@
       document.getElementById("forecastDateReadonly").textContent = "Đang xem cho ngày: " + date.toLocaleDateString("vi-VN");
       renderHours(date);
       updateForecastFocusLine(ymd);
+      updateEnergySuccessPanel();
     }
     function applyDateFrom(prefix) {
       var rawText = getRawYMDFrom(prefix);
@@ -1369,13 +1572,19 @@
     async function renderSummary(consume) {
       if (consume === undefined) consume = false;
       var resultEl = document.getElementById("dailyResult");
-      if (consume) resultEl.innerText = "Đang phân tích...";
       var ownerYear = (document.getElementById("ownerYear").value || "").trim();
       var hasParticipant = document.getElementById("hasParticipant").checked;
       var pYear = (document.getElementById("pYear").value || "").trim();
       var role = (document.getElementById("participantRole").value || "").trim();
       var topic = (document.getElementById("topic").value || "").trim();
       var focusHour = (document.getElementById("focusHour").value || "").trim();
+      if (!ownerYear) return (resultEl.innerHTML = "Vui lòng nhập năm sinh Gia chủ (bắt buộc).");
+      var ownerYearNum = parseInt(ownerYear, 10);
+      if (!ownerYearNum || ownerYear.length < 4 || ownerYearNum < 1900 || ownerYearNum > 2099) {
+        return (resultEl.innerHTML = "Năm sinh gia chủ cần đủ 4 số (ví dụ: 1989).");
+      }
+      if (hasParticipant && !pYear) return (resultEl.innerHTML = "Vui lòng nhập năm sinh người tham gia (bắt buộc khi chọn Có).");
+      if (consume) resultEl.innerText = "Đang phân tích...";
       if (consume && customerInviteCode) {
         var codeInfo = getInviteCodes()[customerInviteCode] || {};
         var tier = codeInfo.tier;
@@ -1400,12 +1609,6 @@
           }
         }
       }
-      if (!ownerYear) return resultEl.innerHTML = "Vui lòng nhập năm sinh Gia chủ (bắt buộc).";
-      var ownerYearNum = parseInt(ownerYear, 10);
-      if (!ownerYearNum || ownerYear.length < 4 || ownerYearNum < 1900 || ownerYearNum > 2099) {
-        return resultEl.innerHTML = "Năm sinh gia chủ cần đủ 4 số (ví dụ: 1989).";
-      }
-      if (hasParticipant && !pYear) return resultEl.innerHTML = "Vui lòng nhập năm sinh người tham gia (bắt buộc khi chọn Có).";
       var who = selectedTarget === "owner" ? "gia chủ" : "người khác";
       var p = hasParticipant ? "Có người tham gia (" + (role || "chưa ghi vai trò") + "), năm sinh " + pYear : "Không có người tham gia";
       var ymd = getYMDFrom("global");
@@ -1416,14 +1619,14 @@
       var ownerNapAm = ownerCanChi ? getNapAm(ownerCanChi) : "";
       var ownerEl = getElement(ownerNapAm);
       var dayEl = getElement(dayNapAm);
-      var relation = compareElements(ownerEl, dayEl);
+      var relation = compareElements(ownerEl, dayEl, "ngày");
       var monthCung = getMonthCung(ymd.m);
       var dayCung = getDayCung(ymd.m, ymd.d);
       var hourIdxForCalc = focusHour !== "" ? parseInt(focusHour, 10) : new Date().getHours() % 12;
       var hourCung = getHourCungByInput(ymd.m, ymd.d, hourIdxForCalc);
       var hourCanChi = getHourCanChi(dayCanChi, hourIdxForCalc);
       var hourNapAm = getNapAm(hourCanChi);
-      var relationHour = compareElements(ownerEl, getElement(hourNapAm));
+      var relationHour = compareElements(ownerEl, getElement(hourNapAm), "giờ");
       var positives = [];
       var cautions = [];
       var hourDetails = [];
@@ -1462,6 +1665,7 @@
       var engine = buildEngineV2({
         dayCung: dayCung,
         hourCung: hourCung,
+        monthCung: monthCung,
         ownerCanChi: ownerCanChi,
         dayCanChi: dayCanChi,
         hourCanChi: hourCanChi,
@@ -1587,6 +1791,7 @@
       }
       if (consume) resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
       updateUsageReadonly();
+      applyCustomerQuotaLock();
     }
 
     function loadActiveProfileToForm() {
@@ -1621,7 +1826,10 @@
         var cy = p.birthYear ? getCanChiByYear(parseInt(p.birthYear, 10)) : "";
         var na = cy ? getNapAm(cy) : "";
         document.getElementById("ownerProfileLabel").textContent = (p.name || "Gia chủ") + (na ? (" - " + na) : "") + " (tham chiếu hồ sơ)";
-      } catch (_) {}
+      } catch (_) {
+      } finally {
+        updateEnergySuccessPanel();
+      }
     }
     function clearOtherTargetForm() {
       document.getElementById("ownerName").value = "";
@@ -1631,6 +1839,7 @@
       document.getElementById("ownerYear").value = "";
       document.getElementById("ownerSeal").textContent = "Khách";
       document.getElementById("ownerProfileLabel").textContent = "Người khác (nhập tạm, không lưu hồ sơ)";
+      updateEnergySuccessPanel();
     }
 
     function syncParticipantUI() {
@@ -1679,6 +1888,7 @@
       var canchi = next.birthYear ? getCanChiByYear(parseInt(next.birthYear, 10)) : "";
       var napam = canchi ? getNapAm(canchi) : "";
       document.getElementById("ownerProfileLabel").textContent = (next.name || "Gia chủ") + (napam ? (" - " + napam) : "") + " (tham chiếu hồ sơ)";
+      updateEnergySuccessPanel();
       return true;
     }
 
@@ -1697,18 +1907,23 @@
         if (selectedTarget === "owner") loadActiveProfileToForm();
         else clearOtherTargetForm();
         renderSummary();
+        syncOwnerYearGate();
       });
     });
     document.getElementById("previewBtn").addEventListener("click", async function () {
       var btn = document.getElementById("previewBtn");
       btn.disabled = true;
-      try { await renderSummary(true); }
-      finally { btn.disabled = false; }
+      try {
+        await renderSummary(true);
+      } finally {
+        syncOwnerYearGate();
+      }
     });
     document.getElementById("hasParticipant").addEventListener("change", syncParticipantUI);
     document.getElementById("focusHour").addEventListener("change", function () {
       var ymd = getYMDFrom("global");
       updateForecastFocusLine(ymd);
+      updateEnergySuccessPanel();
     });
     ["globalMonth","globalDay","globalYear"].forEach(function (id) {
       var el = document.getElementById(id);
@@ -1734,9 +1949,14 @@
       var el = document.getElementById(id);
       if (!el) return;
       el.addEventListener("input", scheduleAutoSaveOwnerProfile);
+      if (id === "ownerYear") {
+        el.addEventListener("input", updateEnergySuccessPanel);
+        el.addEventListener("input", syncOwnerYearGate);
+      }
     });
 
     (async function bootDashboard() {
+      await loadPublicConfig();
       var ok = await ensureCustomerAccessAsync();
       if (!ok) return;
       updateProfileNavLink();
@@ -1749,7 +1969,10 @@
       syncParticipantUI();
       renderBySelectedDate(ymdToDate(initYmd.y, initYmd.m, initYmd.d));
       updateUsageReadonly();
-      document.getElementById("dailyResult").innerText = "Nhập chủ đề và bấm Khám phá để xem phân tích.";
+      applyCustomerQuotaLock();
+      syncOwnerYearGate();
+      document.getElementById("dailyResult").innerText =
+        "Nhập năm sinh gia chủ (bắt buộc, 4 số), chủ đề, rồi bấm Khám phá để xem phân tích.";
     })();
   </script>
 </body>

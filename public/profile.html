@@ -21,6 +21,10 @@
       --ring: rgba(168, 85, 247, 0.45);
     }
     * { box-sizing: border-box; }
+    html {
+      min-height: 100%;
+      background: linear-gradient(135deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3));
+    }
     body {
       margin: 0;
       font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -30,6 +34,7 @@
         radial-gradient(circle at 80% 20%, rgba(126, 34, 206, 0.30), transparent 35%),
         linear-gradient(135deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3));
       min-height: 100vh;
+      min-height: 100dvh;
     }
     .topbar {
       position: sticky; top: 0; z-index: 20;
@@ -55,7 +60,7 @@
       border: 1px solid rgba(255,255,255,.24); padding: 6px 10px; border-radius: 999px;
       background: linear-gradient(180deg, rgba(168,85,247,.35), rgba(126,34,206,.35));
     }
-    .wrap { width: min(1680px, calc(100vw - 24px)); margin: 14px auto; padding: 0 6px 20px; }
+    .wrap { width: min(1680px, calc(100vw - 24px)); margin: 14px auto; padding: 0 6px max(20px, env(safe-area-inset-bottom, 0px)); }
     .card {
       border: 1px solid rgba(255,255,255,.14);
       border-radius: 14px;
@@ -236,6 +241,13 @@
       accent-color: #c084fc;
       cursor: pointer;
     }
+    .invite-table-hint {
+      display: none;
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 8px;
+      line-height: 1.4;
+    }
     @media (min-width: 1500px) {
       .topbar .inner,
       .wrap { width: calc(100vw - 18px); }
@@ -251,8 +263,35 @@
       .birth { grid-template-columns: auto 1fr; }
       .actions { display: grid; grid-template-columns: 1fr; }
       .btn { width: 100%; }
-      .table-wrap { overflow-x: auto; }
-      table { min-width: 820px; font-size: 14px; }
+      .profiles-scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .profiles-scroll-wrap table { min-width: 720px; font-size: 14px; }
+      .invite-table-hint { display: block; }
+      .invite-codes-wrap { overflow-x: visible; }
+      .invite-codes-wrap table {
+        min-width: 0;
+        width: 100%;
+        font-size: 12px;
+        table-layout: fixed;
+      }
+      .invite-codes-wrap th,
+      .invite-codes-wrap td {
+        padding: 7px 5px;
+        vertical-align: top;
+        word-break: break-word;
+      }
+      .invite-codes-wrap th:nth-child(1),
+      .invite-codes-wrap td:nth-child(1) { width: 22%; }
+      .invite-codes-wrap th:nth-child(2),
+      .invite-codes-wrap td:nth-child(2) { width: 14%; }
+      .invite-codes-wrap th:nth-child(3),
+      .invite-codes-wrap td:nth-child(3) { width: 12%; }
+      .invite-codes-wrap th:nth-child(4),
+      .invite-codes-wrap td:nth-child(4) { width: 12%; }
+      .invite-codes-wrap th:nth-child(5),
+      .invite-codes-wrap td:nth-child(5) { width: 14%; }
+      .invite-codes-wrap th:nth-child(6),
+      .invite-codes-wrap td:nth-child(6) { width: 26%; }
+      .invite-codes-wrap .row-actions { flex-wrap: wrap; }
     }
   </style>
 </head>
@@ -306,7 +345,8 @@
 
     <section class="card">
       <h3>Danh sách profile</h3>
-      <div class="table-wrap">
+      <p class="invite-table-hint">Bảng profile rộng: vuốt <strong>ngang</strong> để xem đủ cột.</p>
+      <div class="table-wrap profiles-scroll-wrap">
         <table>
           <thead>
             <tr>
@@ -395,7 +435,10 @@
         Nếu site có <strong>PIN admin</strong>, bạn cần <a href="/admin-login.html?next=%2Fprofile.html%3Fentry%3Dadmin">đăng nhập admin</a> trước — nếu không, mã chỉ nằm trên trình duyệt của bạn và khách sẽ báo &quot;không hợp lệ&quot;.
         Hồ sơ khách trên cloud (Supabase) dùng đúng <strong>mã đó</strong> làm khóa (<code>invite_code</code>) — không cần thêm cột &quot;mã đang dùng&quot; riêng.
       </p>
-      <div class="table-wrap">
+      <p class="invite-table-hint">
+        <strong>Mã tuỳ chỉnh</strong> nằm trong bảng dưới (dưới hai dòng ADMIN/TEST). Nếu chỉ thấy 2 mặc định: chưa tạo mã sau khi đăng nhập admin, hoặc mã chưa đồng bộ server — đăng nhập PIN rồi bấm &quot;Tạo mã random&quot; lại.
+      </p>
+      <div class="table-wrap invite-codes-wrap">
         <table>
           <thead>
             <tr>

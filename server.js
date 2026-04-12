@@ -451,6 +451,20 @@ const server = http.createServer((req, res) => {
     inviteRecordUsageHandler(req, res);
     return;
   }
+  if (req.method === "GET" && pathOnly === "/api/public-config") {
+    send(
+      res,
+      200,
+      JSON.stringify({
+        ok: true,
+        supportEmail: String(process.env.SUPPORT_EMAIL || "").trim(),
+        supportPhone: String(process.env.SUPPORT_PHONE || "").trim(),
+        supportWhatsappUrl: String(process.env.SUPPORT_WHATSAPP_URL || "").trim(),
+      }),
+      "application/json; charset=utf-8"
+    );
+    return;
+  }
 
   if (req.method === "POST" && pathOnly === "/api/customer-profile/load") {
     customerProfileLoadHandler(req, res);
