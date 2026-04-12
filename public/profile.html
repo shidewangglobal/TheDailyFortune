@@ -456,6 +456,7 @@
       </div>
       <div class="actions">
         <button class="btn primary" id="createInviteBtn" type="button">Tạo mã random</button>
+        <button class="btn soft" id="syncInvitesFromServerBtn" type="button">Tải mã từ server</button>
       </div>
       <div class="status" id="inviteStatus">Sẵn sàng.</div>
       <p class="sub" style="margin-top:8px;font-size:13px;line-height:1.45;opacity:0.92;">
@@ -464,7 +465,7 @@
         Hồ sơ khách trên cloud (Supabase) dùng đúng <strong>mã đó</strong> làm khóa (<code>invite_code</code>) — không cần thêm cột &quot;mã đang dùng&quot; riêng.
       </p>
       <p class="invite-table-hint">
-        <strong>Mã tuỳ chỉnh</strong> nằm trong bảng dưới (dưới hai dòng ADMIN/TEST). Nếu chỉ thấy 2 mặc định: chưa tạo mã sau khi đăng nhập admin, hoặc mã chưa đồng bộ server — đăng nhập PIN rồi bấm &quot;Tạo mã random&quot; lại.
+        <strong>Mã tuỳ chỉnh</strong> nằm trong bảng dưới (dưới hai dòng ADMIN/TEST). Nếu chỉ thấy 2 mặc định — đặc biệt trên điện thoại: thường do <strong>chưa đăng nhập admin PIN trên trình duyệt đó</strong> (cookie khác máy tính); dữ liệu trên server không mất. Đăng nhập admin rồi bấm <strong>«Tải mã từ server»</strong> hoặc tải lại trang. Hoặc chưa tạo mã / chưa đồng bộ — đăng nhập PIN rồi tạo mã lại.
       </p>
       <div class="table-wrap invite-codes-wrap">
         <table>
@@ -643,9 +644,21 @@
     async function hydrateInvitesFromServer() {
       try {
         var r = await fetch("/api/invite-codes", { credentials: "same-origin" });
-        if (!r.ok) return;
+        if (r.status === 403) {
+          setInviteStatus(
+            "Trình duyệt này chưa có phiên admin PIN — server không gửi danh sách mã (dữ liệu trên server vẫn còn). Đăng nhập admin rồi bấm «Tải mã từ server» hoặc tải lại trang."
+          );
+          return;
+        }
+        if (!r.ok) {
+          setInviteStatus("Không đọc được mã từ server (lỗi " + r.status + "). Thử «Tải mã từ server» sau ít giây.");
+          return;
+        }
         var j = await r.json().catch(function () { return {}; });
-        if (!j || !j.ok || !j.codes) return;
+        if (!j || !j.ok || !j.codes) {
+          setInviteStatus("Phản hồi từ server không hợp lệ. Thử lại.");
+          return;
+        }
         var local = {};
         try {
           var raw = localStorage.getItem(INVITE_CODES_KEY);
@@ -657,7 +670,10 @@
         Object.keys(j.codes).forEach(function (k) { merged[k] = j.codes[k]; });
         await setInviteCodes(merged);
         renderInviteCodes();
-      } catch (_) {}
+        setInviteStatus("Đã đồng bộ danh sách mã từ server.");
+      } catch (_) {
+        setInviteStatus("Lỗi khi gọi server. Bấm «Tải mã từ server» để thử lại.");
+      }
     }
     function setInviteStatus(text) {
       var el = document.getElementById("inviteStatus");
@@ -1379,6 +1395,14 @@
           setActiveInviteUI(k);
           refreshContinue(k);
         })();
+      });
+    }
+
+    var syncInvitesFromServerBtn = document.getElementById("syncInvitesFromServerBtn");
+    if (syncInvitesFromServerBtn) {
+      syncInvitesFromServerBtn.addEventListener("click", function () {
+        setInviteStatus("Đang tải danh sách mã…");
+        void hydrateInvitesFromServer();
       });
     }
 
