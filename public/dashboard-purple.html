@@ -529,12 +529,13 @@
       color: #f2e8ff;
       line-height: 1.55;
       font-size: 16px;
+      white-space: pre-wrap;
     }
     .result-box strong { color: #f9e9bd; }
     .analysis-card .result-box {
       margin-top: 0;
-      min-height: 180px;
-      max-height: 260px;
+      min-height: 220px;
+      max-height: 520px;
       overflow: auto;
     }
     .hours-grid {
@@ -620,7 +621,7 @@
       .daily-ref-card textarea,
       .daily-ref-card select { font-size: 15px; }
       .daily-date-readonly { font-size: 13px; margin: 2px 0 6px; }
-      .analysis-card .result-box { font-size: 15px; max-height: 170px; }
+      .analysis-card .result-box { font-size: 15px; max-height: 360px; }
       .participant-box { padding: 6px; }
       .daily-ref-card .btn-row { margin-top: 6px; }
       .daily-ref-card textarea { min-height: 58px; }
@@ -737,7 +738,7 @@
       <div class="energy-head-row">
         <h2 class="title">Năng Lượng Ngày</h2>
         <div class="energy-head-inline">
-          <div class="energy-success">
+          <div class="energy-success" title="Mức thuận lợi tương đối trong ngày theo bản mệnh và giờ đang xem; càng cao càng phù hợp việc cần gặp gỡ, đàm phán — không phải chắc chắn tuyệt đối.">
             <div class="subtitle">Điểm thành công</div>
             <div class="num" id="energyScore">—</div>
           </div>
@@ -761,7 +762,7 @@
               </div>
             </div>
             <div class="energy-analysis-col">
-              <p class="energy-body" id="energyMessage">Chọn ngày và nhập năm sinh gia chủ để xem gợi ý nhanh về thuận lợi trong ngày.</p>
+              <p class="energy-body" id="energyMessage">Chọn ngày và nhập năm sinh gia chủ — một câu gợi ý việc-nên-làm (không lặp Can Chi/quẻ đã hiện ở trên).</p>
               <div class="energy-summary-footer"><span class="seal" id="ownerSeal">Gia chủ</span> Điểm dự báo theo hồ sơ hiện tại</div>
             </div>
           </div>
@@ -1389,8 +1390,8 @@
       return map[cung] || "trung tính";
     }
     /**
-     * Một câu gợi ý việc-nên-làm (không lặp Can Chi/quẻ).
-     * engine.status/% đến từ buildEngineV2: cộng điểm quan hệ ngũ hành (năm sinh vs ngày/giờ) + lục cung tháng/ngày/giờ (+ bonus mẫu đặc biệt).
+     * Một câu gợi ý hành động — không nhắc lại Can Chi, nạp âm, tên quẻ, giờ (đã có trên giao diện).
+     * engine.status/% tính từ buildEngineV2 (ngũ hành + lục cung); % chỉ ở badge «Điểm thành công» (tooltip giải thích).
      */
     function buildEnergySuccessQuote(engine) {
       var c = engine.confidence;
@@ -1413,13 +1414,7 @@
       return "Phù hợp việc thường nhật và công việc đều đặn; giữ việc quan trọng ở mức chuẩn bị hoặc xin ý kiến, chốt dứt điểm khi đã chắc chắn.";
     }
     function buildEnergyPanelMessage(engine) {
-      var quote = buildEnergySuccessQuote(engine);
-      var pct = engine.confidence;
-      var scoreHint =
-        "Điểm " +
-        pct +
-        "% phản ánh mức thuận khi tiến hành và chốt việc trong ngày (theo mệnh và giờ đang xem; càng cao càng phù hợp việc cần gặp gỡ, đàm phán—không phải chắc chắn).";
-      return quote + " " + scoreHint;
+      return buildEnergySuccessQuote(engine);
     }
     function getPairMeaning(dayCung, hourCung) {
       var key = dayCung + "|" + hourCung;
