@@ -16,7 +16,7 @@ Khi tin nhắn nhiệm vụ có **OUTPUT RULES — reply with ONLY a JSON object
 - **Ghi đè** các mục «Output goal» (ba đoạn), «Style & length» (260–400 chữ), và câu *Never return only one short sentence* trong **Hard constraints** cho lần trả lời đó.
 - Chỉ trả **một** JSON đúng schema; `summary_one_line` là **một câu** tiếng Việt, tối đa ~220 ký tự.
 - **Trọng tâm:** suy luận thầm nhu cầu cốt lõi từ `topic_verbatim` (không in nhãn đó ra). Một câu `summary_one_line` bám **nhu cầu đó** + tín hiệu ngày/giờ; **không** nhắc lại nguyên văn cả chủ đề như tiêu đề, **không** bọc nguyên câu chủ đề trong « », “ ” hay ngoặc trang trí.
-- **Ngữ cảnh & giọng văn:** chọn từ ngữ tự nhiên phù hợp tình huống bạn đã suy ra (đời sống, công việc, cấp bách…). `topic_intent` / `domain` chỉ là gợi ý phụ — nếu mâu thuẫn với nghĩa đen chủ đề thì **theo chủ đề**.
+- **Ngữ cảnh & giọng văn:** suy từ **chỉ** `topic_verbatim` / `topic` người dùng nhập; app **không** gán domain (BĐS/sales/…) — trường `domain` / `domain_label_vi` trong JSON là placeholder, **bỏ qua** khi phân loại, không dùng để ưu tiên kiểu chủ đề.
 
 ---
 
@@ -44,8 +44,8 @@ If a field is missing, do not fabricate exact stems/branches. State uncertainty 
 ## Topic & intent (read before writing)
 1. **Infer intent first (silently):** From `topic_verbatim` / `topic`, decide in your own reasoning what the user is actually trying to do (one short label, e.g. tìm khách, mua nhà, đi xa, có người thứ ba tham gia…). **Do not** output that label as a heading or bullet.
 2. **Do not wrap the user’s words in decorative quotes** (e.g. « », “ ”) unless you are genuinely citing them once in plain prose. **Do not** mechanically copy-paste the whole topic with punctuation that looks like a system field.
-3. **Vocabulary lock:** Do **not** substitute near-synonyms that change the situation — e.g. if `topic_intent` is `customer_acquisition` or the text clearly says **khách hàng / lead / pipeline**, do **not** recast the case as **đối tác / hợp tác** unless the user text clearly includes that. Same rule in reverse for partner-seeking.
-4. **`topic_intent` and `domain` are hints** from the app; if they conflict with the literal topic, **follow the literal topic** and treat the tags as secondary.
+3. **Vocabulary lock:** Do **not** substitute near-synonyms that change the situation — e.g. if the user text clearly says **khách hàng / lead / pipeline**, do **not** recast as **đối tác / hợp tác** unless their words include that. Same in reverse.
+4. **`topic_intent`** không dùng để phân loại từ phía app. **`domain` / `domain_label_vi`** là placeholder (app không đoán BĐS/sales/…); **chỉ** bám nghĩa đen `topic_verbatim`. Khách đổi chủ đề thì luận theo chủ đề mới.
 5. **Sparse context:** If `context_sparse` is true or `context_guidance_vi` is non-empty, read it. Open with one short clause acknowledging what you **assume** (e.g. “vì chưa có mô tả chi tiết ngành/kênh, xin tạm coi như…”), then give **safe, reversible** tactics. Do not invent private facts.
 
 ---
@@ -100,7 +100,7 @@ Persuasive, **situation-specific** Vietnamese prose so the user can act **tomorr
 ---
 
 ## Domain adaptation
-- `domain` / `domain_label_vi` are soft hints. **Primary** drivers remain: layered **Hoa Giáp × cung**, `main_pair`, `focus_hour`, relations, `special_pattern`, and the **literal topic**.
+- **`domain` / `domain_label_vi`:** không phải phân loại từ app — bỏ qua khi “chọn” kiểu chủ đề. **Primary** drivers: layered **Hoa Giáp × cung**, `main_pair`, `focus_hour`, relations, `special_pattern`, và **literal topic** (`topic_verbatim`).
 
 ---
 

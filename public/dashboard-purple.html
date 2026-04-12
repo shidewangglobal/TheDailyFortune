@@ -1435,23 +1435,7 @@
       if (/hao sức/.test(text)) return -1;
       return 0;
     }
-    function detectDomain(topic) {
-      var t = (topic || "").toLowerCase();
-      if (/(nhà|đất|bđs|bất động sản|mua bán|xem nhà)/.test(t)) return "real_estate";
-      if (/(công việc|sales|khách|hợp đồng|chốt|bán)/.test(t)) return "sales";
-      if (/(hôn|cưới|tình cảm|gia đình)/.test(t)) return "relationship";
-      return "general";
-    }
-    function domainLabelVi(domain) {
-      var map = {
-        real_estate: "Bất động sản / tài sản",
-        sales: "Kinh doanh / chào hàng",
-        relationship: "Tình duyên / gia đình",
-        general: "Chung"
-      };
-      return map[domain] || "Chung";
-    }
-    /** Gợi ý yếu cho model; trọng tâm nên do model suy từ topic_verbatim. */
+    /** App không đoán domain — luôn để model bám topic_verbatim. */
     function inferTopicIntent(topic) {
       return "general";
     }
@@ -1505,7 +1489,6 @@
       if (base >= 2) status = "thanh_cong_mot_phan";
       if (base <= -2) status = "can_tranh_chot";
       var confidence = Math.max(55, Math.min(92, 68 + base * 6 + (special ? 4 : 0)));
-      var domain = detectDomain(input.topic);
       var tactics = buildSituationalTactics({
         status: status,
         hourCung: input.hourCung,
@@ -1519,7 +1502,6 @@
         confidence: confidence,
         pairMeaning: pairMeaning,
         specialPattern: special,
-        domain: domain,
         tactics: tactics,
         quPair: quPair
       };
@@ -1830,8 +1812,8 @@
         topic: topicLine,
         topic_verbatim: topic,
         topic_intent: topicIntent,
-        domain: engine.domain,
-        domain_label_vi: domainLabelVi(engine.domain),
+        domain: "user_topic",
+        domain_label_vi: "Theo đúng chủ đề người dùng nhập — app không phân loại trước",
         subject_target: who,
         viewing_for_other: viewingForOther,
         participant_present: hasParticipant,

@@ -418,7 +418,7 @@ async function callGeminiAnalysis(payload) {
     '{"confidence": <integer 55-92>, "summary_one_line": "<one sentence, max 220 chars Vietnamese>"}',
     "First infer silently the user's core need from topic_verbatim (do not print that label).",
     "summary_one_line: one concrete sentence aligned with that need + day/hour signals; do not repeat or quote the full topic as a title; integrate meaning in natural wording.",
-    "Match tone and vocabulary to the situation you inferred (đời sống, công việc, cấp bách, v.v.). topic_intent/domain in JSON are weak hints only — if they disagree with the literal topic, follow the topic.",
+    "Match tone and vocabulary to the situation you inferred from topic_verbatim alone. Field topic_intent is not used to classify the case. Fields domain/domain_label_vi are fixed placeholders — do not treat them as app-side categorization; ignore for routing, only follow the user's actual words in topic_verbatim.",
     "You may end summary_one_line with (~NN%) matching confidence.",
     "",
     "INPUT JSON:",
