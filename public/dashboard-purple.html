@@ -1388,32 +1388,37 @@
       };
       return map[cung] || "trung tính";
     }
-    /** Một câu quote thuần ý (không lặp Can Chi/quẻ — đã hiển thị ở chip ngày / chi tiết). */
+    /**
+     * Một câu gợi ý việc-nên-làm (không lặp Can Chi/quẻ).
+     * engine.status/% đến từ buildEngineV2: cộng điểm quan hệ ngũ hành (năm sinh vs ngày/giờ) + lục cung tháng/ngày/giờ (+ bonus mẫu đặc biệt).
+     */
     function buildEnergySuccessQuote(engine) {
       var c = engine.confidence;
       var s = engine.status;
       if (s === "thanh_cong_mot_phan") {
         if (c >= 82) {
-          return "Hôm nay khá thuận để đẩy việc: có thể chủ động liên hệ và chốt bước quan trọng khi đã rõ điều kiện.";
+          return "Hôm nay ưu tiên việc cần đàm phán, gọi điện, gặp trực tiếp hoặc chốt điều khoản khi hai bên đã thống nhất rõ.";
         }
         if (c >= 72) {
-          return "Ngày có xu hướng xuôi—hợp mở đầu, đàm phán gọn và tiến bước có kiểm soát.";
+          return "Hôm nay hợp mở đầu việc mới, họp ngắn và chốt từng bước nhỏ—tránh nhồi quá nhiều quyết định lớn trong một buổi.";
         }
-        return "Có điểm tích cực trong ngày; nên dùng để dọn việc nhỏ và chuẩn bị, tránh ép quyết hết một lúc.";
+        return "Nên dùng ngày để dọn việc phụ, soạn hồ sơ và hẹn lại thời điểm chốt chính—đừng ép ký hay cam kết dứt điểm ngay.";
       }
       if (s === "can_tranh_chot") {
-        return "Hôm nay dễ căng hoặc thiếu nhịp—nên đi chậm, chia nhỏ việc và tránh quyết định lớn khi còn thiếu tin.";
+        return "Nên hoãn chốt hợp đồng hay cam kết lớn; ưu tiên kiểm tra lại số liệu, xác minh thông tin và chia nhỏ việc để tránh hiểu nhầm.";
       }
       if (c >= 72) {
-        return "Ngày ổn thường: làm rõ điều kiện trước khi chốt sẽ an toàn hơn là vội vàng.";
+        return "Hợp bàn tiếp, thống nhất bước kế tiếp và làm rõ điều kiện—chưa cần ép quyết định cuối nếu chưa đủ dữ kiện.";
       }
-      return "Ngày không đặc biệt thuận cũng không xấu—phù hợp việc thường nhật; chốt hạ nên để khi mọi thứ đã rõ ràng.";
+      return "Phù hợp việc thường nhật và công việc đều đặn; giữ việc quan trọng ở mức chuẩn bị hoặc xin ý kiến, chốt dứt điểm khi đã chắc chắn.";
     }
     function buildEnergyPanelMessage(engine) {
       var quote = buildEnergySuccessQuote(engine);
       var pct = engine.confidence;
       var scoreHint =
-        "Điểm " + pct + "%: độ thuận lợi tương đối trong ngày (theo mệnh và giờ đang xem; càng cao càng xuôi—không phải chắc chắn).";
+        "Điểm " +
+        pct +
+        "% phản ánh mức thuận khi tiến hành và chốt việc trong ngày (theo mệnh và giờ đang xem; càng cao càng phù hợp việc cần gặp gỡ, đàm phán—không phải chắc chắn).";
       return quote + " " + scoreHint;
     }
     function getPairMeaning(dayCung, hourCung) {
