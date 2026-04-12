@@ -83,7 +83,10 @@ function mergeInviteCodesFromDisk() {
 function writeInviteCodesToDisk(codes) {
   if (!codes || typeof codes !== "object") throw new Error("Invalid codes");
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(INVITE_CODES_FILE, JSON.stringify(codes, null, 2), "utf8");
+  const payload = JSON.stringify(codes, null, 2);
+  const tmp = path.join(DATA_DIR, "invite_codes.json.tmp." + process.pid);
+  fs.writeFileSync(tmp, payload, "utf8");
+  fs.renameSync(tmp, INVITE_CODES_FILE);
 }
 
 let supabaseClientMemo = undefined;
@@ -320,6 +323,16 @@ function readJsonBody(req) {
   });
 }
 
+function extractJsonObjectFromModelText(text) {
+  let t = String(text || "").trim();
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) t = fence[1].trim();
+  const start = t.indexOf("{");
+  const end = t.lastIndexOf("}");
+  if (start < 0 || end <= start) throw new Error("No JSON object in model output");
+  return JSON.parse(t.slice(start, end + 1));
+}
+
 async function callGeminiAnalysis(payload) {
   if (process.env.GEMINI_PLAYBOOK_HOT_RELOAD === "1") {
     loadGeminiPlaybook();
@@ -329,25 +342,11 @@ async function callGeminiAnalysis(payload) {
     throw new Error("Missing GEMINI_API_KEY");
   }
   const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + encodeURIComponent(apiKey);
-  const prompt = [
-    "SYSTEM PLAYBOOK (MUST FOLLOW):",
-    geminiPlaybook || "Fallback: Write 3 Vietnamese paragraphs, practical and non-generic.",
-    "",
-    "TASK:",
-    "Produce a practical interpretation in Vietnamese using Luc Nham + Hoa Giap input JSON.",
-    "Do not output bullet list.",
-    "Focus on relation between day/hour and owner fate for this specific event.",
-    "Do NOT use generic sales templates if topic is not sales.",
-    "Output MUST be 260-400 Vietnamese words (three continuous paragraphs).",
-    "",
-    "INPUT JSON:",
-    JSON.stringify(payload)
-  ].join("\n");
   const buildBody = (textPrompt) => ({
     contents: [{ role: "user", parts: [{ text: textPrompt }] }],
     generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 2048,
+      temperature: 0.45,
+      maxOutputTokens: 512,
       thinkingConfig: {
         thinkingBudget: 0
       }
@@ -373,33 +372,44 @@ async function callGeminiAnalysis(payload) {
     return text.trim();
   };
 
+  const prompt = [
+    "SYSTEM PLAYBOOK (use for reasoning; output format is strict JSON below, not prose):",
+    geminiPlaybook || "Use Luc Nham + Hoa Giap from payload; stay concrete.",
+    "",
+    "TASK:",
+    "Read INPUT JSON (day/hour cung, Can Chi, relations, topic, status, confidence hint).",
+    "Refine the numeric confidence using the playbook and payload (not random).",
+    "Write ONE short Vietnamese sentence for the dashboard user (no bullets, no second paragraph).",
+    "",
+    "OUTPUT RULES — reply with ONLY a JSON object, no markdown fences, no text before or after:",
+    '{"confidence": <integer 55-92>, "summary_one_line": "<one sentence, max 220 chars Vietnamese>"}',
+    "summary_one_line must mention the topic (use topic_verbatim) and the day gist; you may end with (~NN%) matching confidence.",
+    "",
+    "INPUT JSON:",
+    JSON.stringify(payload)
+  ].join("\n");
+
   let text = await generate(prompt);
-  const words = text.split(/\s+/).filter(Boolean).length;
-  if (words < 180) {
+  let parsed;
+  try {
+    parsed = extractJsonObjectFromModelText(text);
+  } catch (_) {
     const retryPrompt = [
-      "Bạn vừa trả lời quá ngắn và chưa đạt chuẩn dashboard.",
-      "Hãy viết lại thành 3 đoạn văn liên tục, 260-400 từ, có chiều sâu, không bullet, không lặp.",
-      "Bắt buộc giải thích rõ: quẻ chính, mệnh ngày/gia chủ, giờ thuận-tránh và hành động cụ thể.",
+      "Invalid JSON before. Reply with ONLY valid JSON, one line or pretty-print, keys exactly:",
+      '{"confidence":55,"summary_one_line":"..."}',
+      "confidence integer 55-92. summary_one_line max 220 chars Vietnamese.",
       "",
       "INPUT JSON:",
       JSON.stringify(payload)
     ].join("\n");
-    const retryText = await generate(retryPrompt);
-    if (retryText.split(/\s+/).filter(Boolean).length > words) text = retryText;
+    text = await generate(retryPrompt);
+    parsed = extractJsonObjectFromModelText(text);
   }
-  // Avoid returning obviously cut-off one-liners.
-  const sentenceEnd = /[.!?…]$/.test(text);
-  if (!sentenceEnd && text.split(/\s+/).filter(Boolean).length < 120) {
-    const finalizePrompt = [
-      "Nội dung trước bị cụt. Hãy viết lại trọn vẹn 3 đoạn tiếng Việt, không bullet, 260-400 từ.",
-      "Bám đúng dữ liệu input, tập trung lý giải vì sao và gợi ý hành động phù hợp.",
-      "",
-      "INPUT JSON:",
-      JSON.stringify(payload)
-    ].join("\n");
-    text = await generate(finalizePrompt);
-  }
-  return text;
+  const conf = Math.max(55, Math.min(92, Math.round(Number(parsed.confidence))));
+  const line = String(parsed.summary_one_line || "").trim().slice(0, 280);
+  if (!Number.isFinite(conf)) throw new Error("Gemini JSON missing valid confidence");
+  if (!line) throw new Error("Gemini JSON missing summary_one_line");
+  return { confidence: conf, summary_one_line: line };
 }
 
 const server = http.createServer((req, res) => {
@@ -478,7 +488,20 @@ const server = http.createServer((req, res) => {
   if (req.method === "POST" && req.url === "/api/fortune/analyze") {
     readJsonBody(req)
       .then((payload) => callGeminiAnalysis(payload))
-      .then((analysis) => send(res, 200, JSON.stringify({ ok: true, analysis, source: "gemini" }), "application/json; charset=utf-8"))
+      .then((result) =>
+        send(
+          res,
+          200,
+          JSON.stringify({
+            ok: true,
+            source: "gemini",
+            confidence: result.confidence,
+            summary_one_line: result.summary_one_line,
+            analysis: result.summary_one_line
+          }),
+          "application/json; charset=utf-8"
+        )
+      )
       .catch((err) => {
         const message = String(err && err.message ? err.message : err);
         console.error("[fortune/analyze]", message);
@@ -487,13 +510,13 @@ const server = http.createServer((req, res) => {
           ok: false,
           errorCode: "gemini_error",
           error:
-            "Luận giải AI tạm không khả dụng. Phần phân tích nội bộ bên dưới vẫn đầy đủ — vui lòng thử lại sau.",
+            "Luận giải chi tiết tạm chưa sẵn sàng. Bạn vẫn xem được dòng tóm tắt ngay bên dưới — thử lại sau ít phút.",
         };
         if (message.includes("Missing GEMINI_API_KEY")) {
           status = 503;
           body.errorCode = "gemini_not_configured";
           body.error =
-            "Luận giải AI chưa bật trên máy chủ (chưa cấu hình khoá). Bạn vẫn xem được phân tích nội bộ đầy đủ. Admin: thêm biến GEMINI_API_KEY trên Render.";
+            "Tính năng luận giải tăng cường tạm chưa bật. Bạn vẫn xem được tóm tắt bên dưới bình thường.";
         }
         if (process.env.NODE_ENV !== "production") {
           body.debug = message.slice(0, 500);

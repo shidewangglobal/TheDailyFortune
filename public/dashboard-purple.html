@@ -888,9 +888,9 @@
         parts.push('<a href="' + escapeCfgAttr(u) + '" target="_blank" rel="noopener">Nhắn Zalo / WhatsApp</a>');
       }
       if (!parts.length) {
-        return "Liên hệ quản trị viên (admin) để mua thêm lượt hoặc gia hạn mã.";
+        return "Liên hệ người đã cấp mã mời hoặc bộ phận hỗ trợ để gia hạn thêm lượt.";
       }
-      return "Để mua thêm lượt: " + parts.join(" · ") + ".";
+      return "Để thêm lượt: " + parts.join(" · ") + ".";
     }
     function applyCustomerQuotaLock() {
       var banner = document.getElementById("quotaLockBanner");
@@ -946,7 +946,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: raw })
       })
-        .then(function (r) { return r.json(); })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
         .then(function (j) {
           if (!j || !j.ok || !j.key) return "";
           var merged = getInviteCodes();
@@ -1003,7 +1003,7 @@
           credentials: "same-origin",
           body: JSON.stringify({ code: invite })
         });
-        var j = await r.json();
+        var j = await r.json().catch(function () { return {}; });
         if (!j || !j.ok || !j.profile) return;
         var p = j.profile;
         localStorage.setItem(
@@ -1019,7 +1019,32 @@
           })
         );
         if (p.name && p.birthYear) localStorage.setItem(customerProfileDoneKey(invite), "1");
+        try {
+          syncCustomerProfileToAdminStore(invite, {
+            name: p.name || "",
+            contact: p.contact || "",
+            birthDay: p.birthDay || "",
+            birthMonth: p.birthMonth || "",
+            birthYear: p.birthYear || "",
+            birthHour: p.birthHour || ""
+          });
+        } catch (_) {}
       } catch (_) {}
+    }
+    async function syncCustomerServerState() {
+      if (roleParam !== "customer" || !customerInviteCode) {
+        updateUsageReadonly();
+        applyCustomerQuotaLock();
+        return;
+      }
+      try {
+        await lookupInviteFromServer(customerInviteCode);
+      } catch (_) {}
+      try {
+        await mergeRemoteCustomerProfileToLocal(customerInviteCode);
+      } catch (_) {}
+      updateUsageReadonly();
+      applyCustomerQuotaLock();
     }
     function usageKey(invite) { return "daily_fortune_usage_total_" + invite; }
     function getDailyUsage(invite) {
@@ -1057,6 +1082,20 @@
         return { ok: false, network: true };
       }
     }
+    function sleepMs(ms) {
+      return new Promise(function (resolve) {
+        setTimeout(resolve, ms);
+      });
+    }
+    async function recordInviteUsageOnServerWithRetry(code) {
+      var r = await recordInviteUsageOnServer(code);
+      if (r.ok || r.error === "quota_exceeded" || !r.network) return r;
+      await sleepMs(400);
+      r = await recordInviteUsageOnServer(code);
+      if (r.ok || r.error === "quota_exceeded" || !r.network) return r;
+      await sleepMs(900);
+      return recordInviteUsageOnServer(code);
+    }
     function setDailyUsage(invite, value) {
       localStorage.setItem(usageKey(invite), String(value));
     }
@@ -1066,10 +1105,71 @@
         return raw ? JSON.parse(raw) : null;
       } catch (_) { return null; }
     }
+    function syncCustomerProfileToAdminStore(invite, profile) {
+      var list = getProfiles();
+      var marker = "invite:" + invite;
+      var next = {
+        id: marker,
+        name: (profile && profile.name) || "Khách hàng",
+        contact: (profile && profile.contact) || "",
+        birthDay: (profile && profile.birthDay) || "",
+        birthMonth: (profile && profile.birthMonth) || "",
+        birthYear: (profile && profile.birthYear) || "",
+        birthHour: (profile && profile.birthHour) || "",
+        inviteCode: invite,
+        source: "customer_invite",
+        updatedAt: new Date().toISOString()
+      };
+      var found = false;
+      list = list.map(function (p) {
+        if (p.id !== marker) return p;
+        found = true;
+        return next;
+      });
+      if (!found) list.push(next);
+      setProfiles(list);
+    }
+    function pushCustomerProfileToServer(inviteKey, profile) {
+      return fetch("/api/customer-profile/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          code: inviteKey,
+          name: profile.name,
+          contact: profile.contact,
+          birthDay: profile.birthDay,
+          birthMonth: profile.birthMonth,
+          birthYear: profile.birthYear,
+          birthHour: profile.birthHour
+        })
+      })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (j) { return !!(j && j.ok); })
+        .catch(function () { return false; });
+    }
+    var customerCloudSaveTimer = null;
+    function scheduleCustomerProfileCloudSave(profile) {
+      if (roleParam !== "customer" || !customerInviteCode) return;
+      if (customerCloudSaveTimer) clearTimeout(customerCloudSaveTimer);
+      var code = customerInviteCode;
+      var snap = {
+        name: profile.name,
+        contact: profile.contact,
+        birthDay: profile.birthDay,
+        birthMonth: profile.birthMonth,
+        birthYear: profile.birthYear,
+        birthHour: profile.birthHour || ""
+      };
+      customerCloudSaveTimer = setTimeout(function () {
+        customerCloudSaveTimer = null;
+        void pushCustomerProfileToServer(code, snap);
+      }, 1200);
+    }
     function updateUsageReadonly() {
       var el = document.getElementById("dailyUsageReadonly");
       if (!customerInviteCode) {
-        el.textContent = "Admin mode: không giới hạn lượt xem.";
+        el.textContent = "Chế độ không giới hạn lượt xem.";
         return;
       }
       var codeInfo = getInviteCodes()[customerInviteCode] || {};
@@ -1096,8 +1196,6 @@
         }
         localStorage.setItem("daily_fortune_customer_invite", serverKey);
         invite = serverKey;
-      } else {
-        await lookupInviteFromServer(invite);
       }
       await mergeRemoteCustomerProfileToLocal(invite);
       var profile = getCustomerProfile(invite);
@@ -1106,6 +1204,7 @@
         return false;
       }
       customerInviteCode = invite;
+      await syncCustomerServerState();
       return true;
     }
     function updateProfileNavLink() {
@@ -1485,9 +1584,6 @@
       }
       syncOwnerYearGate();
     }
-    function compactHourJudgement(list, maxItems) {
-      return list.slice(0, maxItems).map(function (x) { return x.slot + " (" + x.cung + ")"; }).join("; ");
-    }
     function setAllDateInputs(ymd) {
       document.getElementById("globalMonth").value = ymd.m;
       document.getElementById("globalDay").value = ymd.d;
@@ -1569,6 +1665,23 @@
       renderBySelectedDate(ymdToDate(ymd.y, ymd.m, ymd.d));
     }
 
+    function fortuneIntroForUser(json) {
+      if (!json || typeof json !== "object") {
+        return "Luận giải tăng cường tạm chưa xong. Bạn vẫn xem được dòng tóm tắt phía dưới.";
+      }
+      var c = json.errorCode || "";
+      if (c === "gemini_not_configured" || c === "gemini_error") {
+        return (
+          json.error ||
+          (c === "gemini_not_configured"
+            ? "Tính năng luận giải tăng cường tạm chưa bật. Bạn vẫn xem được tóm tắt phía dưới."
+            : "Luận giải tăng cường tạm gián đoạn. Bạn vẫn xem được tóm tắt phía dưới — thử lại sau ít phút.")
+        );
+      }
+      var t = (json.error && String(json.error).trim()) || "";
+      if (t && t.length <= 200 && !/GEMINI|SUPABASE|Render|API_KEY|admin_pin/i.test(t)) return t;
+      return "Luận giải tăng cường tạm gián đoạn. Bạn vẫn xem được tóm tắt phía dưới.";
+    }
     async function renderSummary(consume) {
       if (consume === undefined) consume = false;
       var resultEl = document.getElementById("dailyResult");
@@ -1590,20 +1703,23 @@
         var tier = codeInfo.tier;
         var limit = Number.isFinite(parseInt(codeInfo.totalLimit, 10)) ? parseInt(codeInfo.totalLimit, 10) : totalLimit;
         if (tier !== "admin") {
-          var rec = await recordInviteUsageOnServer(customerInviteCode);
+          var rec = await recordInviteUsageOnServerWithRetry(customerInviteCode);
           if (rec.ok && !rec.skipped && rec.usageCount != null) {
             patchInviteMetaUsage(customerInviteCode, rec.usageCount);
             setDailyUsage(customerInviteCode, rec.usageCount);
           } else if (rec.error === "quota_exceeded") {
-            updateUsageReadonly();
+            await syncCustomerServerState();
             return (resultEl.innerHTML =
-              "Bạn đã dùng hết " + (rec.limit || limit) + " lượt miễn phí tổng cộng. Vui lòng nâng cấp gói để tiếp tục xem.");
+              "<strong>Bạn đã dùng hết " +
+              (rec.limit || limit) +
+              " lượt miễn phí trên mã này.</strong> " +
+              buildSupportLinksHtml());
           } else {
             var usedLocal = getInviteUsageDisplay(customerInviteCode);
             if (usedLocal >= limit) {
-              updateUsageReadonly();
+              await syncCustomerServerState();
               return (resultEl.innerHTML =
-                "Bạn đã dùng hết " + limit + " lượt miễn phí tổng cộng. Vui lòng nâng cấp gói để tiếp tục xem.");
+                "<strong>Bạn đã dùng hết " + limit + " lượt miễn phí trên mã này.</strong> " + buildSupportLinksHtml());
             }
             setDailyUsage(customerInviteCode, usedLocal + 1);
           }
@@ -1629,37 +1745,11 @@
       var relationHour = compareElements(ownerEl, getElement(hourNapAm), "giờ");
       var positives = [];
       var cautions = [];
-      var hourDetails = [];
-      var hourObjects = [];
       for (var i = 0; i < hours.length; i++) {
         var name = getHourCung(i);
         var slot = hours[i][0] + " (" + hours[i][1] + ")";
         if (name === "Tiểu Cát" || name === "Tốc Hỷ" || name === "Đại An") positives.push(slot);
         if (name === "Không Vong" || name === "Xích Khẩu") cautions.push(slot);
-        hourObjects.push({ slot: slot, cung: name, idx: i });
-        if (name === "Tiểu Cát" || name === "Tốc Hỷ" || name === "Đại An") {
-          hourDetails.push(slot + ": thuận (" + name + ")");
-        } else if (name === "Không Vong" || name === "Xích Khẩu") {
-          hourDetails.push(slot + ": cần tránh (" + name + ")");
-        } else {
-          hourDetails.push(slot + ": trung tính (" + name + ")");
-        }
-      }
-      var suggested = positives.slice(0, 3).join(", ");
-      var avoid = cautions.slice(0, 2).join(", ");
-      var focusLine = "Tự động gợi ý theo giờ tốt trong ngày.";
-      var focusNarrative = "";
-      if (focusHour !== "") {
-        var idx = parseInt(focusHour, 10);
-        var focusName = getHourCung(idx);
-        focusLine = "Khung giờ đã chọn: <strong>" + hours[idx][0] + " (" + hours[idx][1] + ") - " + focusName + "</strong>.";
-        focusNarrative = "Tại giờ " + hours[idx][0] + " (" + hours[idx][1] + "), cung rơi vào " + focusName + ", nghĩa là " + getCungTone(focusName) + ".";
-      } else {
-        focusNarrative = "Nếu chưa cố định giờ, nên ưu tiên các khung " + compactHourJudgement(hourObjects.filter(function (h) {
-          return h.cung === "Tiểu Cát" || h.cung === "Tốc Hỷ" || h.cung === "Đại An";
-        }), 3) + " và tránh các khung " + compactHourJudgement(hourObjects.filter(function (h) {
-          return h.cung === "Không Vong" || h.cung === "Xích Khẩu";
-        }), 2) + ".";
       }
       var topicLine = topic ? topic : "chưa nhập cụ thể";
       var engine = buildEngineV2({
@@ -1694,29 +1784,23 @@
       try {
         userContextNote = (localStorage.getItem("daily_fortune_user_context_note") || "").trim();
       } catch (_) {}
-      var statusText = engine.status === "thanh_cong_mot_phan" ? "khả năng chốt tích cực có điều kiện" :
-        (engine.status === "can_tranh_chot" ? "rủi ro cao, nên tránh ép chốt" : "khó chốt ngay, cần đi theo lộ trình");
       var statusLabelVi = engine.status === "thanh_cong_mot_phan" ? "có thể tiến hành có điều kiện" :
         (engine.status === "can_tranh_chot" ? "nên tránh chốt vội" : "cần đi chậm và quan sát thêm");
-      var paragraph1 = "Ngày " + dayDate.toLocaleDateString("vi-VN") + " tạo quẻ " + dayCung + " + " + hourCung + " (" + engine.quPair + "), hàm ý " +
-        engine.pairMeaning + ". Với chủ đề \"" + topicLine + "\" cho " + who + ", trạng thái dự kiến là " + statusText + " (độ chắc " + engine.confidence + "%). Bối cảnh mệnh ngày là " + dayCanChi + " (" + dayNapAm + "), còn người được xem thuộc " +
-        (ownerCanChi ? (ownerCanChi + " (" + ownerNapAm + ")") : "mệnh chưa xác định") + ", vì vậy tương quan tổng thể là: " + relation + ".";
-      var paragraph2 = "Với chủ đề \"" + topicLine + "\", mức độ thuận nhất đang tập trung ở " + (suggested || "khung giờ chưa nổi trội") +
-        ", trong khi " + (avoid || "các giờ rủi ro thấp") + " nên dùng để quan sát hoặc chuẩn bị hơn là chốt việc. " +
-        focusNarrative + " Nếu bắt buộc làm ở giờ trung tính, nên chuẩn bị sẵn phương án dự phòng và giới hạn kỳ vọng chốt nhanh.";
-      var paragraph3 = "Đối chiếu sâu hơn theo mệnh giờ " + (hourCanChi || "chưa xác định") + (hourCanChi ? (" (" + hourNapAm + ")") : "") +
-        " cho thấy " + relationHour + (engine.specialPattern ? (" " + engine.specialPattern) : "") + " Vì vậy chiến thuật phù hợp là: " +
-        engine.tactics[0] + " " + engine.tactics[1] + " " + engine.tactics[2];
-      var fallbackText = paragraph1 + "\n\n" + paragraph2 + "\n\n" + paragraph3;
-      var reasoningTrace =
-        "Dấu hiệu dùng để luận:\n" +
-        "- Cặp Ngày-Giờ: " + dayCung + "|" + hourCung + " (" + engine.pairMeaning + ")\n" +
-        "- Cung tháng: " + monthCung + "; Cung ngày: " + dayCung + "; Cung giờ: " + hourCung + "\n" +
-        "- Mệnh ngày: " + dayCanChi + " (" + dayNapAm + ", hành " + (dayEl || "chưa rõ") + ")\n" +
-        "- Mệnh giờ: " + (hourCanChi || "chưa xác định") + (hourCanChi ? (" (" + hourNapAm + ", hành " + (getElement(hourNapAm) || "chưa rõ") + ")") : "") + "\n" +
-        "- Mệnh người xem: " + (ownerCanChi || "chưa xác định") + (ownerCanChi ? (" (" + ownerNapAm + ", hành " + (ownerEl || "chưa rõ") + ")") : "") + "\n" +
-        "- Tương quan ngũ hành ngày/người xem: " + relation + "\n" +
-        "- Tương quan ngũ hành giờ/người xem: " + relationHour;
+      var shortLocalLine =
+        dayDate.toLocaleDateString("vi-VN") +
+        " (" +
+        dayCanChi +
+        ") · " +
+        dayCung +
+        "+" +
+        hourCung +
+        " · «" +
+        topicLine +
+        "» — " +
+        statusLabelVi +
+        " (~" +
+        engine.confidence +
+        "%).";
       var analysisPayload = {
         date_view: dayDate.toLocaleDateString("vi-VN"),
         month_cung: monthCung,
@@ -1767,17 +1851,22 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(analysisPayload)
         });
-        var json = await resp.json();
-        if (resp.ok && json && json.ok && json.analysis) {
-          resultEl.innerText = reasoningTrace + "\n\n" + json.analysis;
+        var json = await resp.json().catch(function () { return {}; });
+        var outLine = shortLocalLine;
+        if (resp.ok && json && json.ok) {
+          var gLine = (json.summary_one_line || json.analysis || "").trim();
+          var gConf = parseInt(json.confidence, 10);
+          if (gLine) outLine = gLine;
+          if (Number.isFinite(gConf) && gConf >= 55 && gConf <= 92 && !/\d{1,3}\s*%/.test(outLine)) {
+            outLine = outLine.replace(/\s*\.\s*$/, "") + " (~" + gConf + "%).";
+          }
         } else {
-          var intro =
-            json && json.error
-              ? json.error
-              : "Luận giải AI tạm không phản hồi — đang dùng phân tích nội bộ.";
-          var dev = json && json.debug ? ("\n\n[dev] " + json.debug) : "";
-          resultEl.innerText = intro + "\n\n" + reasoningTrace + "\n\n" + fallbackText + dev;
+          resultEl.innerText = fortuneIntroForUser(json) + "\n\n" + shortLocalLine;
+          if (consume) resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          await syncCustomerServerState();
+          return;
         }
+        resultEl.innerText = outLine;
       } catch (err) {
         var raw = (err && err.message) ? err.message : "";
         var msg =
@@ -1785,13 +1874,10 @@
             ? "Mạng tạm gián đoạn — không gọi được máy chủ."
             : "Lỗi kết nối tạm thời.";
         resultEl.innerText =
-          "Luận giải AI không gửi được lúc này — đang dùng phân tích nội bộ.\n\n" +
-          reasoningTrace + "\n\n" + fallbackText +
-          "\n\n" + msg;
+          "Hiện không kết nối được luận giải tăng cường. Bạn vẫn xem được tóm tắt bên dưới.\n\n" + shortLocalLine + "\n\n" + msg;
       }
       if (consume) resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      updateUsageReadonly();
-      applyCustomerQuotaLock();
+      await syncCustomerServerState();
     }
 
     function loadActiveProfileToForm() {
@@ -1874,6 +1960,36 @@
         if (!opts.silent) document.getElementById("dailyResult").textContent = "Vui lòng nhập năm sinh Gia chủ (bắt buộc).";
         return false;
       }
+      if (roleParam === "customer" && customerInviteCode) {
+        var cpPrev = getCustomerProfile(customerInviteCode) || {};
+        var payload = {
+          name: ownerName || (cpPrev.name || "") || "Gia chủ",
+          contact: ownerPhone || (cpPrev.contact || ""),
+          birthDay: ownerDay || (cpPrev.birthDay || ""),
+          birthMonth: ownerMonth || (cpPrev.birthMonth || ""),
+          birthYear: ownerYear,
+          birthHour: (cpPrev.birthHour || ""),
+          updatedAt: new Date().toISOString()
+        };
+        try {
+          localStorage.setItem(customerProfileKey(customerInviteCode), JSON.stringify(payload));
+          localStorage.setItem("daily_fortune_customer_invite", customerInviteCode);
+        } catch (_) {}
+        if (payload.name && payload.birthYear) {
+          try {
+            localStorage.setItem(customerProfileDoneKey(customerInviteCode), "1");
+          } catch (_) {}
+        }
+        syncCustomerProfileToAdminStore(customerInviteCode, payload);
+        document.getElementById("ownerSeal").textContent = (payload.name || "Gia chủ").split(" ").slice(-1)[0];
+        var ccyCust = payload.birthYear ? getCanChiByYear(parseInt(payload.birthYear, 10)) : "";
+        var namCust = ccyCust ? getNapAm(ccyCust) : "";
+        document.getElementById("ownerProfileLabel").textContent =
+          (payload.name || "Gia chủ") + (namCust ? (" - " + namCust) : "") + " (mã " + customerInviteCode + ")";
+        updateEnergySuccessPanel();
+        scheduleCustomerProfileCloudSave(payload);
+        return true;
+      }
       var profiles = getProfiles();
       var activeId = getActiveProfileId();
       var active = profiles.find(function (p) { return p.id === activeId; });
@@ -1954,6 +2070,19 @@
         el.addEventListener("input", syncOwnerYearGate);
       }
     });
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden") {
+        if (roleParam === "customer" && customerInviteCode && customerCloudSaveTimer) {
+          clearTimeout(customerCloudSaveTimer);
+          customerCloudSaveTimer = null;
+          var cpFlush = getCustomerProfile(customerInviteCode);
+          if (cpFlush) void pushCustomerProfileToServer(customerInviteCode, cpFlush);
+        }
+        return;
+      }
+      if (roleParam !== "customer" || !customerInviteCode) return;
+      void syncCustomerServerState();
+    });
 
     (async function bootDashboard() {
       await loadPublicConfig();
@@ -1968,8 +2097,7 @@
       loadActiveProfileToForm();
       syncParticipantUI();
       renderBySelectedDate(ymdToDate(initYmd.y, initYmd.m, initYmd.d));
-      updateUsageReadonly();
-      applyCustomerQuotaLock();
+      await syncCustomerServerState();
       syncOwnerYearGate();
       document.getElementById("dailyResult").innerText =
         "Nhập năm sinh gia chủ (bắt buộc, 4 số), chủ đề, rồi bấm Khám phá để xem phân tích.";

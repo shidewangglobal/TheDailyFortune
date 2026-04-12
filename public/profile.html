@@ -126,6 +126,34 @@
       border: 1px solid rgba(255,255,255,.16);
       font-weight: 700;
     }
+    .btn.dirty {
+      box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.95), 0 0 18px rgba(251, 191, 36, 0.25);
+    }
+    .btn.saved-flash {
+      background: linear-gradient(180deg, #22c55e, #15803d) !important;
+      color: #fff !important;
+      border: 1px solid rgba(255,255,255,0.35) !important;
+      transform: scale(1.02);
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+      box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.45);
+    }
+    a.btn.btn-cta-important {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-weight: 800;
+      color: #1a0f00;
+      background: linear-gradient(180deg, #fde047, #f59e0b);
+      border: 2px solid #fef9c3;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 15px;
+      box-shadow: 0 6px 22px rgba(245, 158, 11, 0.5);
+    }
+    a.btn.btn-cta-important:hover {
+      filter: brightness(1.05);
+    }
     .status { margin-top: 10px; font-size: 15px; color: var(--muted); }
     table { width: 100%; border-collapse: collapse; font-size: 15px; }
     th, td { text-align: left; padding: 10px 8px; border-bottom: 1px dashed rgba(255,255,255,.14); }
@@ -459,10 +487,10 @@
     <div id="customerView" class="hidden">
       <section class="card">
         <h1>Hồ sơ của bạn</h1>
-        <p class="sub">Nhập invitation code để truy cập. Chỉ người có mã mới vào được.</p>
+        <p class="sub">Nhập mã mời (invitation code) để truy cập. Chỉ người có mã mới vào được.</p>
         <div class="grid">
           <div>
-            <label for="inviteCode">Invitation code</label>
+            <label for="inviteCode">Mã mời</label>
             <input id="inviteCode" placeholder="Nhập mã mời của bạn" />
           </div>
           <div class="inline-actions" style="align-self:end;">
@@ -497,7 +525,7 @@
         </div>
         <div class="actions">
           <button class="btn primary" id="customerSaveBtn" type="button">Lưu hồ sơ</button>
-          <a class="btn soft hidden" id="goDashboardBtn" href="/dashboard-purple.html?role=customer">Bắt đầu trải nghiệm</a>
+          <a class="btn btn-cta-important hidden" id="goDashboardBtn" href="/dashboard-purple.html?role=customer">Bắt đầu trải nghiệm</a>
         </div>
         <div class="note">
           Lần đầu với mỗi code, vui lòng điền hồ sơ (đặc biệt là năm sinh) rồi bấm Lưu trước khi vào Dashboard.
@@ -508,8 +536,8 @@
         <h3>Quyền dùng miễn phí</h3>
         <div class="note" id="dailyUsageCounter">Bạn được miễn phí theo quota của mã. Đã dùng: 0/20.</div>
         <ul class="locked-list">
-          <li>Mỗi invitation code có bộ đếm tổng riêng biệt.</li>
-          <li>Hết 20 lượt sẽ cần nâng cấp để tiếp tục xem.</li>
+          <li>Mỗi mã mời có bộ đếm tổng riêng biệt.</li>
+          <li>Hết lượt miễn phí trên mã thì cần gia hạn thêm lượt (liên hệ người đã cấp mã).</li>
           <li>Số lượt đã dùng được cập nhật tự động trên Dashboard.</li>
         </ul>
       </section>
@@ -602,7 +630,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: raw })
       })
-        .then(function (r) { return r.json(); })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
         .then(function (j) {
           if (!j || !j.ok || !j.key) return "";
           var merged = getInviteCodes();
@@ -616,7 +644,7 @@
       try {
         var r = await fetch("/api/invite-codes", { credentials: "same-origin" });
         if (!r.ok) return;
-        var j = await r.json();
+        var j = await r.json().catch(function () { return {}; });
         if (!j || !j.ok || !j.codes) return;
         var local = {};
         try {
@@ -858,6 +886,32 @@
       document.getElementById("ownerMonth").value = profile.birthMonth || "";
       document.getElementById("ownerYear").value = profile.birthYear || "";
       document.getElementById("ownerHour").value = profile.birthHour || "";
+      resetAdminSaveUi();
+    }
+
+    function resetAdminSaveUi() {
+      var b = document.getElementById("saveBtn");
+      if (!b) return;
+      b.classList.remove("dirty", "saved-flash");
+      b.textContent = "Lưu profile";
+    }
+    function markAdminDirty() {
+      var b = document.getElementById("saveBtn");
+      if (!b || b.classList.contains("saved-flash")) return;
+      b.classList.add("dirty");
+      b.textContent = "Lưu thay đổi";
+    }
+    function flashAdminSaved() {
+      var b = document.getElementById("saveBtn");
+      if (!b) return;
+      b.classList.remove("dirty");
+      b.classList.add("saved-flash");
+      b.textContent = "Đã lưu ✓";
+      clearTimeout(window.__adminSaveFlashTimer);
+      window.__adminSaveFlashTimer = setTimeout(function () {
+        b.classList.remove("saved-flash");
+        b.textContent = "Lưu profile";
+      }, 2200);
     }
 
     function renderProfiles() {
@@ -941,11 +995,17 @@
       setProfiles(profiles);
       renderProfiles();
       clearForm();
+      flashAdminSaved();
     }
 
     document.getElementById("saveBtn").addEventListener("click", upsertProfile);
+    ["ownerName", "ownerContact", "ownerDay", "ownerMonth", "ownerYear", "ownerHour"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener("input", markAdminDirty);
+    });
     document.getElementById("resetBtn").addEventListener("click", function () {
       clearForm();
+      resetAdminSaveUi();
       setStatus("Đã làm mới form.");
     });
 
@@ -1093,7 +1153,7 @@
         credentials: "same-origin",
         body: JSON.stringify({ code: inviteKey })
       })
-        .then(function (r) { return r.json(); })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
         .then(function (j) {
           if (!j || !j.ok || !j.profile) return null;
           var prof = profileFromServerPayload(j.profile);
@@ -1119,7 +1179,7 @@
           birthHour: profile.birthHour
         })
       })
-        .then(function (r) { return r.json(); })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
         .then(function (j) { return !!(j && j.ok); })
         .catch(function () { return false; });
     }
@@ -1154,6 +1214,31 @@
       document.getElementById("customerMonth").value = (profile && profile.birthMonth) || "";
       document.getElementById("customerYear").value = (profile && profile.birthYear) || "";
       document.getElementById("customerHour").value = (profile && profile.birthHour) || "";
+      resetCustomerSaveUi();
+    }
+    function resetCustomerSaveUi() {
+      var b = document.getElementById("customerSaveBtn");
+      if (!b) return;
+      b.classList.remove("dirty", "saved-flash");
+      b.textContent = "Lưu hồ sơ";
+    }
+    function markCustomerDirty() {
+      var b = document.getElementById("customerSaveBtn");
+      if (!b || b.classList.contains("saved-flash")) return;
+      b.classList.add("dirty");
+      b.textContent = "Lưu thay đổi";
+    }
+    function flashCustomerSaved() {
+      var b = document.getElementById("customerSaveBtn");
+      if (!b) return;
+      b.classList.remove("dirty");
+      b.classList.add("saved-flash");
+      b.textContent = "Đã lưu ✓";
+      clearTimeout(window.__custSaveFlashTimer);
+      window.__custSaveFlashTimer = setTimeout(function () {
+        b.classList.remove("saved-flash");
+        b.textContent = "Lưu hồ sơ";
+      }, 2200);
     }
     function initCustomerMode() {
       var params = new URLSearchParams(window.location.search);
@@ -1161,7 +1246,7 @@
       document.getElementById("goDashboardBtn").setAttribute("href", nextUrl);
       document.getElementById("unlockBtn").addEventListener("click", function () {
         var invite = (document.getElementById("inviteCode").value || "").trim();
-        if (!invite) return setCustomerStatus("Vui lòng nhập invitation code.");
+        if (!invite) return setCustomerStatus("Vui lòng nhập mã mời.");
         setCustomerStatus("Đang kiểm tra mã…");
         var localKey = findInviteCodeKey(invite);
         if (localKey) {
@@ -1169,7 +1254,7 @@
           return;
         }
         lookupInviteFromServer(invite).then(function (serverKey) {
-          if (!serverKey) return setCustomerStatus("Invitation code không hợp lệ.");
+          if (!serverKey) return setCustomerStatus("Mã mời không hợp lệ hoặc chưa được kích hoạt. Kiểm tra lại hoặc liên hệ người đã gửi mã.");
           applyUnlockedInvite(serverKey);
         });
       });
@@ -1232,9 +1317,9 @@
       })();
       document.getElementById("customerSaveBtn").addEventListener("click", async function () {
         var invite = (document.getElementById("inviteCode").value || "").trim();
-        if (!invite) return setCustomerStatus("Cần invitation code trước khi lưu.");
+        if (!invite) return setCustomerStatus("Cần nhập mã mời trước khi lưu.");
         var inviteKey = findInviteCodeKey(invite) || (await lookupInviteFromServer(invite));
-        if (!inviteKey) return setCustomerStatus("Invitation code không hợp lệ.");
+        if (!inviteKey) return setCustomerStatus("Mã mời không hợp lệ hoặc chưa được kích hoạt. Kiểm tra lại hoặc liên hệ người đã gửi mã.");
         var name = (document.getElementById("customerName").value || "").trim();
         var contact = (document.getElementById("customerContact").value || "").trim();
         var birthDay = (document.getElementById("customerDay").value || "").trim();
@@ -1264,12 +1349,36 @@
         markProfileDone(inviteKey);
         refreshContinue(inviteKey);
         var synced = await pushCustomerProfileToServer(inviteKey, payload);
+        await lookupInviteFromServer(inviteKey);
+        var rmAfterSave = await mergeRemoteCustomerProfile(inviteKey);
+        if (rmAfterSave) {
+          fillCustomerForm(rmAfterSave);
+          refreshContinue(inviteKey);
+        }
+        setActiveInviteUI(inviteKey);
+        flashCustomerSaved();
         setCustomerStatus(
           synced
-            ? "Đã lưu hồ sơ (đã đồng bộ cloud). Bạn có thể bấm \"Bắt đầu trải nghiệm\"."
-            : "Đã lưu trên trình duyệt. Cloud chưa nhận — kiểm tra SUPABASE_URL và secret trên Render, rồi bấm Lưu lại."
+            ? "Đã lưu (cloud). Có thể bấm nút vàng «Bắt đầu trải nghiệm»."
+            : "Đã lưu trên thiết bị này. Bạn có thể bấm «Bắt đầu trải nghiệm» và dùng bình thường. Nếu sau này đổi máy hoặc trình duyệt mà không thấy hồ sơ, nhờ người đã cấp mã mời liên hệ đội vận hành giúp bạn."
         );
         refreshTopbarNav("customer");
+      });
+      ["customerName", "customerContact", "customerDay", "customerMonth", "customerYear", "customerHour"].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener("input", markCustomerDirty);
+      });
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState !== "visible") return;
+        var saved = (localStorage.getItem("daily_fortune_customer_invite") || "").trim();
+        if (!saved) return;
+        void (async function () {
+          var k = findInviteCodeKey(saved) || (await lookupInviteFromServer(saved));
+          if (!k) return;
+          await mergeRemoteCustomerProfile(k);
+          setActiveInviteUI(k);
+          refreshContinue(k);
+        })();
       });
     }
 
