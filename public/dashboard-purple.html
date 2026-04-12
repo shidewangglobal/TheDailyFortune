@@ -761,7 +761,7 @@
               </div>
             </div>
             <div class="energy-analysis-col">
-              <p class="energy-body" id="energyMessage">Hôm nay hợp mở đầu việc mới, đàm phán ngắn gọn và chốt hạng mục quan trọng. Hạn chế tranh luận kéo dài và quyết định nóng vội.</p>
+              <p class="energy-body" id="energyMessage">Chọn ngày và nhập năm sinh gia chủ để xem một dòng gợi ý theo lịch.</p>
               <div class="energy-summary-footer"><span class="seal" id="ownerSeal">Gia chủ</span> Điểm dự báo theo hồ sơ hiện tại</div>
             </div>
           </div>
@@ -1388,6 +1388,30 @@
       };
       return map[cung] || "trung tính";
     }
+    /** Một cụm ngắn kiểu lịch treo tường (không giải thích dài). */
+    function getCungCalendarHint(cung) {
+      var map = {
+        "Đại An": "thuận việc bền, đi chậm",
+        "Lưu Liên": "dễ kéo dài",
+        "Tốc Hỷ": "thuận tin nhanh",
+        "Xích Khẩu": "dễ tranh cãi",
+        "Tiểu Cát": "lợi nhỏ, khá ổn",
+        "Không Vong": "dễ hụt nhịp"
+      };
+      return map[cung] || "bình thường";
+    }
+    function buildShortEnergyLine(dayDate, dayCanChi, dayCung, hourCung, hourIdx, confidence) {
+      var d = dayDate.toLocaleDateString("vi-VN");
+      var dayHint = getCungCalendarHint(dayCung);
+      var hourHint = getCungCalendarHint(hourCung);
+      var label = hours[hourIdx] && hours[hourIdx][0] ? hours[hourIdx][0] : "";
+      var s = d + " (" + dayCanChi + "), quẻ ngày " + dayCung + " — " + dayHint;
+      if (label) {
+        s += "; giờ " + label + " (" + hourCung + ") — " + hourHint;
+      }
+      s += ". Điểm " + confidence + "%.";
+      return s;
+    }
     function getPairMeaning(dayCung, hourCung) {
       var key = dayCung + "|" + hourCung;
       var pair = {
@@ -1519,8 +1543,7 @@
       if (!birth.ok) {
         if (scoreEl) scoreEl.textContent = "—";
         if (msgEl) {
-          msgEl.textContent =
-            "Ưu tiên năm sinh gia chủ: nhập đủ 4 số (1900–2099) vào ô «Năm sinh (*)». Không có năm sinh hợp lệ thì điểm năng lượng, gợi ý giờ theo mệnh và phân tích không được tính — lục thập hoa giáp và so ngũ hành cần gốc năm sinh.";
+          msgEl.textContent = "Nhập năm sinh gia chủ (đủ 4 số, 1900–2099) để hiện điểm và dòng gợi ý.";
         }
         syncOwnerYearGate();
         return;
@@ -1573,14 +1596,14 @@
       );
       if (scoreEl) scoreEl.textContent = engine.confidence + "%";
       if (msgEl) {
-        var sp = getSpecialPattern(ownerCanChi, dayCanChi, hourCanChi);
-        msgEl.textContent =
-          "Gốc năm sinh (lục thập hoa giáp): " + ownerCanChi + " (" + ownerNapAm + "). So ngũ hành với ngày " + dayCanChi + " và giờ " + hourCanChi + ": " +
-          relationDay + " / " + relationHour +
-          ". Lục cung trong ngày: tháng " + monthCung + ", quẻ ngày " + dayCung + ", giờ đang xem " + hourCung + " — " +
-          engine.pairMeaning +
-          (sp ? " " + sp : "") +
-          " Điểm " + engine.confidence + "% ưu tiên thế mệnh–ngày/giờ; lục cung tinh chỉnh thêm (cùng hướng barem phân tích).";
+        msgEl.textContent = buildShortEnergyLine(
+          dayDate,
+          dayCanChi,
+          dayCung,
+          hourCung,
+          hourIdxForCalc,
+          engine.confidence
+        );
       }
       syncOwnerYearGate();
     }
