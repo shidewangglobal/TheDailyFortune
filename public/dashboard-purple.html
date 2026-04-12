@@ -852,8 +852,25 @@
     var currentDayIndex = 0;
     var totalLimit = 20;
     var INVITE_CODES_KEY = "daily_fortune_invite_codes";
+    var DASHBOARD_ROLE_KEY = "daily_fortune_dashboard_role";
     var roleQuery = new URLSearchParams(window.location.search).get("role") || "";
-    var roleParam = roleQuery || (localStorage.getItem("daily_fortune_customer_invite") ? "customer" : "admin");
+    var roleParam;
+    if (roleQuery === "admin" || roleQuery === "customer") {
+      roleParam = roleQuery;
+      try {
+        localStorage.setItem(DASHBOARD_ROLE_KEY, roleQuery);
+      } catch (e) {}
+    } else {
+      var storedDashRole = "";
+      try {
+        storedDashRole = localStorage.getItem(DASHBOARD_ROLE_KEY) || "";
+      } catch (e) {}
+      if (storedDashRole === "admin" || storedDashRole === "customer") {
+        roleParam = storedDashRole;
+      } else {
+        roleParam = localStorage.getItem("daily_fortune_customer_invite") ? "customer" : "admin";
+      }
+    }
     var customerInviteCode = "";
     var supportConfig = { supportEmail: "", supportPhone: "", supportWhatsappUrl: "" };
     function escapeCfg(s) {

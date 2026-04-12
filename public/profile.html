@@ -331,7 +331,7 @@
         <a class="hidden" id="adminLogoutLink" href="/api/admin/logout">Đăng xuất admin</a>
         <div class="inline-actions hidden" id="topbarNav" aria-label="Điều hướng">
           <span class="mode-badge" id="modeBadge">ADMIN</span>
-          <a id="topbarDashboardLink" href="/dashboard-purple.html">Về Dashboard</a>
+          <a id="topbarDashboardLink" href="/dashboard-purple.html?role=admin">Về Dashboard</a>
         </div>
       </div>
     </div>
@@ -1062,12 +1062,16 @@
       }
     });
 
+    var DASHBOARD_ROLE_KEY = "daily_fortune_dashboard_role";
     function getMode() {
       var params = new URLSearchParams(window.location.search);
       var q = params.get("entry") || params.get("role");
       if (q === "admin") return "admin";
       if (q === "customer") return "customer";
       if ((params.get("code") || "").trim()) return "customer";
+      var lastDash = localStorage.getItem(DASHBOARD_ROLE_KEY) || "";
+      if (lastDash === "admin") return "admin";
+      if (lastDash === "customer") return "customer";
       var savedInvite = localStorage.getItem("daily_fortune_customer_invite") || "";
       return savedInvite ? "customer" : "admin";
     }
@@ -1087,7 +1091,7 @@
         badge.classList.remove("hidden");
         dash.classList.remove("hidden");
         badge.textContent = "ADMIN";
-        dash.setAttribute("href", "/dashboard-purple.html");
+        dash.setAttribute("href", "/dashboard-purple.html?role=admin");
         var lo = document.getElementById("adminLogoutLink");
         if (lo) lo.classList.remove("hidden");
         return;
@@ -1126,6 +1130,9 @@
     }
     function setModeUI(mode) {
       var isCustomer = mode === "customer";
+      try {
+        localStorage.setItem(DASHBOARD_ROLE_KEY, isCustomer ? "customer" : "admin");
+      } catch (e) {}
       document.getElementById("adminView").classList.toggle("hidden", isCustomer);
       document.getElementById("customerView").classList.toggle("hidden", !isCustomer);
       document.getElementById("pageTitle").textContent = isCustomer
