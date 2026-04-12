@@ -532,8 +532,7 @@
           <a class="btn btn-cta-important hidden" id="goDashboardBtn" href="/dashboard-purple.html?role=customer">Bắt đầu trải nghiệm</a>
         </div>
         <div class="note">
-          Lần đầu với mỗi code, vui lòng điền hồ sơ (đặc biệt là năm sinh) rồi bấm Lưu trước khi vào Dashboard.
-          Đã có mã và đã lưu hồ sơ: vào trang chủ sẽ chuyển thẳng tới Dashboard. Muốn sửa hồ sơ tại đây, thêm <code>?profile=1</code> vào URL (ví dụ <code>/profile.html?entry=customer&amp;profile=1</code>).
+          Lần đầu với mỗi mã: điền hồ sơ (đặc biệt năm sinh) rồi bấm Lưu. Nút vàng «Bắt đầu trải nghiệm» chỉ gợi ý <strong>một lần</strong> cho tới khi bạn mở Dashboard lần đầu; sau đó dùng «Dashboard» trên thanh trên cùng để quay lại app.
         </div>
       </section>
 
@@ -1143,6 +1142,23 @@
     }
     function customerKey(invite) { return "daily_fortune_customer_profile_" + invite; }
     function customerDoneKey(invite) { return "daily_fortune_customer_profile_done_" + invite; }
+    function customerFirstDashKey(invite) {
+      return "daily_fortune_customer_first_dash_" + invite;
+    }
+    function hasVisitedCustomerDashboard(invite) {
+      if (!invite) return false;
+      try {
+        return localStorage.getItem(customerFirstDashKey(invite)) === "1";
+      } catch (e) {
+        return false;
+      }
+    }
+    function markCustomerDashboardVisited(invite) {
+      if (!invite) return;
+      try {
+        localStorage.setItem(customerFirstDashKey(invite), "1");
+      } catch (e) {}
+    }
     function isProfileDone(invite) { return localStorage.getItem(customerDoneKey(invite)) === "1"; }
     function markProfileDone(invite) { localStorage.setItem(customerDoneKey(invite), "1"); }
     function isValidInvite(invite) { return !!findInviteCodeKey(invite); }
@@ -1251,7 +1267,8 @@
         "Bạn được miễn phí theo quota của mã. Đã dùng: " + getInviteUsageDisplay(invite) + "/" + limit + ".";
     }
     function refreshContinue(invite) {
-      document.getElementById("goDashboardBtn").classList.toggle("hidden", !isProfileDone(invite));
+      var showCta = isProfileDone(invite) && !hasVisitedCustomerDashboard(invite);
+      document.getElementById("goDashboardBtn").classList.toggle("hidden", !showCta);
     }
     function fillCustomerForm(profile) {
       document.getElementById("customerName").value = (profile && profile.name) || "";
@@ -1295,6 +1312,11 @@
       var params = new URLSearchParams(window.location.search);
       var nextUrl = resolveCustomerDashboardUrl(params);
       document.getElementById("goDashboardBtn").setAttribute("href", nextUrl);
+      document.getElementById("goDashboardBtn").addEventListener("click", function () {
+        var rawInv = (document.getElementById("inviteCode").value || "").trim();
+        var canon = rawInv ? findInviteCodeKey(rawInv) || rawInv : "";
+        if (canon) markCustomerDashboardVisited(canon);
+      });
       document.getElementById("unlockBtn").addEventListener("click", function () {
         var invite = (document.getElementById("inviteCode").value || "").trim();
         if (!invite) return setCustomerStatus("Vui lòng nhập mã mời.");
@@ -1365,16 +1387,6 @@
           }
         }
         refreshTopbarNav("customer");
-        var forceProfile = params.get("profile") === "1" || params.get("stay") === "1";
-        if (!forceProfile) {
-          var stored = (localStorage.getItem("daily_fortune_customer_invite") || "").trim();
-          var canon = stored ? findInviteCodeKey(stored) || stored : "";
-          var prof = canon ? loadCustomerProfile(canon) : null;
-          if (canon && isProfileDone(canon) && prof && prof.birthYear && prof.name) {
-            window.location.replace(resolveCustomerDashboardUrl(params));
-            return;
-          }
-        }
       })();
       document.getElementById("customerSaveBtn").addEventListener("click", async function () {
         var invite = (document.getElementById("inviteCode").value || "").trim();
@@ -1420,8 +1432,14 @@
         flashCustomerSaved();
         setCustomerStatus(
           synced
-            ? "Đã lưu (cloud). Có thể bấm nút vàng «Bắt đầu trải nghiệm»."
-            : "Đã lưu trên thiết bị này. Bạn có thể bấm «Bắt đầu trải nghiệm» và dùng bình thường. Nếu sau này đổi máy hoặc trình duyệt mà không thấy hồ sơ, nhờ người đã cấp mã mời liên hệ đội vận hành giúp bạn."
+            ? "Đã lưu (cloud). " +
+                (hasVisitedCustomerDashboard(inviteKey)
+                  ? "Vào Dashboard từ liên kết trên thanh trên cùng."
+                  : "Có thể bấm «Bắt đầu trải nghiệm» (một lần) hoặc mở Dashboard từ thanh trên cùng.")
+            : "Đã lưu trên thiết bị này. " +
+                (hasVisitedCustomerDashboard(inviteKey)
+                  ? "Vào Dashboard từ thanh trên cùng. Đổi máy mà mất hồ sơ — nhờ người cấp mã liên hệ vận hành."
+                  : "Bấm «Bắt đầu trải nghiệm» hoặc Dashboard trên thanh trên cùng. Đổi máy mà mất hồ sơ — nhờ người cấp mã liên hệ vận hành.")
         );
         refreshTopbarNav("customer");
       });

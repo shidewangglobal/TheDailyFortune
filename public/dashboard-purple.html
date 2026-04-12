@@ -1256,7 +1256,7 @@
       var link = document.getElementById("profileNavLink");
       if (!link) return;
       if (roleParam === "customer") {
-        link.setAttribute("href", "/profile.html?role=customer");
+        link.setAttribute("href", "/profile.html?role=customer&profile=1");
         link.textContent = "Hồ sơ của bạn";
       } else {
         link.setAttribute("href", "/profile.html?role=admin");
@@ -2102,6 +2102,11 @@
       await loadPublicConfig();
       var ok = await ensureCustomerAccessAsync();
       if (!ok) return;
+      if (roleParam === "customer" && customerInviteCode) {
+        try {
+          localStorage.setItem("daily_fortune_customer_first_dash_" + customerInviteCode, "1");
+        } catch (e) {}
+      }
       updateProfileNavLink();
       var today = new Date();
       var initYmd = dateToYMD(today);
