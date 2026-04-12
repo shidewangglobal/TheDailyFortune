@@ -461,11 +461,11 @@
       <div class="status" id="inviteStatus">Sẵn sàng.</div>
       <p class="sub" style="margin-top:8px;font-size:13px;line-height:1.45;opacity:0.92;">
         <strong>Mã cho khách dùng được khi nào?</strong> Khi mã đã <strong>lưu lên máy chủ</strong> (sau bấm &quot;Tạo mã random&quot; hoặc sửa bảng mã, dòng trạng thái phải báo đã lưu server).
-        Nếu site có <strong>PIN admin</strong>, bạn cần <a href="/admin-login.html?next=%2Fprofile.html%3Fentry%3Dadmin">đăng nhập admin</a> trước — nếu không, mã chỉ nằm trên trình duyệt của bạn và khách sẽ báo &quot;không hợp lệ&quot;.
+        Nếu host đã đặt <strong>mã quản trị</strong> trên server, mỗi trình duyệt cần <a href="/admin">vào /admin</a> và nhập đúng mã đó một lần — nếu không, lưu mã chỉ ở máy bạn và khách sẽ báo &quot;không hợp lệ&quot;.
         Hồ sơ khách trên cloud (Supabase) dùng đúng <strong>mã đó</strong> làm khóa (<code>invite_code</code>) — không cần thêm cột &quot;mã đang dùng&quot; riêng.
       </p>
       <p class="invite-table-hint">
-        <strong>Mã tuỳ chỉnh</strong> nằm trong bảng dưới (dưới hai dòng ADMIN/TEST). Nếu chỉ thấy 2 mặc định — đặc biệt trên điện thoại: thường do <strong>chưa đăng nhập admin PIN trên trình duyệt đó</strong> (cookie khác máy tính); dữ liệu trên server không mất. Đăng nhập admin rồi bấm <strong>«Tải mã từ server»</strong> hoặc tải lại trang. Hoặc chưa tạo mã / chưa đồng bộ — đăng nhập PIN rồi tạo mã lại.
+        <strong>Mã tuỳ chỉnh</strong> nằm trong bảng dưới (dưới hai dòng ADMIN/TEST). Chỉ thấy 2 mặc định — đặc biệt trên điện thoại: thường do <strong>chưa nhập mã quản trị trên trình duyệt đó</strong> (mỗi máy một phiên; dữ liệu server không mất). Mở <strong>/admin</strong>, nhập mã quản trị, rồi bấm <strong>«Tải mã từ server»</strong> hoặc tải lại trang. Hoặc chưa tạo mã trên server — tạo mã sau khi đã vào admin.
       </p>
       <div class="table-wrap invite-codes-wrap">
         <table>
@@ -646,7 +646,7 @@
         var r = await fetch("/api/invite-codes", { credentials: "same-origin" });
         if (r.status === 403) {
           setInviteStatus(
-            "Trình duyệt này chưa có phiên admin PIN — server không gửi danh sách mã (dữ liệu trên server vẫn còn). Đăng nhập admin rồi bấm «Tải mã từ server» hoặc tải lại trang."
+            "Trình duyệt này chưa có phiên sau khi nhập mã quản trị — server không gửi danh sách mã (dữ liệu vẫn còn trên server). Mở /admin, nhập mã quản trị, rồi bấm «Tải mã từ server» hoặc tải lại trang."
           );
           return;
         }
@@ -1433,7 +1433,7 @@
       } else {
         setInviteStatus(
           "Đã tạo " + created.length + " mã (" + created.join(", ") + ") nhưng CHƯA lưu lên server. Khách sẽ báo không hợp lệ. " +
-            "Hãy mở /admin-login.html?next=%2Fprofile.html%3Fentry%3Dadmin — đăng nhập PIN — quay lại trang này và bấm \"Tạo mã random\" thêm 1 mã (hoặc tick/bỏ tick \"Đã gửi\") để đồng bộ lại toàn bộ."
+            "Hãy mở /admin — nhập mã quản trị — quay lại trang này và bấm \"Tạo mã random\" thêm 1 mã (hoặc tick/bỏ tick \"Đã gửi\") để đồng bộ lại toàn bộ."
         );
       }
     });
@@ -1449,7 +1449,7 @@
       setInviteStatus("Đang đồng bộ…");
       setInviteCodes(codes).then(function (ok) {
         if (ok) setInviteStatus(t.checked ? ("Đã đánh dấu đã gửi (đã lưu server): " + code) : ("Đã bỏ tick gửi (đã lưu server): " + code));
-        else setInviteStatus("Chưa lưu được lên server — đăng nhập admin PIN rồi thử tick lại.");
+        else setInviteStatus("Chưa lưu được lên server — vào /admin, nhập mã quản trị, rồi thử tick lại.");
       });
     });
     document.getElementById("inviteCodesBody").addEventListener("click", function (e) {
@@ -1467,7 +1467,7 @@
         setInviteStatus("Đang đồng bộ reset lượt…");
         setInviteCodes(codesReset).then(function (ok) {
           if (ok) setInviteStatus("Đã reset lượt mã " + code + " (đã lưu server).");
-          else setInviteStatus("Đã reset trên máy — đăng nhập admin PIN rồi bấm Reset lại để lưu server.");
+          else setInviteStatus("Đã reset trên máy — vào /admin, nhập mã quản trị, rồi bấm Reset lại để lưu server.");
         });
         renderInviteCodes();
         return;
@@ -1493,7 +1493,7 @@
         setInviteStatus("Đang đồng bộ…");
         setInviteCodes(codes).then(function (ok) {
           if (ok) setInviteStatus("Đã gia hạn mã " + code + ": +" + add + " lượt → quota mới: " + meta.totalLimit + " (đã lưu server).");
-          else setInviteStatus("Gia hạn chỉ trên máy bạn — đăng nhập admin PIN rồi bấm gia hạn lại.");
+          else setInviteStatus("Gia hạn chỉ trên máy bạn — vào /admin, nhập mã quản trị, rồi bấm gia hạn lại.");
         });
         renderInviteCodes();
         return;
@@ -1504,7 +1504,7 @@
         setInviteStatus("Đang đồng bộ…");
         setInviteCodes(codes).then(function (ok) {
           if (ok) setInviteStatus("Đã xoá mã " + code + " (đã lưu server).");
-          else setInviteStatus("Đã xoá trên trình duyệt nhưng chưa lưu server — đăng nhập admin PIN rồi xoá lại.");
+          else setInviteStatus("Đã xoá trên trình duyệt nhưng chưa lưu server — vào /admin, nhập mã quản trị, rồi xoá lại.");
         });
         renderInviteCodes();
       }

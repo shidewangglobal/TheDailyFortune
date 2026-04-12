@@ -566,6 +566,12 @@ const server = http.createServer((req, res) => {
     const u = new URL(req.url || "/", "http://localhost");
     const incomingPath = decodeURIComponent(u.pathname || "/");
 
+    if (incomingPath === "/admin-login.html" && !adminProtectionActive()) {
+      const next = u.searchParams.get("next") || "/profile.html?entry=admin";
+      res.writeHead(302, { Location: next });
+      return res.end();
+    }
+
     if (incomingPath === "/profile.html") {
       const entry = u.searchParams.get("entry") || u.searchParams.get("role") || "";
       if (entry === "admin" && !hasAdminSession(req)) {
@@ -580,7 +586,13 @@ const server = http.createServer((req, res) => {
       return res.end();
     }
     if (incomingPath === "/admin") {
-      res.writeHead(302, { Location: "/profile.html?entry=admin" });
+      if (adminProtectionActive()) {
+        res.writeHead(302, {
+          Location: "/admin-login.html?next=" + encodeURIComponent("/profile.html?entry=admin"),
+        });
+      } else {
+        res.writeHead(302, { Location: "/profile.html?entry=admin" });
+      }
       return res.end();
     }
     if (incomingPath === "/customer") {
