@@ -532,7 +532,7 @@
           <a class="btn btn-cta-important hidden" id="goDashboardBtn" href="/dashboard-purple.html?role=customer">Bắt đầu trải nghiệm</a>
         </div>
         <div class="note">
-          Lần đầu trong phiên (tab): nếu hồ sơ đã đủ, hệ thống có thể chuyển bạn sang Dashboard <strong>một lần</strong> để vào app nhanh. Cùng phiên, lần sau mở «Hồ sơ» sẽ <strong>ở lại</strong> trang này (hoặc dùng URL có <code>?profile=1</code>). Nút vàng chỉ hiện tới khi bạn chưa mở Dashboard lần đầu (theo mã).
+          Nếu hồ sơ đã đủ, lần <strong>đầu tiên với mã này trên trình duyệt</strong> có thể tự chuyển sang Dashboard một lần (đỡ phải bấm thêm). Sau đó, mọi tab: mở «Hồ sơ» sẽ <strong>ở lại</strong> profile — không tự nhảy nữa. Link từ Dashboard luôn có <code>?profile=1</code>. Nút vàng chỉ tới khi chưa mở Dashboard lần đầu (theo mã).
         </div>
       </section>
 
@@ -1062,18 +1062,23 @@
     });
 
     var DASHBOARD_ROLE_KEY = "daily_fortune_dashboard_role";
-    /** Cùng một tab: sau khi đã auto-chuyển profile→dashboard hoặc đã mở dashboard khách, không auto-chuyển nữa. */
-    var SESSION_PROFILE_AUTODASH_DONE = "daily_fortune_sess_profile_autodash_done";
-    function isProfileAutodashDoneThisSession() {
+    /** Mỗi mã + trình duyệt: chỉ auto profile→dashboard tối đa một lần (localStorage — mọi tab dùng chung, không lặp khi mở tab mới). */
+    var AUTODASH_ONCE_PREFIX = "daily_fortune_autodash_once_";
+    function autodashOnceKey(invite) {
+      return AUTODASH_ONCE_PREFIX + invite;
+    }
+    function hasAutodashOnceForInvite(invite) {
+      if (!invite) return false;
       try {
-        return sessionStorage.getItem(SESSION_PROFILE_AUTODASH_DONE) === "1";
+        return localStorage.getItem(autodashOnceKey(invite)) === "1";
       } catch (e) {
         return true;
       }
     }
-    function markProfileAutodashDoneThisSession() {
+    function markAutodashOnceForInvite(invite) {
+      if (!invite) return;
       try {
-        sessionStorage.setItem(SESSION_PROFILE_AUTODASH_DONE, "1");
+        localStorage.setItem(autodashOnceKey(invite), "1");
       } catch (e) {}
     }
     function getMode() {
@@ -1329,10 +1334,12 @@
       var nextUrl = resolveCustomerDashboardUrl(params);
       document.getElementById("goDashboardBtn").setAttribute("href", nextUrl);
       document.getElementById("goDashboardBtn").addEventListener("click", function () {
-        markProfileAutodashDoneThisSession();
         var rawInv = (document.getElementById("inviteCode").value || "").trim();
         var canon = rawInv ? findInviteCodeKey(rawInv) || rawInv : "";
-        if (canon) markCustomerDashboardVisited(canon);
+        if (canon) {
+          markAutodashOnceForInvite(canon);
+          markCustomerDashboardVisited(canon);
+        }
       });
       document.getElementById("unlockBtn").addEventListener("click", function () {
         var invite = (document.getElementById("inviteCode").value || "").trim();
@@ -1405,18 +1412,17 @@
         }
         refreshTopbarNav("customer");
         var forceStayOnProfile = params.get("profile") === "1" || params.get("stay") === "1";
-        if (!forceStayOnProfile && !isProfileAutodashDoneThisSession()) {
-          var storedInv = (localStorage.getItem("daily_fortune_customer_invite") || "").trim();
-          var canonInv = storedInv ? findInviteCodeKey(storedInv) || storedInv : "";
-          var profCheck = canonInv ? loadCustomerProfile(canonInv) : null;
-          if (
-            canonInv &&
-            isProfileDone(canonInv) &&
-            profCheck &&
-            profCheck.birthYear &&
-            profCheck.name
-          ) {
-            markProfileAutodashDoneThisSession();
+        var storedInv = (localStorage.getItem("daily_fortune_customer_invite") || "").trim();
+        var canonInv = storedInv ? findInviteCodeKey(storedInv) || storedInv : "";
+        if (
+          !forceStayOnProfile &&
+          canonInv &&
+          !hasAutodashOnceForInvite(canonInv) &&
+          isProfileDone(canonInv)
+        ) {
+          var profCheck = loadCustomerProfile(canonInv);
+          if (profCheck && profCheck.birthYear && profCheck.name) {
+            markAutodashOnceForInvite(canonInv);
             window.location.replace(resolveCustomerDashboardUrl(params));
             return;
           }
