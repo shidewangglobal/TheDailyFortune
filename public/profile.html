@@ -462,7 +462,7 @@
         <button class="btn soft" id="mergeInvitesBtn" type="button">Hợp nhất local + server</button>
       </div>
       <div class="status" id="inviteStatus">Sẵn sàng.</div>
-      <div class="status" id="inviteSyncSummary">Server: - | Local: - | Chưa gộp</div>
+      <div class="status" id="inviteSyncSummary">Server: - | Local: - | Total: - | Chưa gộp</div>
       <p class="sub" style="margin-top:8px;font-size:13px;line-height:1.45;opacity:0.92;">
         <strong>Mã cho khách dùng được khi nào?</strong> Khi mã đã <strong>lưu lên máy chủ</strong> (sau bấm &quot;Tạo mã random&quot; hoặc sửa bảng mã, dòng trạng thái phải báo đã lưu server).
         Nếu host đã đặt <strong>mã quản trị</strong> trên server, mỗi trình duyệt cần <a href="/admin">vào /admin</a> và nhập đúng mã đó một lần — nếu không, server sẽ từ chối thao tác admin ở trình duyệt đó.
@@ -554,6 +554,7 @@
     var STORAGE_ACTIVE = "daily_fortune_active_profile_id";
     var editingId = null;
     var INVITE_CODES_KEY = "daily_fortune_invite_codes";
+    var INVITE_CODES_BACKUP_KEY = "daily_fortune_invite_codes_backup";
     var INVITE_CODES = {
       "ADMIN-2026": { tier: "admin" },
       "TEST-2026": { tier: "admin" }
@@ -633,11 +634,11 @@
       if (!codes || typeof codes !== "object") return 0;
       return Object.keys(codes).length;
     }
-    function updateInviteSyncSummary(serverCount, localCount, mergedFlag) {
+    function updateInviteSyncSummary(serverCount, localCount, totalCount, mergedFlag) {
       var el = document.getElementById("inviteSyncSummary");
       if (!el) return;
       var label = mergedFlag ? "Đã gộp" : "Chưa gộp";
-      el.textContent = "Server: " + serverCount + " | Local: " + localCount + " | " + label;
+      el.textContent = "Server: " + serverCount + " | Local: " + localCount + " | Total: " + totalCount + " | " + label;
     }
     function getRawLocalInviteCodes() {
       try {
@@ -648,25 +649,84 @@
         return {};
       }
     }
-    function normalizeInviteMeta(meta) {
-      if (!meta || typeof meta !== "object") return {};
-      var out = {};
-      if (meta.tier === "admin" || meta.tier === "test") out.tier = meta.tier;
-      if (meta.totalLimit != null && meta.totalLimit !== "") out.totalLimit = parseInt(meta.totalLimit, 10) || meta.totalLimit;
-      if (meta.usageCount != null && meta.usageCount !== "") out.usageCount = parseInt(meta.usageCount, 10) || meta.usageCount;
-      if (meta.sentToCustomer != null) out.sentToCustomer = !!meta.sentToCustomer;
-      return out;
+    function backupLocalInviteCodes(codes) {
+      try {
+        localStorage.setItem(INVITE_CODES_BACKUP_KEY, JSON.stringify(codes || {}));
+      } catch (_) {}
     }
-    function buildMergedInviteCodes(serverCodes, localCodes) {
+    function getRawLocalInviteCodesBackup() {
+      try {
+        var raw = localStorage.getItem(INVITE_CODES_BACKUP_KEY);
+        var parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+    function mergeInviteSources(serverCodes, localCodes, backupCodes) {
+      var warnings = [];
       var merged = {};
+      function ensureMeta(raw, source, code) {
+        if (!raw || typeof raw !== "object") {
+          warnings.push("Mã " + code + " ở " + source + " có metadata không hợp lệ.");
+          return {};
+        }
+        var out = {};
+        if (raw.tier === "admin" || raw.tier === "test") {
+          out.tier = raw.tier;
+        } else if (raw.tier != null) {
+          warnings.push("Mã " + code + " có tier lạ ở " + source + ": " + raw.tier);
+        }
+        if (raw.totalLimit != null && raw.totalLimit !== "") {
+          var lim = parseInt(raw.totalLimit, 10);
+          if (Number.isFinite(lim) && lim > 0) out.totalLimit = lim;
+          else warnings.push("Mã " + code + " có totalLimit không hợp lệ ở " + source + ".");
+        }
+        if (raw.usageCount != null && raw.usageCount !== "") {
+          var used = parseInt(raw.usageCount, 10);
+          if (Number.isFinite(used) && used >= 0) out.usageCount = used;
+          else warnings.push("Mã " + code + " có usageCount không hợp lệ ở " + source + ".");
+        }
+        if (raw.sentToCustomer != null) out.sentToCustomer = !!raw.sentToCustomer;
+        return out;
+      }
+      function mergeInto(code, nextMeta, source) {
+        if (!code || !String(code).trim()) {
+          warnings.push("Có key mã rỗng ở " + source + ".");
+          return;
+        }
+        var key = String(code).trim();
+        var prev = merged[key] || {};
+        var combined = Object.assign({}, prev);
+        if (nextMeta.tier === "admin" || prev.tier === "admin") combined.tier = "admin";
+        else if (nextMeta.tier || prev.tier) combined.tier = nextMeta.tier || prev.tier;
+        if (nextMeta.totalLimit != null || prev.totalLimit != null) {
+          var pLim = Number.isFinite(parseInt(prev.totalLimit, 10)) ? parseInt(prev.totalLimit, 10) : 0;
+          var nLim = Number.isFinite(parseInt(nextMeta.totalLimit, 10)) ? parseInt(nextMeta.totalLimit, 10) : 0;
+          var lim = Math.max(pLim, nLim);
+          if (lim > 0) combined.totalLimit = lim;
+        }
+        if (nextMeta.usageCount != null || prev.usageCount != null) {
+          var pUsed = Number.isFinite(parseInt(prev.usageCount, 10)) ? parseInt(prev.usageCount, 10) : 0;
+          var nUsed = Number.isFinite(parseInt(nextMeta.usageCount, 10)) ? parseInt(nextMeta.usageCount, 10) : 0;
+          combined.usageCount = Math.max(pUsed, nUsed);
+        }
+        combined.sentToCustomer = !!prev.sentToCustomer || !!nextMeta.sentToCustomer;
+        merged[key] = combined;
+      }
       Object.keys(INVITE_CODES).forEach(function (k) { merged[k] = INVITE_CODES[k]; });
-      Object.keys(serverCodes || {}).forEach(function (k) { merged[k] = normalizeInviteMeta(serverCodes[k]); });
-      Object.keys(localCodes || {}).forEach(function (k) {
-        var next = normalizeInviteMeta(localCodes[k]);
-        if (!next || typeof next !== "object") return;
-        merged[k] = Object.assign({}, merged[k] || {}, next);
-      });
-      return merged;
+      Object.keys(serverCodes || {}).forEach(function (k) { mergeInto(k, ensureMeta(serverCodes[k], "server", k), "server"); });
+      Object.keys(backupCodes || {}).forEach(function (k) { mergeInto(k, ensureMeta(backupCodes[k], "backup local", k), "backup local"); });
+      Object.keys(localCodes || {}).forEach(function (k) { mergeInto(k, ensureMeta(localCodes[k], "local", k), "local"); });
+      return { merged: merged, warnings: warnings };
+    }
+    function appendWarningStatus(baseText, warnings) {
+      if (!warnings || !warnings.length) return baseText;
+      var uniq = [];
+      for (var i = 0; i < warnings.length; i++) {
+        if (uniq.indexOf(warnings[i]) < 0) uniq.push(warnings[i]);
+      }
+      return baseText + " Cảnh báo: " + uniq.length + " mã/cấu hình cần kiểm tra thủ công.";
     }
     function lookupInviteFromServer(raw) {
       return fetch("/api/invite/lookup", {
@@ -703,11 +763,21 @@
           return;
         }
         var local = getRawLocalInviteCodes();
-        var merged = buildMergedInviteCodes(j.codes, {});
-        localStorage.setItem(INVITE_CODES_KEY, JSON.stringify(merged));
+        var backupLocal = getRawLocalInviteCodesBackup();
+        var mergeResult = mergeInviteSources(j.codes, local, backupLocal);
+        var viewCodes = mergeResult.merged;
+        backupLocalInviteCodes(local);
+        setInviteStatus("Đang đồng bộ tổng mã local + server lên máy chủ…");
+        var okSync = await setInviteCodes(viewCodes);
+        if (!okSync) {
+          renderInviteCodes();
+          updateInviteSyncSummary(countInviteCodes(j.codes), countInviteCodes(local), countInviteCodes(viewCodes), false);
+          setInviteStatus(appendWarningStatus("Không đẩy được bản gộp lên server. Đang giữ dữ liệu local để tránh mất mã.", mergeResult.warnings));
+          return;
+        }
         renderInviteCodes();
-        updateInviteSyncSummary(countInviteCodes(j.codes), countInviteCodes(local), false);
-        setInviteStatus("Đã đồng bộ danh sách mã từ server.");
+        updateInviteSyncSummary(countInviteCodes(j.codes), countInviteCodes(local), countInviteCodes(viewCodes), true);
+        setInviteStatus(appendWarningStatus("Đã gộp local + server, đồng bộ lên server và tải snapshot tổng về máy.", mergeResult.warnings));
       } catch (_) {
         setInviteStatus("Lỗi khi gọi server. Hãy tải lại trang để thử đồng bộ lại.");
       }
@@ -725,17 +795,19 @@
           return;
         }
         var local = getRawLocalInviteCodes();
-        var merged = buildMergedInviteCodes(j.codes, local);
+        var backupLocal = getRawLocalInviteCodesBackup();
+        var mergeResult = mergeInviteSources(j.codes, local, backupLocal);
+        var merged = mergeResult.merged;
         setInviteStatus("Đang hợp nhất và đồng bộ lên server…");
         var ok = await setInviteCodes(merged);
         if (!ok) {
-          updateInviteSyncSummary(countInviteCodes(j.codes), countInviteCodes(local), false);
-          setInviteStatus("Hợp nhất trên máy xong nhưng chưa đẩy được lên server.");
+          updateInviteSyncSummary(countInviteCodes(j.codes), countInviteCodes(local), countInviteCodes(merged), false);
+          setInviteStatus(appendWarningStatus("Hợp nhất trên máy xong nhưng chưa đẩy được lên server.", mergeResult.warnings));
           return;
         }
         renderInviteCodes();
-        updateInviteSyncSummary(countInviteCodes(j.codes), countInviteCodes(local), true);
-        setInviteStatus("Đã hợp nhất local + server và đồng bộ lên server.");
+        updateInviteSyncSummary(countInviteCodes(j.codes), countInviteCodes(local), countInviteCodes(merged), true);
+        setInviteStatus(appendWarningStatus("Đã hợp nhất local + server và đồng bộ lên server.", mergeResult.warnings));
       } catch (_) {
         setInviteStatus("Lỗi khi hợp nhất dữ liệu. Thử lại sau.");
       }
