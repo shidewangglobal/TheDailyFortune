@@ -459,16 +459,17 @@
       </div>
       <div class="actions">
         <button class="btn primary" id="createInviteBtn" type="button">Tạo mã random</button>
-        <button class="btn soft" id="syncInvitesFromServerBtn" type="button">Tải mã từ server</button>
+        <button class="btn soft" id="mergeInvitesBtn" type="button">Hợp nhất local + server</button>
       </div>
       <div class="status" id="inviteStatus">Sẵn sàng.</div>
+      <div class="status" id="inviteSyncSummary">Server: - | Local: - | Chưa gộp</div>
       <p class="sub" style="margin-top:8px;font-size:13px;line-height:1.45;opacity:0.92;">
         <strong>Mã cho khách dùng được khi nào?</strong> Khi mã đã <strong>lưu lên máy chủ</strong> (sau bấm &quot;Tạo mã random&quot; hoặc sửa bảng mã, dòng trạng thái phải báo đã lưu server).
-        Nếu host đã đặt <strong>mã quản trị</strong> trên server, mỗi trình duyệt cần <a href="/admin">vào /admin</a> và nhập đúng mã đó một lần — nếu không, lưu mã chỉ ở máy bạn và khách sẽ báo &quot;không hợp lệ&quot;.
+        Nếu host đã đặt <strong>mã quản trị</strong> trên server, mỗi trình duyệt cần <a href="/admin">vào /admin</a> và nhập đúng mã đó một lần — nếu không, server sẽ từ chối thao tác admin ở trình duyệt đó.
         Hồ sơ khách trên cloud (Supabase) dùng đúng <strong>mã đó</strong> làm khóa (<code>invite_code</code>) — không cần thêm cột &quot;mã đang dùng&quot; riêng.
       </p>
       <p class="invite-table-hint">
-        <strong>Mã tuỳ chỉnh</strong> nằm trong bảng dưới (dưới hai dòng ADMIN/TEST). Chỉ thấy 2 mặc định — đặc biệt trên điện thoại: thường do <strong>chưa nhập mã quản trị trên trình duyệt đó</strong> (mỗi máy một phiên; dữ liệu server không mất). Mở <strong>/admin</strong>, nhập mã quản trị, rồi bấm <strong>«Tải mã từ server»</strong> hoặc tải lại trang. Hoặc chưa tạo mã trên server — tạo mã sau khi đã vào admin.
+        <strong>Mã tuỳ chỉnh</strong> nằm trong bảng dưới (dưới hai dòng ADMIN/TEST). Nếu chỉ thấy 2 mặc định — đặc biệt trên điện thoại: thường do <strong>chưa nhập mã quản trị trên trình duyệt đó</strong> (mỗi máy một phiên; dữ liệu server không mất). Mở <strong>/admin</strong>, nhập mã quản trị, rồi tải lại trang — hệ thống tự đồng bộ.
       </p>
       <div class="table-wrap invite-codes-wrap">
         <table>
@@ -628,6 +629,45 @@
       localStorage.setItem(INVITE_CODES_KEY, JSON.stringify(codes || {}));
       return syncInviteCodesToServer(codes);
     }
+    function countInviteCodes(codes) {
+      if (!codes || typeof codes !== "object") return 0;
+      return Object.keys(codes).length;
+    }
+    function updateInviteSyncSummary(serverCount, localCount, mergedFlag) {
+      var el = document.getElementById("inviteSyncSummary");
+      if (!el) return;
+      var label = mergedFlag ? "Đã gộp" : "Chưa gộp";
+      el.textContent = "Server: " + serverCount + " | Local: " + localCount + " | " + label;
+    }
+    function getRawLocalInviteCodes() {
+      try {
+        var raw = localStorage.getItem(INVITE_CODES_KEY);
+        var parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+    function normalizeInviteMeta(meta) {
+      if (!meta || typeof meta !== "object") return {};
+      var out = {};
+      if (meta.tier === "admin" || meta.tier === "test") out.tier = meta.tier;
+      if (meta.totalLimit != null && meta.totalLimit !== "") out.totalLimit = parseInt(meta.totalLimit, 10) || meta.totalLimit;
+      if (meta.usageCount != null && meta.usageCount !== "") out.usageCount = parseInt(meta.usageCount, 10) || meta.usageCount;
+      if (meta.sentToCustomer != null) out.sentToCustomer = !!meta.sentToCustomer;
+      return out;
+    }
+    function buildMergedInviteCodes(serverCodes, localCodes) {
+      var merged = {};
+      Object.keys(INVITE_CODES).forEach(function (k) { merged[k] = INVITE_CODES[k]; });
+      Object.keys(serverCodes || {}).forEach(function (k) { merged[k] = normalizeInviteMeta(serverCodes[k]); });
+      Object.keys(localCodes || {}).forEach(function (k) {
+        var next = normalizeInviteMeta(localCodes[k]);
+        if (!next || typeof next !== "object") return;
+        merged[k] = Object.assign({}, merged[k] || {}, next);
+      });
+      return merged;
+    }
     function lookupInviteFromServer(raw) {
       return fetch("/api/invite/lookup", {
         method: "POST",
@@ -649,12 +689,12 @@
         var r = await fetch("/api/invite-codes", { credentials: "same-origin" });
         if (r.status === 403) {
           setInviteStatus(
-            "Trình duyệt này chưa có phiên sau khi nhập mã quản trị — server không gửi danh sách mã (dữ liệu vẫn còn trên server). Mở /admin, nhập mã quản trị, rồi bấm «Tải mã từ server» hoặc tải lại trang."
+            "Trình duyệt này chưa có phiên sau khi nhập mã quản trị — server không gửi danh sách mã (dữ liệu vẫn còn trên server). Mở /admin, nhập mã quản trị, rồi tải lại trang để tự đồng bộ."
           );
           return;
         }
         if (!r.ok) {
-          setInviteStatus("Không đọc được mã từ server (lỗi " + r.status + "). Thử «Tải mã từ server» sau ít giây.");
+          setInviteStatus("Không đọc được mã từ server (lỗi " + r.status + "). Hệ thống sẽ tự thử lại khi bạn quay lại tab hoặc tải lại trang.");
           return;
         }
         var j = await r.json().catch(function () { return {}; });
@@ -662,20 +702,42 @@
           setInviteStatus("Phản hồi từ server không hợp lệ. Thử lại.");
           return;
         }
-        var local = {};
-        try {
-          var raw = localStorage.getItem(INVITE_CODES_KEY);
-          if (raw) local = JSON.parse(raw) || {};
-        } catch (_) {}
-        var merged = {};
-        Object.keys(INVITE_CODES).forEach(function (k) { merged[k] = INVITE_CODES[k]; });
-        Object.keys(local).forEach(function (k) { merged[k] = local[k]; });
-        Object.keys(j.codes).forEach(function (k) { merged[k] = j.codes[k]; });
-        await setInviteCodes(merged);
+        var local = getRawLocalInviteCodes();
+        var merged = buildMergedInviteCodes(j.codes, {});
+        localStorage.setItem(INVITE_CODES_KEY, JSON.stringify(merged));
         renderInviteCodes();
+        updateInviteSyncSummary(countInviteCodes(j.codes), countInviteCodes(local), false);
         setInviteStatus("Đã đồng bộ danh sách mã từ server.");
       } catch (_) {
-        setInviteStatus("Lỗi khi gọi server. Bấm «Tải mã từ server» để thử lại.");
+        setInviteStatus("Lỗi khi gọi server. Hãy tải lại trang để thử đồng bộ lại.");
+      }
+    }
+    async function mergeLocalAndServerInvites() {
+      try {
+        var r = await fetch("/api/invite-codes", { credentials: "same-origin" });
+        if (!r.ok) {
+          setInviteStatus("Không đọc được server để hợp nhất (lỗi " + r.status + ").");
+          return;
+        }
+        var j = await r.json().catch(function () { return {}; });
+        if (!j || !j.ok || !j.codes) {
+          setInviteStatus("Phản hồi server không hợp lệ. Chưa thể hợp nhất.");
+          return;
+        }
+        var local = getRawLocalInviteCodes();
+        var merged = buildMergedInviteCodes(j.codes, local);
+        setInviteStatus("Đang hợp nhất và đồng bộ lên server…");
+        var ok = await setInviteCodes(merged);
+        if (!ok) {
+          updateInviteSyncSummary(countInviteCodes(j.codes), countInviteCodes(local), false);
+          setInviteStatus("Hợp nhất trên máy xong nhưng chưa đẩy được lên server.");
+          return;
+        }
+        renderInviteCodes();
+        updateInviteSyncSummary(countInviteCodes(j.codes), countInviteCodes(local), true);
+        setInviteStatus("Đã hợp nhất local + server và đồng bộ lên server.");
+      } catch (_) {
+        setInviteStatus("Lỗi khi hợp nhất dữ liệu. Thử lại sau.");
       }
     }
     function setInviteStatus(text) {
@@ -1143,7 +1205,7 @@
           p.textContent =
             "Hai luồng tách bạch: (1) Khách — trang chủ, nhập mã mời. (2) Admin — /admin, nhập mã quản trị (trùng biến ADMIN_PIN trên Render). " +
             "Mã quản trị là một, server một; nhưng mỗi trình duyệt / điện thoại phải làm luồng (2) một lần (cookie không đồng bộ giữa máy). " +
-            "Đã vào admin trên máy tính mà điện thoại chỉ thấy 2 mặc định → mở /admin trên điện thoại, nhập cùng mã quản trị, rồi «Tải mã từ server».";
+            "Đã vào admin trên máy tính mà điện thoại chỉ thấy 2 mặc định → mở /admin trên điện thoại, nhập cùng mã quản trị, rồi tải lại trang.";
           box.classList.remove("hidden");
         })
         .catch(function () {});
@@ -1501,14 +1563,6 @@
       });
     }
 
-    var syncInvitesFromServerBtn = document.getElementById("syncInvitesFromServerBtn");
-    if (syncInvitesFromServerBtn) {
-      syncInvitesFromServerBtn.addEventListener("click", function () {
-        setInviteStatus("Đang tải danh sách mã…");
-        void hydrateInvitesFromServer();
-      });
-    }
-
     document.getElementById("createInviteBtn").addEventListener("click", async function () {
       var tier = (document.getElementById("newInviteTier").value || "test").trim();
       var limitRaw = parseInt((document.getElementById("newInviteLimit").value || "20").trim(), 10);
@@ -1540,6 +1594,12 @@
         );
       }
     });
+    var mergeInvitesBtn = document.getElementById("mergeInvitesBtn");
+    if (mergeInvitesBtn) {
+      mergeInvitesBtn.addEventListener("click", function () {
+        void mergeLocalAndServerInvites();
+      });
+    }
     document.getElementById("inviteCodesBody").addEventListener("change", function (e) {
       var t = e.target;
       if (!t || t.type !== "checkbox" || !t.dataset || t.dataset.act !== "toggleSent") return;
@@ -1622,6 +1682,12 @@
     setModeUI(mode);
     if (mode === "customer") initCustomerMode();
     else hydrateInvitesFromServer();
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState !== "visible") return;
+      if (mode !== "customer") {
+        void hydrateInvitesFromServer();
+      }
+    });
   </script>
 </body>
 </html>
