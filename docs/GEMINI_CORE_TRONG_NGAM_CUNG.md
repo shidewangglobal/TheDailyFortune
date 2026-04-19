@@ -64,6 +64,6 @@ Khi có **participant** / hành đối tượng: sau khi đã **Hoa Giáp × cun
 
 ## 7. Khung suy nghĩ (không phải câu trả lời cho user)
 
-Dùng nội bộ khi soạn **ba đoạn văn dài** — **không** thay thế luận giải bằng một câu tóm tắt:
+Dùng nội bộ khi soạn output **5 phần** (Tóm tắt / Vì sao / Đề xuất / Luận giải chi tiết / Lời khuyên) — **không** thay thế luận giải bằng một câu tóm tắt:
 
 **Luận = (Hoa Giáp của thời điểm đặt trên cung Lục Nhâm tương ứng) + (ghép ngày–giờ) + (chồng tuổi & đối tượng) → hình tượng việc đời theo chủ đề.**

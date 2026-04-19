@@ -54,6 +54,7 @@ function clearAdminCookieHeader() {
 
 const DATA_DIR = path.join(__dirname, "data");
 const INVITE_CODES_FILE = path.join(DATA_DIR, "invite_codes.json");
+const TRANSLATION_CACHE_FILE = path.join(DATA_DIR, "translation_cache.json");
 const INVITE_DEFAULTS = {
   "ADMIN-2026": { tier: "admin" },
   "TEST-2026": { tier: "admin" },
@@ -87,6 +88,58 @@ function writeInviteCodesToDisk(codes) {
   const tmp = path.join(DATA_DIR, "invite_codes.json.tmp." + process.pid);
   fs.writeFileSync(tmp, payload, "utf8");
   fs.renameSync(tmp, INVITE_CODES_FILE);
+}
+
+function loadTranslationCacheFromDisk() {
+  try {
+    if (!fs.existsSync(TRANSLATION_CACHE_FILE)) return {};
+    const raw = fs.readFileSync(TRANSLATION_CACHE_FILE, "utf8");
+    const parsed = JSON.parse(raw || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (e) {
+    console.error("[i18n/cache] read", e);
+    return {};
+  }
+}
+
+function writeTranslationCacheToDisk(cache) {
+  try {
+    if (!cache || typeof cache !== "object") return;
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    const payload = JSON.stringify(cache, null, 2);
+    const tmp = path.join(DATA_DIR, "translation_cache.json.tmp." + process.pid);
+    fs.writeFileSync(tmp, payload, "utf8");
+    fs.renameSync(tmp, TRANSLATION_CACHE_FILE);
+  } catch (e) {
+    console.error("[i18n/cache] write", e);
+  }
+}
+
+let translationCacheMemo = null;
+let translationCacheFlushTimer = null;
+function getTranslationCache() {
+  if (!translationCacheMemo) translationCacheMemo = loadTranslationCacheFromDisk();
+  return translationCacheMemo;
+}
+function buildTranslationCacheKey(targetLang, text, sourceLang = "auto", domain = "general") {
+  const target = String(targetLang || "").trim().toLowerCase();
+  const source = String(sourceLang || "auto").trim().toLowerCase();
+  const scope = String(domain || "general").trim().toLowerCase();
+  return `${scope}::${source}::${target}::${String(text || "").trim()}`;
+}
+function normalizeComparableText(v) {
+  return String(v || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "")
+    .toLowerCase();
+}
+function queueFlushTranslationCache() {
+  if (translationCacheFlushTimer) return;
+  translationCacheFlushTimer = setTimeout(() => {
+    translationCacheFlushTimer = null;
+    writeTranslationCacheToDisk(getTranslationCache());
+  }, 250);
 }
 
 let supabaseClientMemo = undefined;
@@ -349,6 +402,12 @@ function fortuneAnalysisTooShort(text) {
   return words < 140 || noSpaceLen < 720 || paragraphs < 2;
 }
 
+/** Legacy Vietnamese section titles — if present in model output, trigger retry/finalize. */
+const LEGACY_VI_ANALYSIS_HEADER_MARKERS = /Kết luận nhanh|1 câu chốt/i;
+function analysisHasLegacyViHeaders(text) {
+  return LEGACY_VI_ANALYSIS_HEADER_MARKERS.test(String(text || ""));
+}
+
 async function callGeminiAnalysis(payload) {
   if (process.env.GEMINI_PLAYBOOK_HOT_RELOAD === "1") {
     loadGeminiPlaybook();
@@ -358,21 +417,29 @@ async function callGeminiAnalysis(payload) {
     throw new Error("Missing GEMINI_API_KEY");
   }
   const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + encodeURIComponent(apiKey);
-  /** Luận giải «Tham Khảo Chuyện Hằng Ngày»: văn xuôi nhiều đoạn (bản trước 61c322a), không phải một câu JSON. */
+  const targetLanguage = String((payload && payload.target_language) || "vi").trim() || "vi";
+  const neighborHint = Array.isArray(payload && payload.nearby_windows) ? payload.nearby_windows : [];
+  const eventImportance = String((payload && payload.event_importance_hint) || "normal");
   const prompt = [
     "SYSTEM PLAYBOOK (MUST FOLLOW):",
     geminiPlaybook || "Fallback: Write 3 Vietnamese paragraphs, practical and non-generic.",
     "",
     "TASK:",
-    "Produce a practical interpretation in Vietnamese using Luc Nham + Hoa Giap input JSON.",
-    "Do not output bullet list.",
-    "Focus on relation between day/hour and owner fate for this specific event.",
-    "Do NOT use generic sales templates if topic is not sales.",
-    "Output MUST be 260-400 Vietnamese words as THREE separate paragraphs (blank line between paragraphs).",
-    "FORBIDDEN: a single-sentence reply, a single short paragraph, or ending the whole text with only (~NN%) or (NN%) as the main content.",
-    "You may mention a rough alignment percentage ONCE in the last sentence of the third paragraph if it fits — it must not replace full reasoning.",
-    "Weave topic_verbatim into natural prose — do NOT wrap the whole topic in « », quotes, or parentheses as a title.",
-    "If the situation is sensitive (health, missing person, accident, welfare): avoid business jargon (chốt, deal, pipeline); prefer neutral words: liên hệ, phối hợp, an toàn, kiểm chứng.",
+    `Write the analysis in target_language="${targetLanguage}" only.`,
+    "Output MUST contain exactly 5 titled sections in this order:",
+    "1) Summary — for Vietnamese (vi) use heading **Tóm tắt**; other languages: natural equivalent.",
+    "2) Reasons",
+    "3) Recommendations",
+    "4) Detailed interpretation",
+    "5) Closing recommendation — for Vietnamese (vi) use heading **Lời khuyên**; other languages: natural equivalent (e.g. Closing advice).",
+    "Headings must be in target_language and natural for that language.",
+    "Do not reuse deprecated Vietnamese section-title wording from older app builds; follow the Vietnamese examples above when target_language is vi.",
+    "For section 4, keep original technical astrology language (Luc Nham, cung, can chi, ngu hanh relations).",
+    "Do NOT return JSON, markdown code block, or bullet-only response.",
+    "Avoid repetitive, alarming words. If risk exists, explain specific possible issue and reason.",
+    "In section 3, suggest practical hours and if needed nearby days/weeks/months according to event importance.",
+    `Event importance hint: ${eventImportance}. Nearby windows: ${JSON.stringify(neighborHint)}.`,
+    "Mention percentage at most once; it cannot replace reasoning.",
     "",
     "INPUT JSON:",
     JSON.stringify(payload)
@@ -428,31 +495,147 @@ async function callGeminiAnalysis(payload) {
   };
 
   let text = await generate(prompt);
-  if (fortuneAnalysisTooShort(text)) {
+  // #region agent log
+  fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'analysis-headers',hypothesisId:'H17',location:'server.js:callGeminiAnalysis',message:'initial_output_header_scan',data:{targetLanguage,hasLegacyViHeaders:analysisHasLegacyViHeaders(text),charLen:String(text||'').length},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
+  if (fortuneAnalysisTooShort(text) || analysisHasLegacyViHeaders(text)) {
+    // #region agent log
+    fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'analysis-headers',hypothesisId:'H18',location:'server.js:callGeminiAnalysis',message:'retry_triggered',data:{targetLanguage,isTooShort:fortuneAnalysisTooShort(text),hasLegacyViHeaders:analysisHasLegacyViHeaders(text)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     const retryPrompt = [
-      "Bản trước KHÔNG ĐẠT: quá ngắn hoặc chỉ một đoạn / một câu.",
-      "Viết lại ĐÚNG 3 đoạn tiếng Việt (mỗi đoạn 4-8 câu), để một dòng trống giữa các đoạn, tổng 260-400 từ.",
-      "Đoạn 1: bối cảnh ngày–tháng–giờ (lục cung, mệnh ngày so với gia chủ).",
-      "Đoạn 2: diễn giải vì sao ảnh hưởng tới chủ đề topic_verbatim (không liệt kê bullet).",
-      "Đoạn 3: hành động cụ thể, giờ nên dùng/tránh; có thể kết bằng một cụm mức thuận (~NN%) ở cuối đoạn 3.",
-      "Không markdown, không tiêu đề, không JSON.",
+      "Bản trước KHÔNG ĐẠT format hoặc quá ngắn.",
+      "Rewrite with exactly 5 sections in this order: Summary (vi: Tóm tắt) / Reasons / Recommendations / Detailed interpretation / Closing recommendation (vi: Lời khuyên).",
+      `Bắt buộc dùng ngôn ngữ: ${targetLanguage}.`,
+      "For Vietnamese output, section 1 heading must be Tóm tắt and section 5 heading must be Lời khuyên; do not reuse deprecated section-title wording from older builds.",
+      "Phần Đề xuất cần có khung giờ khả thi thực tế; nếu ngày hiện tại không thuận thì gợi ý cửa sổ ngày gần kề.",
+      "Không JSON, không code block, không dùng từ dọa rủi ro lặp lại.",
       "",
       "INPUT JSON:",
       JSON.stringify(payload)
     ].join("\n");
     const retryText = await generate(retryPrompt);
     if (!fortuneAnalysisTooShort(retryText) || retryText.length > text.length) text = retryText;
+    // #region agent log
+    fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'analysis-headers',hypothesisId:'H19',location:'server.js:callGeminiAnalysis',message:'retry_output_header_scan',data:{targetLanguage,hasLegacyViHeaders:analysisHasLegacyViHeaders(text),charLen:String(text||'').length},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
   }
-  if (fortuneAnalysisTooShort(text)) {
+  if (fortuneAnalysisTooShort(text) || analysisHasLegacyViHeaders(text)) {
+    // #region agent log
+    fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'analysis-headers',hypothesisId:'H20',location:'server.js:callGeminiAnalysis',message:'finalize_triggered',data:{targetLanguage,isTooShort:fortuneAnalysisTooShort(text),hasLegacyViHeaders:analysisHasLegacyViHeaders(text)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     const finalizePrompt = [
-      "Vẫn quá ngắn. Bắt buộc: 3 đoạn văn xuôi, tổng tối thiểu ~220 từ tiếng Việt, không bullet.",
-      "Mở đầu mỗi đoạn bằng ý mới; không lặp nguyên câu từ bản trước.",
+      "Still not valid. Must output exactly 5 clear titled sections with no repetitive points.",
+      `Ngôn ngữ đầu ra bắt buộc: ${targetLanguage}.`,
+      "Use natural headings in target_language. For Vietnamese: first section **Tóm tắt**, last section **Lời khuyên**; no deprecated legacy section titles.",
       "INPUT JSON:",
       JSON.stringify(payload)
     ].join("\n");
     text = await generate(finalizePrompt);
   }
   return text;
+}
+
+async function callGeminiTranslateTexts(payload) {
+  const apiKey = process.env.GEMINI_API_KEY || "";
+  if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
+  const texts = Array.isArray(payload && payload.texts) ? payload.texts : [];
+  if (!texts.length) return [];
+  const source = String((payload && payload.source_language) || "auto");
+  const target = String((payload && payload.target_language) || "en");
+  const domain = String((payload && payload.domain) || "general");
+  const strictTranslate = !!(payload && payload.strict_translate);
+  const cache = getTranslationCache();
+  const result = new Array(texts.length).fill("");
+  const misses = [];
+  const missIndexes = [];
+  for (let i = 0; i < texts.length; i++) {
+    const src = String(texts[i] || "");
+    const scopedKey = buildTranslationCacheKey(target, src, source, domain);
+    const legacyKey = `${String(target || "").trim().toLowerCase()}::${src}`;
+    const cached = cache[scopedKey] || (domain === "general" ? cache[legacyKey] : undefined);
+    if (typeof cached === "string" && cached.trim()) {
+      result[i] = cached;
+    } else {
+      misses.push(src);
+      missIndexes.push(i);
+    }
+  }
+  if (!misses.length) return result;
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + encodeURIComponent(apiKey);
+  async function translateBatch(batchTexts, extraRules) {
+    const prompt = [
+      "Translate each text item preserving order and meaning.",
+      source === "auto"
+        ? `Source language hint: auto-detect from each text item. Target language: ${target}.`
+        : `Source language hint: ${source}. Target language: ${target}.`,
+      extraRules || "",
+      "Return strict JSON object: {\"translations\":[...]}",
+      "No markdown, no commentary.",
+      "INPUT:",
+      JSON.stringify({ texts: batchTexts })
+    ].filter(Boolean).join("\n");
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 0 } }
+      })
+    });
+    if (!resp.ok) {
+      throw new Error("Gemini API error: " + resp.status);
+    }
+    const data = await resp.json();
+    const text = (data?.candidates?.[0]?.content?.parts || [])
+      .map((p) => (p && typeof p.text === "string" ? p.text : ""))
+      .join("\n")
+      .trim();
+    const jsonText = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+    const parsed = JSON.parse(jsonText);
+    return Array.isArray(parsed && parsed.translations) ? parsed.translations : [];
+  }
+  const glossaryRule = domain === "astrology_glossary"
+    ? "These are Vietnamese astrology terms used as user-facing labels. Translate every term into natural target-language wording (or common transliteration if no direct equivalent). Do not keep Vietnamese unchanged."
+    : "";
+  const out = await translateBatch(misses, glossaryRule);
+  const unresolvedIndexes = [];
+  const unresolvedTexts = [];
+  for (let j = 0; j < missIndexes.length; j++) {
+    const idx = missIndexes[j];
+    const src = misses[j];
+    let translated = typeof out[j] === "string" && out[j].trim() ? out[j] : src;
+    const isNearSource =
+      normalizeComparableText(translated) === normalizeComparableText(src);
+    if (
+      strictTranslate &&
+      String(target || "").toLowerCase() !== "vi" &&
+      isNearSource
+    ) {
+      unresolvedIndexes.push(j);
+      unresolvedTexts.push(src);
+    }
+    result[idx] = translated;
+    cache[buildTranslationCacheKey(target, src, source, domain)] = translated;
+  }
+  if (unresolvedTexts.length) {
+    const retryOut = await translateBatch(
+      unresolvedTexts,
+      "Retry mode: translation must not be identical to the Vietnamese source text. Translate to target language only."
+    );
+    for (let k = 0; k < unresolvedIndexes.length; k++) {
+      const missPos = unresolvedIndexes[k];
+      const src = unresolvedTexts[k];
+      const idx = missIndexes[missPos];
+      const retried = typeof retryOut[k] === "string" && retryOut[k].trim() ? retryOut[k] : result[idx];
+      result[idx] = retried;
+      cache[buildTranslationCacheKey(target, src, source, domain)] = retried;
+    }
+    // #region agent log
+    fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'post-fix',hypothesisId:'H16',location:'server.js:callGeminiTranslateTexts',message:'strict_retry_for_near_source_terms',data:{domain,target,count:unresolvedTexts.length},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+  }
+  queueFlushTranslationCache();
+  return result.map((x, i) => (typeof x === "string" && x.trim() ? x : texts[i]));
 }
 
 const server = http.createServer((req, res) => {
@@ -564,6 +747,23 @@ const server = http.createServer((req, res) => {
           body.debug = message.slice(0, 500);
         }
         send(res, status, JSON.stringify(body), "application/json; charset=utf-8");
+      });
+    return;
+  }
+  if (req.method === "POST" && pathOnly === "/api/i18n/translate") {
+    readJsonBody(req)
+      .then((payload) => callGeminiTranslateTexts(payload))
+      .then((translations) =>
+        send(
+          res,
+          200,
+          JSON.stringify({ ok: true, translations }),
+          "application/json; charset=utf-8"
+        )
+      )
+      .catch((err) => {
+        console.error("[i18n/translate]", String(err && err.message ? err.message : err).slice(0, 300));
+        send(res, 500, JSON.stringify({ ok: false, error: "translate_failed" }), "application/json; charset=utf-8");
       });
     return;
   }
