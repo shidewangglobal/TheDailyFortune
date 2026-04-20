@@ -32,6 +32,16 @@
         justify-content: center;
         padding: 16px;
       }
+      .lang-switcher {
+        position: fixed;
+        top: 10px;
+        right: 12px;
+        z-index: 100;
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 999px;
+        padding: 5px 8px;
+        border: 1px solid rgba(91, 33, 182, 0.2);
+      }
       @media (min-width: 481px) {
         body {
           background-attachment: fixed;
@@ -465,24 +475,25 @@
     </style>
   </head>
   <body>
+    <div class="lang-switcher" data-lang-dropdown-host data-no-translate="1"></div>
     <!-- Màn điền Tên + Email trước khi vào chat. Lần sau (cùng trình duyệt) tự điền lại từ localStorage. -->
     <div id="preChatScreen" class="pre-chat-screen">
       <div class="pre-chat-box">
-        <h2>Joy · A Life Well Lived</h2>
-        <p>Vui lòng điền thông tin để bắt đầu trò chuyện</p>
-        <label for="gateName">Tên của bạn</label>
-        <input id="gateName" type="text" placeholder="Nhập tên" required />
-        <label for="gateContact">Email hoặc SĐT</label>
-        <input id="gateContact" type="text" placeholder="Nhập email hoặc số điện thoại" required />
-        <button type="button" id="gateEnter" class="btn-enter">Vào chat</button>
-        <p class="hint">Thông tin được lưu trên trình duyệt, lần sau sẽ tự điền lại.</p>
+        <h2 data-i18n="index.gate.title">Joy · A Life Well Lived</h2>
+        <p data-i18n="index.gate.subtitle">Vui lòng điền thông tin để bắt đầu trò chuyện</p>
+        <label for="gateName" data-i18n="index.gate.name.label">Tên của bạn</label>
+        <input id="gateName" type="text" data-i18n-placeholder="index.gate.name.placeholder" placeholder="Nhập tên" required />
+        <label for="gateContact" data-i18n="index.gate.contact.label">Email hoặc SĐT</label>
+        <input id="gateContact" type="text" data-i18n-placeholder="index.gate.contact.placeholder" placeholder="Nhập email hoặc số điện thoại" required />
+        <button type="button" id="gateEnter" class="btn-enter" data-i18n="index.gate.enter.button">Vào chat</button>
+        <p class="hint" data-i18n="index.gate.hint">Thông tin được lưu trên trình duyệt, lần sau sẽ tự điền lại.</p>
       </div>
     </div>
 
     <div id="mainChat" class="chat-container" style="display: none;">
       <div class="chat-header">
-        <div class="chat-header-title">Joy · A Life Well Lived - Sống Chất</div>
-        <div class="chat-header-subtitle">Trợ lý dự án A Life Well Lived - Sống Chất · Đa ngôn ngữ</div>
+        <div class="chat-header-title" data-i18n="index.chat.header.title">Joy · A Life Well Lived - Sống Chất</div>
+        <div class="chat-header-subtitle" data-i18n="index.chat.header.subtitle">Trợ lý dự án A Life Well Lived - Sống Chất · Đa ngôn ngữ</div>
       </div>
       <div id="messages" class="chat-messages"></div>
       <div id="status" class="status"></div>
@@ -495,15 +506,17 @@
             id="input"
             class="chat-input"
             type="text"
+            data-i18n-placeholder="index.chat.input.placeholder"
             placeholder="Nhập tin nhắn..."
           />
         </div>
-        <button type="button" id="send" class="send-button" title="Gửi" aria-label="Gửi">
+        <button type="button" id="send" class="send-button" data-i18n-title="index.chat.send" data-i18n-aria="index.chat.send" title="Gửi" aria-label="Gửi">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
         </button>
       </div>
     </div>
 
+    <script src="/i18n.js"></script>
     <script>
       const messagesEl = document.getElementById("messages");
       const inputEl = document.getElementById("input");
@@ -515,6 +528,10 @@
       const STORAGE_KEY = "joy_session_id";
       const STORAGE_USER_NAME = "joy_user_name";
       const STORAGE_USER_CONTACT = "joy_user_contact";
+      const tr = function (key, params, fallback) {
+        if (window.DFI18n && typeof window.DFI18n.t === "function") return window.DFI18n.t(key, params);
+        return fallback || key;
+      };
 
       function getSessionId() {
         try {
@@ -606,7 +623,7 @@
           btnWrap.className = "quick-reply-wrap";
           const labelEl = document.createElement("div");
           labelEl.className = "quick-reply-label";
-          labelEl.textContent = "Bạn có thể chọn:";
+          labelEl.textContent = tr("index.chat.quickReply.label", null, "Bạn có thể chọn:");
           btnWrap.appendChild(labelEl);
           options.buttons.forEach(function (label) {
             const btn = document.createElement("button");
@@ -628,7 +645,7 @@
         if (isSending) return;
         isSending = true;
         sendBtn.disabled = true;
-        statusEl.textContent = "Joy is thinking...";
+        statusEl.textContent = tr("index.chat.status.thinking", null, "Joy is thinking...");
         addMessage("user", text);
         history.push({ role: "user", text });
         if (inputEl && inputEl.value) clearInput();
@@ -650,7 +667,7 @@
 
           const data = await res.json();
           if (data.error) {
-            let errText = "Xin lỗi, Joy gặp lỗi: " + data.error;
+            let errText = tr("index.chat.error.prefix", null, "Xin lỗi, Joy gặp lỗi: ") + data.error;
             if (data.detail && data.detail !== data.error) errText += "\n\nChi tiết: " + data.detail;
             addMessage("joy", errText);
           } else {
@@ -664,7 +681,7 @@
           console.error(err);
           addMessage(
             "joy",
-            "Xin lỗi, Joy không thể kết nối tới máy chủ. Hãy thử lại sau."
+            tr("index.chat.error.network", null, "Xin lỗi, Joy không thể kết nối tới máy chủ. Hãy thử lại sau.")
           );
         } finally {
           isSending = false;
@@ -709,11 +726,11 @@
             } catch (_) {}
           }
           if (isReturning) {
-            addMessage("joy", "Chào mừng bạn quay trở lại! 👋 Tôi có thể giúp gì cho bạn hôm nay?");
+            addMessage("joy", tr("index.chat.welcome.back", null, "Chào mừng bạn quay trở lại! 👋 Tôi có thể giúp gì cho bạn hôm nay?"));
           } else {
             addMessage(
               "joy",
-              "Xin chào bạn, tôi là Joy – trợ lý ảo của dự án A Life Well Lived - Sống Chất. Tôi có thể hỗ trợ bạn tìm hiểu thông tin về hệ sinh thái sức khỏe và kinh doanh của chúng tôi. Bạn cần tôi hỗ trợ điều gì hôm nay?"
+              tr("index.chat.welcome.new", null, "Xin chào bạn, tôi là Joy – trợ lý ảo của dự án A Life Well Lived - Sống Chất. Tôi có thể hỗ trợ bạn tìm hiểu thông tin về hệ sinh thái sức khỏe và kinh doanh của chúng tôi. Bạn cần tôi hỗ trợ điều gì hôm nay?")
             );
           }
         }
@@ -751,7 +768,7 @@
         const name = (gateName && gateName.value || "").trim();
         const contact = (gateContact && gateContact.value || "").trim();
         if (!name || !contact) {
-          alert("Vui lòng điền đầy đủ Tên và Email để vào chat.");
+          alert(tr("index.gate.required", null, "Vui lòng điền đầy đủ Tên và Email để vào chat."));
           return;
         }
         saveUserInfo(name, contact);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Daily fortune</title>
+  <title data-i18n="app.brand">Daily fortune</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Noto+Serif:wght@600;700;800;900&display=swap" rel="stylesheet">
@@ -725,21 +725,22 @@
     .quota-banner a { color: #fde68a; font-weight: 700; word-break: break-all; }
   </style>
 </head>
-<body>
+<body data-i18n-strict="1">
   <div class="shell">
     <div class="topbar">
-      <div class="brand">Daily fortune</div>
+      <div class="brand" data-i18n="app.brand">Daily fortune</div>
       <div class="top-actions">
-        <a id="profileNavLink" href="/profile.html?role=customer&amp;profile=1">Hồ sơ / Profile</a>
+        <a id="profileNavLink" href="/profile.html?role=customer&amp;profile=1" data-i18n="dashboard.profile.link">Hồ sơ / Profile</a>
+        <span data-lang-dropdown-host></span>
       </div>
     </div>
 
     <section class="card energy-card">
       <div class="energy-head-row">
-        <h2 class="title">Năng Lượng Ngày</h2>
+        <h2 class="title" data-i18n="dashboard.energy.title">Năng Lượng Ngày</h2>
         <div class="energy-head-inline">
-          <div class="energy-success" title="Mức thuận lợi tương đối trong ngày theo bản mệnh và giờ đang xem; càng cao càng phù hợp việc cần gặp gỡ, đàm phán — không phải chắc chắn tuyệt đối.">
-            <div class="subtitle">Điểm thành công</div>
+          <div class="energy-success" data-i18n-title="dashboard.energy.score.tooltip" title="Mức thuận lợi tương đối trong ngày theo bản mệnh và giờ đang xem; càng cao càng phù hợp việc cần gặp gỡ, đàm phán — không phải chắc chắn tuyệt đối.">
+            <div class="subtitle" data-i18n="dashboard.energy.score.label">Điểm thành công</div>
             <div class="num" id="energyScore">—</div>
           </div>
           <div class="energy-date-chip">
@@ -752,18 +753,18 @@
         <div class="left">
           <div class="energy-split">
             <div class="energy-meta-col">
-              <div class="energy-profile">Bản mệnh: <span id="ownerProfileLabel">Gia chủ (theo hồ sơ)</span></div>
+              <div class="energy-profile"><span data-i18n="dashboard.energy.profile.label">Bản mệnh:</span> <span id="ownerProfileLabel">Gia chủ (theo hồ sơ)</span></div>
               <div class="global-date-row">
                 <div class="date-inline">
-                  <label for="globalMonth">Tháng dương</label><input id="globalMonth" type="number" min="1" max="12" />
-                  <label for="globalDay">Ngày dương</label><input id="globalDay" type="number" min="1" max="31" />
-                  <label for="globalYear">Năm</label><input id="globalYear" type="number" />
+                  <label for="globalMonth" data-i18n="dashboard.solar.month">Tháng dương</label><input id="globalMonth" type="number" min="1" max="12" />
+                  <label for="globalDay" data-i18n="dashboard.solar.day">Ngày dương</label><input id="globalDay" type="number" min="1" max="31" />
+                  <label for="globalYear" data-i18n="dashboard.solar.year">Năm</label><input id="globalYear" type="number" />
                 </div>
               </div>
             </div>
             <div class="energy-analysis-col">
-              <p class="energy-body" id="energyMessage">Chọn ngày và nhập năm sinh gia chủ — một câu gợi ý việc-nên-làm (không lặp Can Chi/quẻ đã hiện ở trên).</p>
-              <div class="energy-summary-footer"><span class="seal" id="ownerSeal">Gia chủ</span> Điểm dự báo theo hồ sơ hiện tại</div>
+              <p class="energy-body" id="energyMessage" data-i18n="dashboard.energy.message.default">Chọn ngày và nhập năm sinh gia chủ — một câu gợi ý việc-nên-làm (không lặp Can Chi/quẻ đã hiện ở trên).</p>
+              <div class="energy-summary-footer"><span class="seal" id="ownerSeal" data-i18n="dashboard.owner.default">Gia chủ</span> <span data-i18n="dashboard.energy.footer.label">Điểm dự báo theo hồ sơ hiện tại</span></div>
             </div>
           </div>
         </div>
@@ -772,16 +773,16 @@
 
     <div class="lower-grid">
       <section class="card daily-ref-card">
-        <h2 class="title">Tham Khảo Chuyện Hằng Ngày</h2>
-        <div class="daily-date-readonly" id="dailyDateReadonly">Đang xem cho ngày: 09/04/2026</div>
+        <h2 class="title" data-i18n="dashboard.daily.title">Tham Khảo Chuyện Hằng Ngày</h2>
+        <div class="daily-date-readonly" id="dailyDateReadonly" data-no-translate="1" data-i18n="dashboard.daily.viewingDate">Đang xem cho ngày: 09/04/2026</div>
         <div class="daily-usage-readonly" id="dailyUsageReadonly"></div>
         <div class="compact-date-row">
-          <label for="refMonth">Tháng dương</label><input id="refMonth" type="number" min="1" max="12" />
-          <label for="refDay">Ngày dương</label><input id="refDay" type="number" min="1" max="31" />
-          <label for="refYear">Năm</label><input id="refYear" type="number" />
-          <label for="focusHour">Khung giờ xem</label>
+          <label for="refMonth" data-i18n="dashboard.solar.month">Tháng dương</label><input id="refMonth" type="number" min="1" max="12" />
+          <label for="refDay" data-i18n="dashboard.solar.day">Ngày dương</label><input id="refDay" type="number" min="1" max="31" />
+          <label for="refYear" data-i18n="dashboard.solar.year">Năm</label><input id="refYear" type="number" />
+          <label for="focusHour" data-i18n="dashboard.focusHour.label">Khung giờ xem</label>
           <select id="focusHour">
-            <option value="">Tự gợi ý giờ tốt</option>
+            <option value="" data-i18n="dashboard.focusHour.auto">Tự gợi ý giờ tốt</option>
             <option value="0">Tý (23:00 - 00:59)</option>
             <option value="1">Sửu (01:00 - 02:59)</option>
             <option value="2">Dần (03:00 - 04:59)</option>
@@ -796,57 +797,58 @@
             <option value="11">Hợi (21:00 - 22:59)</option>
           </select>
         </div>
-        <label>Xem cho ai</label>
+        <label data-i18n="dashboard.viewFor.label">Xem cho ai</label>
         <div class="toggle-row">
-          <div class="pill active" data-target="owner">Gia chủ</div>
-          <div class="pill" data-target="other">Cho người khác</div>
+          <div class="pill active" data-target="owner" data-i18n="dashboard.target.owner">Gia chủ</div>
+          <div class="pill" data-target="other" data-i18n="dashboard.target.other">Cho người khác</div>
         </div>
         <div class="owner-core-row">
-          <label for="ownerName">Gia chủ</label><input id="ownerName" placeholder="Nhập tên gia chủ" />
-          <label for="ownerPhone">Liên hệ</label><input id="ownerPhone" placeholder="SĐT hoặc email (tuỳ chọn)" />
-          <label for="ownerYear">Năm sinh (*)</label><input id="ownerYear" type="number" />
+          <label for="ownerName" data-i18n="dashboard.owner.name">Gia chủ</label><input id="ownerName" data-i18n-placeholder="dashboard.owner.name.placeholder" placeholder="Nhập tên gia chủ" />
+          <label for="ownerPhone" data-i18n="dashboard.owner.contact">Liên hệ</label><input id="ownerPhone" data-i18n-placeholder="dashboard.owner.contact.placeholder" placeholder="SĐT hoặc email (tuỳ chọn)" />
+          <label for="ownerYear" data-i18n="dashboard.owner.birthYear">Năm sinh (*)</label><input id="ownerYear" type="number" />
         </div>
         <div class="date-inline">
-          <label for="ownerDay">Ngày sinh</label><input id="ownerDay" type="number" min="1" max="31" />
-          <label for="ownerMonth">Tháng sinh</label><input id="ownerMonth" type="number" min="1" max="12" />
+          <label for="ownerDay" data-i18n="dashboard.owner.birthDay">Ngày sinh</label><input id="ownerDay" type="number" min="1" max="31" />
+          <label for="ownerMonth" data-i18n="dashboard.owner.birthMonth">Tháng sinh</label><input id="ownerMonth" type="number" min="1" max="12" />
           <label></label><div></div>
         </div>
         <div class="check-row">
           <input id="hasParticipant" type="checkbox" />
-          <label for="hasParticipant" style="margin:0">Có người tham gia</label>
+          <label for="hasParticipant" style="margin:0" data-i18n="dashboard.participant.has">Có người tham gia</label>
         </div>
         <div id="participantBox" class="participant-box disabled">
           <div class="participant-row">
-            <label for="participantRole">Vai trò</label><input id="participantRole" placeholder="Ví dụ: khách hàng" />
-            <label for="pDay">Ngày sinh</label><input id="pDay" type="number" min="1" max="31" />
-            <label for="pMonth">Tháng sinh</label><input id="pMonth" type="number" min="1" max="12" />
-            <label for="pYear">Năm sinh (*)</label><input id="pYear" type="number" />
+            <label for="participantRole" data-i18n="dashboard.participant.role">Vai trò</label><input id="participantRole" data-i18n-placeholder="dashboard.participant.role.placeholder" placeholder="Ví dụ: khách hàng" />
+            <label for="pDay" data-i18n="dashboard.owner.birthDay">Ngày sinh</label><input id="pDay" type="number" min="1" max="31" />
+            <label for="pMonth" data-i18n="dashboard.owner.birthMonth">Tháng sinh</label><input id="pMonth" type="number" min="1" max="12" />
+            <label for="pYear" data-i18n="dashboard.owner.birthYear">Năm sinh (*)</label><input id="pYear" type="number" />
           </div>
         </div>
-        <label for="topic">Chủ đề</label>
-        <textarea id="topic" placeholder="Ví dụ: mai nên nhắn khách lúc nào để tăng phản hồi tích cực?"></textarea>
+        <label for="topic" data-i18n="dashboard.topic.label">Chủ đề</label>
+        <textarea id="topic" data-i18n-placeholder="dashboard.topic.placeholder" placeholder="Ví dụ: mai nên nhắn khách lúc nào để tăng phản hồi tích cực?"></textarea>
         <div class="btn-row">
-          <button class="btn primary" id="previewBtn" type="button">Khám phá</button>
+          <button class="btn primary" id="previewBtn" type="button" data-i18n="dashboard.preview.button">Khám phá</button>
         </div>
         <div id="quotaLockBanner" class="quota-banner hidden" role="status"></div>
       </section>
 
       <section class="card forecast-card">
-        <h2 class="title">Dự Báo 6 Cung</h2>
-        <div class="daily-date-readonly" id="forecastDateReadonly">Đang xem cho ngày: 09/04/2026</div>
-        <div class="status" id="dayCung">Ngày này thuộc cung: Đại An</div>
-        <div class="forecast-focus" id="forecastFocusReadonly">Giờ xem: Tự gợi ý theo giờ tốt trong ngày.</div>
+        <h2 class="title" data-i18n="dashboard.forecast.title">Dự Báo 6 Cung</h2>
+        <div class="daily-date-readonly" id="forecastDateReadonly" data-no-translate="1" data-i18n="dashboard.daily.viewingDate">Đang xem cho ngày: 09/04/2026</div>
+        <div class="status" id="dayCung" data-no-translate="1" data-i18n="dashboard.forecast.dayCung.default">Ngày này thuộc cung: Đại An</div>
+        <div class="forecast-focus" id="forecastFocusReadonly" data-no-translate="1" data-i18n="dashboard.forecast.focus.default">Giờ xem: Tự gợi ý theo giờ tốt trong ngày.</div>
         <div class="hours-wrap">
-          <div class="hours-grid" id="hours"></div>
+          <div class="hours-grid" id="hours" data-no-translate="1"></div>
         </div>
       </section>
     </div>
 
     <section class="card analysis-card">
-      <div class="result-box" id="dailyResult">Nhập chủ đề và chọn thông tin, sau đó bấm Khám phá để xem luận giải.</div>
+      <div class="result-box" id="dailyResult" data-i18n="dashboard.result.default">Nhập chủ đề và chọn thông tin, sau đó bấm Khám phá để xem luận giải.</div>
     </section>
   </div>
 
+  <script src="/i18n.js"></script>
   <script>
     var selectedTarget = "owner";
     var currentDayIndex = 0;
@@ -873,6 +875,232 @@
       }
     }
     var customerInviteCode = "";
+    function tr(key, params, fallback) {
+      if (window.DFI18n && typeof window.DFI18n.t === "function") {
+        var out = window.DFI18n.t(key, params);
+        if (out === key && fallback != null) return fallback;
+        return out;
+      }
+      return fallback || key;
+    }
+    function getUiLocale() {
+      var code = window.DFI18n && DFI18n.getLanguage ? DFI18n.getLanguage() : "vi";
+      var map = {
+        vi: "vi-VN", en: "en-US", de: "de-DE", fr: "fr-FR", es: "es-ES", it: "it-IT",
+        pt: "pt-PT", ru: "ru-RU", zh: "zh-CN", ja: "ja-JP", ko: "ko-KR", th: "th-TH",
+        id: "id-ID", ms: "ms-MY", tl: "fil-PH", hi: "hi-IN", ar: "ar-SA", tr: "tr-TR",
+        nl: "nl-NL", pl: "pl-PL"
+      };
+      return map[code] || "vi-VN";
+    }
+    function formatUiDate(date) {
+      return date.toLocaleDateString(getUiLocale());
+    }
+    var runtimeGlossaryCache = {};
+    function getGlossaryCacheKey(lang) {
+      return "daily_fortune_glossary_" + String(lang || "").toLowerCase();
+    }
+    function loadGlossaryFromStorage(lang) {
+      try {
+        return JSON.parse(localStorage.getItem(getGlossaryCacheKey(lang)) || "{}") || {};
+      } catch (_) {
+        return {};
+      }
+    }
+    function saveGlossaryToStorage(lang, map) {
+      try {
+        localStorage.setItem(getGlossaryCacheKey(lang), JSON.stringify(map || {}));
+      } catch (_) {}
+    }
+    async function ensureRuntimeGlossary(lang) {
+      var code = String(lang || (window.DFI18n && DFI18n.getLanguage ? DFI18n.getLanguage() : "vi")).toLowerCase();
+      if (runtimeGlossaryCache[code]) return runtimeGlossaryCache[code];
+      var terms = [
+        "Đại An","Lưu Liên","Tốc Hỷ","Xích Khẩu","Tiểu Cát","Không Vong",
+        "Tý","Sửu","Dần","Mão","Thìn","Tỵ","Ngọ","Mùi","Thân","Dậu","Tuất","Hợi",
+        "Giáp","Ất","Bính","Đinh","Mậu","Kỷ","Canh","Tân","Nhâm","Quý",
+        "Hải Trung Kim","Lô Trung Hỏa","Đại Lâm Mộc","Lộ Bàng Thổ","Kiếm Phong Kim","Sơn Đầu Hỏa","Giản Hạ Thủy","Thành Đầu Thổ",
+        "Bạch Lạp Kim","Dương Liễu Mộc","Tuyền Trung Thủy","Ốc Thượng Thổ","Tích Lịch Hỏa","Tùng Bách Mộc","Trường Lưu Thủy","Sa Trung Kim",
+        "Sơn Hạ Hỏa","Bình Địa Mộc","Bích Thượng Thổ","Kim Bạch Kim","Phú Đăng Hỏa","Thiên Hà Thủy","Đại Trạch Thổ","Thoa Xuyến Kim",
+        "Tang Đố Mộc","Đại Khê Thủy","Sa Trung Thổ","Thiên Thượng Hỏa","Thạch Lựu Mộc","Đại Hải Thủy"
+      ];
+      var stored = loadGlossaryFromStorage(code);
+      if (stored && typeof stored === "object" && Object.keys(stored).length) {
+        if (code !== "vi") {
+          var unchangedCount = 0;
+          terms.forEach(function (t) {
+            if (String(stored[t] || "").trim() === t) unchangedCount++;
+          });
+          var coreCung = ["Đại An","Lưu Liên","Tốc Hỷ","Xích Khẩu","Tiểu Cát","Không Vong"];
+          var coreStillVi = coreCung.filter(function (t) { return String(stored[t] || "").trim() === t; });
+          if (unchangedCount >= 6) {
+            stored = {};
+          } else if (coreStillVi.length) {
+            // #region agent log
+            fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'post-fix',hypothesisId:'H12',location:'public/dashboard-purple.html:ensureRuntimeGlossary',message:'invalidate_partial_vi_core_cung_cache',data:{lang:code,terms:coreStillVi},timestamp:Date.now()})}).catch(()=>{});
+            // #endregion
+            stored = {};
+          }
+        }
+        if (Object.keys(stored).length) {
+          runtimeGlossaryCache[code] = stored;
+          return stored;
+        }
+      }
+      if (code === "vi" || code === "en" || code === "zh") {
+        runtimeGlossaryCache[code] = {};
+        // #region agent log
+        fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'lang-switch',hypothesisId:'H4',location:'public/dashboard-purple.html:ensureRuntimeGlossary',message:'glossary_skipped_for_built_in_lang',data:{lang:code},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+        return runtimeGlossaryCache[code];
+      }
+      try {
+        var r = await fetch("/api/i18n/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            target_language: code,
+            source_language: "vi",
+            domain: "astrology_glossary",
+            strict_translate: true,
+            texts: terms
+          })
+        });
+        var j = await r.json().catch(function () { return {}; });
+        if (r.ok && j && j.ok && Array.isArray(j.translations)) {
+          var m = {};
+          terms.forEach(function (t, i) { m[t] = j.translations[i] || t; });
+          runtimeGlossaryCache[code] = m;
+          saveGlossaryToStorage(code, m);
+          // #region agent log
+          fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'lang-switch',hypothesisId:'H4',location:'public/dashboard-purple.html:ensureRuntimeGlossary',message:'glossary_loaded',data:{lang:code,count:Object.keys(m).length},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
+          return m;
+        }
+      } catch (_) {}
+      runtimeGlossaryCache[code] = {};
+      return runtimeGlossaryCache[code];
+    }
+    function localizeCanChiText(text) {
+      var lang = window.DFI18n && DFI18n.getLanguage ? DFI18n.getLanguage() : "vi";
+      if (lang !== "zh") {
+        if (lang === "vi") return text;
+        var parts = String(text || "").trim().split(/\s+/).filter(Boolean);
+        if (parts.length >= 2) {
+          var localized = displayStem(parts[0]) + " " + displayBranch(parts[1]);
+          if (localized === String(text || "").trim()) {
+            // #region agent log
+            fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'post-fix',hypothesisId:'H7',location:'public/dashboard-purple.html:localizeCanChiText',message:'canchi_not_localized_non_vi',data:{lang,input:text,output:localized},timestamp:Date.now()})}).catch(()=>{});
+            // #endregion
+          }
+          return localized;
+        }
+        return text;
+      }
+      var s = String(text || "");
+      var map = {
+        "Giáp": "甲", "Ất": "乙", "Bính": "丙", "Đinh": "丁", "Mậu": "戊",
+        "Kỷ": "己", "Canh": "庚", "Tân": "辛", "Nhâm": "壬", "Quý": "癸",
+        "Tý": "子", "Sửu": "丑", "Dần": "寅", "Mão": "卯", "Thìn": "辰",
+        "Tỵ": "巳", "Ngọ": "午", "Mùi": "未", "Thân": "申", "Dậu": "酉",
+        "Tuất": "戌", "Hợi": "亥"
+      };
+      Object.keys(map).forEach(function (k) { s = s.replaceAll(k, map[k]); });
+      return s;
+    }
+    function localizeNapAmText(text) {
+      var lang = window.DFI18n && DFI18n.getLanguage ? DFI18n.getLanguage() : "vi";
+      if (lang !== "zh") {
+        if (lang === "vi") return text;
+        var runtimeMap = runtimeGlossaryCache[String(lang || "").toLowerCase()] || {};
+        var out = runtimeMap[String(text || "")];
+        if (out) return out;
+        // #region agent log
+        fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'post-fix',hypothesisId:'H10',location:'public/dashboard-purple.html:localizeNapAmText',message:'napam_fallback_to_vi_literal',data:{lang,input:text},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+        return text;
+      }
+      var map = {
+        "Hải Trung Kim": "海中金", "Lô Trung Hỏa": "炉中火", "Đại Lâm Mộc": "大林木", "Lộ Bàng Thổ": "路旁土",
+        "Kiếm Phong Kim": "剑锋金", "Sơn Đầu Hỏa": "山头火", "Giản Hạ Thủy": "涧下水", "Thành Đầu Thổ": "城头土",
+        "Bạch Lạp Kim": "白蜡金", "Dương Liễu Mộc": "杨柳木", "Tuyền Trung Thủy": "泉中水", "Ốc Thượng Thổ": "屋上土",
+        "Tích Lịch Hỏa": "霹雳火", "Tùng Bách Mộc": "松柏木", "Trường Lưu Thủy": "长流水", "Sa Trung Kim": "沙中金",
+        "Sơn Hạ Hỏa": "山下火", "Bình Địa Mộc": "平地木", "Bích Thượng Thổ": "壁上土", "Kim Bạch Kim": "金箔金",
+        "Phú Đăng Hỏa": "覆灯火", "Thiên Hà Thủy": "天河水", "Đại Trạch Thổ": "大驿土", "Thoa Xuyến Kim": "钗钏金",
+        "Tang Đố Mộc": "桑柘木", "Đại Khê Thủy": "大溪水", "Sa Trung Thổ": "沙中土", "Thiên Thượng Hỏa": "天上火",
+        "Thạch Lựu Mộc": "石榴木", "Đại Hải Thủy": "大海水"
+      };
+      return map[String(text || "")] || text;
+    }
+    function displayCung(name) {
+      var lang = window.DFI18n && DFI18n.getLanguage ? DFI18n.getLanguage() : "vi";
+      var runtimeMap = runtimeGlossaryCache[String(lang || "").toLowerCase()] || {};
+      if (runtimeMap[name]) return runtimeMap[name];
+      var map = {
+        "Đại An": "dashboard.cung.daiAn",
+        "Lưu Liên": "dashboard.cung.luuLien",
+        "Tốc Hỷ": "dashboard.cung.tocHy",
+        "Xích Khẩu": "dashboard.cung.xichKhau",
+        "Tiểu Cát": "dashboard.cung.tieuCat",
+        "Không Vong": "dashboard.cung.khongVong"
+      };
+      var out = tr(map[name] || "", null, name);
+      if (out === name && lang !== "vi") {
+        // #region agent log
+        fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'lang-switch',hypothesisId:'H5',location:'public/dashboard-purple.html:displayCung',message:'cung_fallback_to_vi_literal',data:{lang,term:name},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+      }
+      return out;
+    }
+    function displayBranch(name) {
+      var lang = window.DFI18n && DFI18n.getLanguage ? DFI18n.getLanguage() : "vi";
+      var runtimeMap = runtimeGlossaryCache[String(lang || "").toLowerCase()] || {};
+      if (runtimeMap[name]) return runtimeMap[name];
+      var map = {
+        "Tý": "dashboard.branch.ty",
+        "Sửu": "dashboard.branch.suu",
+        "Dần": "dashboard.branch.dan",
+        "Mão": "dashboard.branch.mao",
+        "Thìn": "dashboard.branch.thin",
+        "Tỵ": "dashboard.branch.ty2",
+        "Ngọ": "dashboard.branch.ngo",
+        "Mùi": "dashboard.branch.mui",
+        "Thân": "dashboard.branch.than",
+        "Dậu": "dashboard.branch.dau",
+        "Tuất": "dashboard.branch.tuat",
+        "Hợi": "dashboard.branch.hoi"
+      };
+      return tr(map[name] || "", null, name);
+    }
+    function displayStem(name) {
+      var lang = window.DFI18n && DFI18n.getLanguage ? DFI18n.getLanguage() : "vi";
+      var runtimeMap = runtimeGlossaryCache[String(lang || "").toLowerCase()] || {};
+      if (runtimeMap[name]) return runtimeMap[name];
+      var map = {
+        "Giáp": "dashboard.stem.giap",
+        "Ất": "dashboard.stem.at",
+        "Bính": "dashboard.stem.binh",
+        "Đinh": "dashboard.stem.dinh",
+        "Mậu": "dashboard.stem.mau",
+        "Kỷ": "dashboard.stem.ky",
+        "Canh": "dashboard.stem.canh",
+        "Tân": "dashboard.stem.tan",
+        "Nhâm": "dashboard.stem.nham",
+        "Quý": "dashboard.stem.quy"
+      };
+      return tr(map[name] || "", null, name);
+    }
+    function localizeFocusHourOptions() {
+      var sel = document.getElementById("focusHour");
+      if (!sel) return;
+      if (sel.options[0]) sel.options[0].textContent = tr("dashboard.focusHour.auto", null, "Tự gợi ý giờ tốt");
+      for (var i = 1; i < sel.options.length; i++) {
+        var slot = hours[i - 1];
+        if (!slot) continue;
+        sel.options[i].textContent = displayBranch(slot[0]) + " (" + slot[1] + ")";
+      }
+    }
     var supportConfig = { supportEmail: "", supportPhone: "", supportWhatsappUrl: "" };
     function escapeCfg(s) {
       return String(s || "")
@@ -907,9 +1135,9 @@
         parts.push('<a href="' + escapeCfgAttr(u) + '" target="_blank" rel="noopener">Nhắn Zalo / WhatsApp</a>');
       }
       if (!parts.length) {
-        return "Liên hệ người đã cấp mã mời hoặc bộ phận hỗ trợ để gia hạn thêm lượt.";
+        return tr("dashboard.support.contactFallback", null, "Liên hệ người đã cấp mã mời hoặc bộ phận hỗ trợ để gia hạn thêm lượt.");
       }
-      return "Để thêm lượt: " + parts.join(" · ") + ".";
+      return tr("dashboard.support.moreQuota", null, "Để thêm lượt:") + " " + parts.join(" · ") + ".";
     }
     function applyCustomerQuotaLock() {
       var banner = document.getElementById("quotaLockBanner");
@@ -933,7 +1161,7 @@
       if (used >= limit) {
         banner.classList.remove("hidden");
         btn.disabled = true;
-        banner.innerHTML = "<strong>Đã hết " + limit + " lượt miễn phí.</strong> " + buildSupportLinksHtml();
+        banner.innerHTML = "<strong>" + tr("dashboard.quota.exhausted", { limit: limit }, "Đã hết " + limit + " lượt miễn phí.") + "</strong> " + buildSupportLinksHtml();
       } else {
         banner.classList.add("hidden");
         btn.disabled = false;
@@ -1016,12 +1244,17 @@
     function customerProfileDoneKey(invite) { return "daily_fortune_customer_profile_done_" + invite; }
     async function mergeRemoteCustomerProfileToLocal(invite) {
       try {
+        var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+        var timer = null;
+        if (controller) timer = setTimeout(function () { controller.abort(); }, 2200);
         var r = await fetch("/api/customer-profile/load", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "same-origin",
-          body: JSON.stringify({ code: invite })
+          body: JSON.stringify({ code: invite }),
+          signal: controller ? controller.signal : undefined
         });
+        if (timer) clearTimeout(timer);
         var j = await r.json().catch(function () { return {}; });
         if (!j || !j.ok || !j.profile) return;
         var p = j.profile;
@@ -1215,16 +1448,20 @@
     function updateUsageReadonly() {
       var el = document.getElementById("dailyUsageReadonly");
       if (!customerInviteCode) {
-        el.textContent = "Chế độ không giới hạn lượt xem.";
+        el.textContent = tr("dashboard.usage.unlimitedMode", null, "Chế độ không giới hạn lượt xem.");
         return;
       }
       var codeInfo = getInviteCodes()[customerInviteCode] || {};
       var limit = Number.isFinite(parseInt(codeInfo.totalLimit, 10)) ? parseInt(codeInfo.totalLimit, 10) : totalLimit;
       if (codeInfo.tier === "admin") {
-        el.textContent = "Mã " + customerInviteCode + " - Không giới hạn lượt xem.";
+        el.textContent = tr("dashboard.usage.unlimited", { code: customerInviteCode }, "Mã " + customerInviteCode + " - Không giới hạn lượt xem.");
         return;
       }
-      el.textContent = "Mã " + customerInviteCode + " - Đã dùng: " + getInviteUsageDisplay(customerInviteCode) + "/" + limit + " lượt miễn phí.";
+      el.textContent = tr(
+        "dashboard.usage.limited",
+        { code: customerInviteCode, used: getInviteUsageDisplay(customerInviteCode), limit: limit },
+        "Mã " + customerInviteCode + " - Đã dùng: " + getInviteUsageDisplay(customerInviteCode) + "/" + limit + " lượt miễn phí."
+      );
     }
     async function ensureCustomerAccessAsync() {
       if (roleParam !== "customer") return true;
@@ -1271,6 +1508,105 @@
     function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
     function dateToYMD(date) { return { y: date.getFullYear(), m: date.getMonth() + 1, d: date.getDate() }; }
     function ymdToDate(y, m, d) { return new Date(y, m - 1, d); }
+    function INT(d) { return Math.floor(d); }
+    function jdFromDate(dd, mm, yy) {
+      var a = INT((14 - mm) / 12);
+      var y = yy + 4800 - a;
+      var m = mm + 12 * a - 3;
+      var jd = dd + INT((153 * m + 2) / 5) + 365 * y + INT(y / 4) - INT(y / 100) + INT(y / 400) - 32045;
+      if (jd < 2299161) {
+        jd = dd + INT((153 * m + 2) / 5) + 365 * y + INT(y / 4) - 32083;
+      }
+      return jd;
+    }
+    function getNewMoonDay(k, timeZone) {
+      var T = k / 1236.85;
+      var T2 = T * T;
+      var T3 = T2 * T;
+      var dr = Math.PI / 180;
+      var Jd1 = 2415020.75933 + 29.53058868 * k + 0.0001178 * T2 - 0.000000155 * T3;
+      Jd1 += 0.00033 * Math.sin((166.56 + 132.87 * T - 0.009173 * T2) * dr);
+      var M = 359.2242 + 29.10535608 * k - 0.0000333 * T2 - 0.00000347 * T3;
+      var Mpr = 306.0253 + 385.81691806 * k + 0.0107306 * T2 + 0.00001236 * T3;
+      var F = 21.2964 + 390.67050646 * k - 0.0016528 * T2 - 0.00000239 * T3;
+      var C1 = (0.1734 - 0.000393 * T) * Math.sin(M * dr) + 0.0021 * Math.sin(2 * dr * M);
+      C1 = C1 - 0.4068 * Math.sin(Mpr * dr) + 0.0161 * Math.sin(dr * 2 * Mpr);
+      C1 = C1 - 0.0004 * Math.sin(dr * 3 * Mpr);
+      C1 = C1 + 0.0104 * Math.sin(dr * 2 * F) - 0.0051 * Math.sin(dr * (M + Mpr));
+      C1 = C1 - 0.0074 * Math.sin(dr * (M - Mpr)) + 0.0004 * Math.sin(dr * (2 * F + M));
+      C1 = C1 - 0.0004 * Math.sin(dr * (2 * F - M)) - 0.0006 * Math.sin(dr * (2 * F + Mpr));
+      C1 = C1 + 0.0010 * Math.sin(dr * (2 * F - Mpr)) + 0.0005 * Math.sin(dr * (2 * Mpr + M));
+      var deltaT = T < -11 ? (0.001 + 0.000839 * T + 0.0002261 * T2 - 0.00000845 * T3 - 0.000000081 * T * T3) : (-0.000278 + 0.000265 * T + 0.000262 * T2);
+      var JdNew = Jd1 + C1 - deltaT;
+      return INT(JdNew + 0.5 + timeZone / 24);
+    }
+    function getSunLongitude(jdn, timeZone) {
+      var T = (jdn - 2451545.5 - timeZone / 24) / 36525;
+      var T2 = T * T;
+      var dr = Math.PI / 180;
+      var M = 357.52910 + 35999.05030 * T - 0.0001559 * T2 - 0.00000048 * T * T2;
+      var L0 = 280.46645 + 36000.76983 * T + 0.0003032 * T2;
+      var DL = (1.914600 - 0.004817 * T - 0.000014 * T2) * Math.sin(dr * M);
+      DL = DL + (0.019993 - 0.000101 * T) * Math.sin(dr * 2 * M) + 0.000290 * Math.sin(dr * 3 * M);
+      var L = L0 + DL;
+      L = L * dr;
+      L = L - Math.PI * 2 * INT(L / (Math.PI * 2));
+      return INT(L / Math.PI * 6);
+    }
+    function getLunarMonth11(yy, timeZone) {
+      var off = jdFromDate(31, 12, yy) - 2415021;
+      var k = INT(off / 29.530588853);
+      var nm = getNewMoonDay(k, timeZone);
+      var sunLong = getSunLongitude(nm, timeZone);
+      if (sunLong >= 9) nm = getNewMoonDay(k - 1, timeZone);
+      return nm;
+    }
+    function getLeapMonthOffset(a11, timeZone) {
+      var k = INT(0.5 + (a11 - 2415021.076998695) / 29.530588853);
+      var last = 0;
+      var i = 1;
+      var arc = getSunLongitude(getNewMoonDay(k + i, timeZone), timeZone);
+      do {
+        last = arc;
+        i++;
+        arc = getSunLongitude(getNewMoonDay(k + i, timeZone), timeZone);
+      } while (arc !== last && i < 14);
+      return i - 1;
+    }
+    function convertSolar2Lunar(dd, mm, yy, timeZone) {
+      var dayNumber = jdFromDate(dd, mm, yy);
+      var k = INT((dayNumber - 2415021.076998695) / 29.530588853);
+      var monthStart = getNewMoonDay(k + 1, timeZone);
+      if (monthStart > dayNumber) monthStart = getNewMoonDay(k, timeZone);
+      var a11 = getLunarMonth11(yy, timeZone);
+      var b11 = a11;
+      var lunarYear;
+      if (a11 >= monthStart) {
+        lunarYear = yy;
+        a11 = getLunarMonth11(yy - 1, timeZone);
+      } else {
+        lunarYear = yy + 1;
+        b11 = getLunarMonth11(yy + 1, timeZone);
+      }
+      var lunarDay = dayNumber - monthStart + 1;
+      var diff = INT((monthStart - a11) / 29);
+      var lunarLeap = 0;
+      var lunarMonth = diff + 11;
+      if (b11 - a11 > 365) {
+        var leapMonthDiff = getLeapMonthOffset(a11, timeZone);
+        if (diff >= leapMonthDiff) {
+          lunarMonth = diff + 10;
+          if (diff === leapMonthDiff) lunarLeap = 1;
+        }
+      }
+      if (lunarMonth > 12) lunarMonth = lunarMonth - 12;
+      if (lunarMonth >= 11 && diff < 4) lunarYear -= 1;
+      return { d: lunarDay, m: lunarMonth, y: lunarYear, leap: lunarLeap };
+    }
+    function getLunarYMDFromSolarDate(date) {
+      var ymd = dateToYMD(date);
+      return convertSolar2Lunar(ymd.d, ymd.m, ymd.y, 7);
+    }
     function normalizeYMD(y, m, d) {
       var ny = y || new Date().getFullYear();
       var nm = clamp(m || 1, 1, 12);
@@ -1371,7 +1707,7 @@
       var btn = document.getElementById("previewBtn");
       if (btn) {
         btn.disabled = !v.ok;
-        btn.title = v.ok ? "" : "Nhập năm sinh gia chủ: đủ 4 số (1900–2099). Không có năm sinh hợp lệ thì phân tích và điểm năng lượng không chạy.";
+        btn.title = v.ok ? "" : tr("dashboard.owner.birthYear.gateTitle", null, "Nhập năm sinh gia chủ: đủ 4 số (1900–2099). Không có năm sinh hợp lệ thì phân tích và điểm năng lượng không chạy.");
       }
     }
     function updateForecastFocusLine(ymd) {
@@ -1379,25 +1715,30 @@
       if (!el) return;
       var birth = isValidOwnerBirthYear();
       if (!birth.ok) {
-        el.textContent = "Nhập năm sinh gia chủ (4 số, 1900–2099) để bật gợi ý giờ theo mệnh và lục cung.";
+        el.textContent = tr("dashboard.forecast.focus.needBirthYear", null, "Nhập năm sinh gia chủ (4 số, 1900–2099) để bật gợi ý giờ theo mệnh và lục cung.");
         return;
       }
       var focusHour = (document.getElementById("focusHour").value || "").trim();
       if (focusHour === "") {
-        el.textContent = "Giờ xem: Tự gợi ý theo giờ tốt trong ngày.";
+        el.textContent = tr("dashboard.forecast.focus.default", null, "Giờ xem: Tự gợi ý theo giờ tốt trong ngày.");
         return;
       }
       var idx = parseInt(focusHour, 10);
       if (!Number.isFinite(idx) || idx < 0 || idx >= hours.length) {
-        el.textContent = "Giờ xem: Tự gợi ý theo giờ tốt trong ngày.";
+        el.textContent = tr("dashboard.forecast.focus.default", null, "Giờ xem: Tự gợi ý theo giờ tốt trong ngày.");
         return;
       }
-      var dayCanChi = getCanChiByDate(ymdToDate(ymd.y, ymd.m, ymd.d));
-      var hourCung = getHourCungByInput(ymd.m, ymd.d, idx);
+      var dayDate = ymdToDate(ymd.y, ymd.m, ymd.d);
+      var lunar = getLunarYMDFromSolarDate(dayDate);
+      var dayCanChi = getCanChiByDate(dayDate);
+      var hourCung = getHourCungByInput(lunar.m, lunar.d, idx);
       var hourCanChi = getHourCanChi(dayCanChi, idx);
       var hourNapAm = getNapAm(hourCanChi);
-      el.innerHTML = "Giờ xem: <strong>" + hours[idx][0] + " (" + hours[idx][1] + ")</strong> | Cung giờ: <span class='cung " +
-        getCungClassByName(hourCung) + "'>" + hourCung + "</span> | Mệnh giờ: " + hourCanChi + " (" + hourNapAm + ")";
+      el.innerHTML = tr("dashboard.forecast.focus.details", null, "Giờ xem:") +
+        " <strong>" + displayBranch(hours[idx][0]) + " (" + hours[idx][1] + ")</strong> | " +
+        tr("dashboard.forecast.focus.hourCung", null, "Cung giờ:") + " <span class='cung " +
+        getCungClassByName(hourCung) + "'>" + displayCung(hourCung) + "</span> | " +
+        tr("dashboard.forecast.focus.hourMenh", null, "Mệnh giờ:") + " " + localizeCanChiText(hourCanChi) + " (" + localizeNapAmText(hourNapAm) + ")";
     }
     function getCungTone(cung) {
       var map = {
@@ -1415,24 +1756,34 @@
      * engine.status/% tính từ buildEngineV2 (ngũ hành + lục cung); % chỉ ở badge «Điểm thành công» (tooltip giải thích).
      */
     function buildEnergySuccessQuote(engine) {
+      function quote(key, fallbackText) {
+        var out = tr(key, null, fallbackText);
+        var lang = window.DFI18n && DFI18n.getLanguage ? DFI18n.getLanguage() : "vi";
+        if (lang !== "vi" && out === fallbackText) {
+          // #region agent log
+          fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'verify-energy-quote',hypothesisId:'H14',location:'public/dashboard-purple.html:buildEnergySuccessQuote',message:'energy_quote_fallback_vi_for_non_vi_lang',data:{lang,key},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
+        }
+        return out;
+      }
       var c = engine.confidence;
       var s = engine.status;
       if (s === "thanh_cong_mot_phan") {
         if (c >= 82) {
-          return "Hôm nay ưu tiên việc cần đàm phán, gọi điện, gặp trực tiếp hoặc chốt điều khoản khi hai bên đã thống nhất rõ.";
+          return quote("dashboard.energy.quote.partial.high", "Hôm nay ưu tiên việc cần đàm phán, gọi điện, gặp trực tiếp hoặc chốt điều khoản khi hai bên đã thống nhất rõ.");
         }
         if (c >= 72) {
-          return "Hôm nay hợp mở đầu việc mới, họp ngắn và chốt từng bước nhỏ—tránh nhồi quá nhiều quyết định lớn trong một buổi.";
+          return quote("dashboard.energy.quote.partial.mid", "Hôm nay hợp mở đầu việc mới, họp ngắn và chốt từng bước nhỏ—tránh nhồi quá nhiều quyết định lớn trong một buổi.");
         }
-        return "Nên dùng ngày để dọn việc phụ, soạn hồ sơ và hẹn lại thời điểm chốt chính—đừng ép ký hay cam kết dứt điểm ngay.";
+        return quote("dashboard.energy.quote.partial.low", "Nên dùng ngày để dọn việc phụ, soạn hồ sơ và hẹn lại thời điểm chốt chính—đừng ép ký hay cam kết dứt điểm ngay.");
       }
       if (s === "can_tranh_chot") {
-        return "Nên hoãn chốt hợp đồng hay cam kết lớn; ưu tiên kiểm tra lại số liệu, xác minh thông tin và chia nhỏ việc để tránh hiểu nhầm.";
+        return quote("dashboard.energy.quote.avoidClose", "Nên hoãn chốt hợp đồng hay cam kết lớn; ưu tiên kiểm tra lại số liệu, xác minh thông tin và chia nhỏ việc để tránh hiểu nhầm.");
       }
       if (c >= 72) {
-        return "Hợp bàn tiếp, thống nhất bước kế tiếp và làm rõ điều kiện—chưa cần ép quyết định cuối nếu chưa đủ dữ kiện.";
+        return quote("dashboard.energy.quote.steadyProgress", "Hợp bàn tiếp, thống nhất bước kế tiếp và làm rõ điều kiện—chưa cần ép quyết định cuối nếu chưa đủ dữ kiện.");
       }
-      return "Phù hợp việc thường nhật và công việc đều đặn; giữ việc quan trọng ở mức chuẩn bị hoặc xin ý kiến, chốt dứt điểm khi đã chắc chắn.";
+      return quote("dashboard.energy.quote.routine", "Phù hợp việc thường nhật và công việc đều đặn; giữ việc quan trọng ở mức chuẩn bị hoặc xin ý kiến, chốt dứt điểm khi đã chắc chắn.");
     }
     function buildEnergyPanelMessage(engine) {
       return buildEnergySuccessQuote(engine);
@@ -1487,6 +1838,26 @@
     /** App không đoán domain — luôn để model bám topic_verbatim. */
     function inferTopicIntent(topic) {
       return "general";
+    }
+    function inferEventImportance(topic) {
+      var t = String(topic || "").toLowerCase();
+      if (/(biet thu|bat dong san|mua nha|mua dat|cuoi|ket hon|dau tu|mo cong ty|chuyen viec|phau thuat|du hoc)/i.test(t)) return "high";
+      if (/(phong van|thuong luong|ky hop dong|di xem|hop|hen|mua sam)/i.test(t)) return "medium";
+      return "normal";
+    }
+    function buildNearbyWindows(baseDate, importance) {
+      var offsets = importance === "high" ? [1, 3, 7, 14, 30] : importance === "medium" ? [1, 2, 4, 7] : [1, 2];
+      return offsets.map(function (d) {
+        var from = new Date(baseDate);
+        from.setDate(from.getDate() - d);
+        var to = new Date(baseDate);
+        to.setDate(to.getDate() + d);
+        return {
+          offset_days: d,
+          from: from.toLocaleDateString("vi-VN"),
+          to: to.toLocaleDateString("vi-VN")
+        };
+      });
     }
     function buildContextGuidanceVi(opts) {
       var parts = [];
@@ -1568,7 +1939,7 @@
       if (!birth.ok) {
         if (scoreEl) scoreEl.textContent = "—";
         if (msgEl) {
-          msgEl.textContent = "Nhập năm sinh gia chủ (đủ 4 số, 1900–2099) để hiện điểm và gợi ý thuận lợi.";
+          msgEl.textContent = tr("dashboard.energy.birthYear.hint", null, "Nhập năm sinh gia chủ (đủ 4 số, 1900–2099) để hiện điểm và gợi ý thuận lợi.");
         }
         syncOwnerYearGate();
         return;
@@ -1583,14 +1954,15 @@
       var ownerEl = getElement(ownerNapAm);
       var dayEl = getElement(dayNapAm);
       var relationDay = compareElements(ownerEl, dayEl, "ngày");
-      var monthCung = getMonthCung(ymd.m);
-      var dayCung = getDayCung(ymd.m, ymd.d);
+      var lunar = getLunarYMDFromSolarDate(dayDate);
+      var monthCung = getMonthCung(lunar.m);
+      var dayCung = getDayCung(lunar.m, lunar.d);
       var focusHour = (document.getElementById("focusHour").value || "").trim();
       var hourIdxForCalc = focusHour !== "" ? parseInt(focusHour, 10) : new Date().getHours() % 12;
       if (!Number.isFinite(hourIdxForCalc) || hourIdxForCalc < 0 || hourIdxForCalc > 11) {
         hourIdxForCalc = new Date().getHours() % 12;
       }
-      var hourCung = getHourCungByInput(ymd.m, ymd.d, hourIdxForCalc);
+      var hourCung = getHourCungByInput(lunar.m, lunar.d, hourIdxForCalc);
       var hourCanChi = getHourCanChi(dayCanChi, hourIdxForCalc);
       var hourNapAm = getNapAm(hourCanChi);
       var relationHour = compareElements(ownerEl, getElement(hourNapAm), "giờ");
@@ -1658,13 +2030,14 @@
       var m = date.getMonth() + 1;
       var d = date.getDate();
       var y = date.getFullYear();
-      var monthCung = getMonthCung(m);
-      var dayIndex = ((m - 1) + d - 1) % 6;
+      var lunar = getLunarYMDFromSolarDate(date);
+      var monthCung = getMonthCung(lunar.m);
+      var dayIndex = ((lunar.m - 1) + lunar.d - 1) % 6;
       currentDayIndex = dayIndex;
       document.getElementById("dayCung").innerHTML =
         "<span class='day-cung-line'>" +
-        "<span class='day-chip'>Ngày: " + d + "/" + m + "/" + y + " thuộc cung <span class='cung " + cls[dayIndex] + "'>" + cungs[dayIndex] + "</span></span>" +
-        "<span class='day-chip month'>Tháng: " + m + " thuộc cung <span class='cung " + cls[cungs.indexOf(monthCung)] + "'>" + monthCung + "</span></span>" +
+        "<span class='day-chip'>" + tr("dashboard.forecast.lunarDay", null, "Ngày âm:") + " " + lunar.d + "/" + lunar.m + "/" + lunar.y + " " + tr("dashboard.forecast.belongsTo", null, "thuộc cung") + " <span class='cung " + cls[dayIndex] + "'>" + displayCung(cungs[dayIndex]) + "</span></span>" +
+        "<span class='day-chip month'>" + tr("dashboard.forecast.lunarMonth", null, "Tháng âm:") + " " + lunar.m + " " + tr("dashboard.forecast.belongsTo", null, "thuộc cung") + " <span class='cung " + cls[cungs.indexOf(monthCung)] + "'>" + displayCung(monthCung) + "</span></span>" +
         "</span>";
       var grid = document.getElementById("hours");
       grid.innerHTML = "";
@@ -1673,9 +2046,9 @@
         var card = document.createElement("div");
         card.className = "hour-card";
         card.innerHTML =
-          "<div class='hour-branch'>" + hours[i][0] + "</div>" +
+          "<div class='hour-branch'>" + displayBranch(hours[i][0]) + "</div>" +
           "<div class='hour-range'>" + hours[i][1] + "</div>" +
-          "<div class='cung " + cls[ci] + "'>" + cungs[ci] + "</div>";
+          "<div class='cung " + cls[ci] + "'>" + displayCung(cungs[ci]) + "</div>";
         grid.appendChild(card);
       }
     }
@@ -1684,11 +2057,12 @@
     }
     function renderBySelectedDate(date) {
       var ymd = dateToYMD(date);
-      document.getElementById("todayDate").textContent = date.toLocaleDateString("vi-VN");
-      document.getElementById("todayCanChi").textContent = getCanChiByDate(date);
-      document.getElementById("dailyDateReadonly").textContent = "Đang xem cho ngày: " + date.toLocaleDateString("vi-VN");
-      document.getElementById("forecastDateReadonly").textContent = "Đang xem cho ngày: " + date.toLocaleDateString("vi-VN");
+      document.getElementById("todayDate").textContent = formatUiDate(date);
+      document.getElementById("todayCanChi").textContent = localizeCanChiText(getCanChiByDate(date));
+      document.getElementById("dailyDateReadonly").textContent = tr("dashboard.daily.viewingDate", null, "Đang xem cho ngày:") + " " + formatUiDate(date);
+      document.getElementById("forecastDateReadonly").textContent = tr("dashboard.daily.viewingDate", null, "Đang xem cho ngày:") + " " + formatUiDate(date);
       renderHours(date);
+      localizeFocusHourOptions();
       updateForecastFocusLine(ymd);
       updateEnergySuccessPanel();
     }
@@ -1760,10 +2134,26 @@
       var ownerEl = getElement(ownerNapAm);
       var dayEl = getElement(dayNapAm);
       var relation = compareElements(ownerEl, dayEl, "ngày");
-      var monthCung = getMonthCung(ymd.m);
-      var dayCung = getDayCung(ymd.m, ymd.d);
-      var hourIdxForCalc = focusHour !== "" ? parseInt(focusHour, 10) : new Date().getHours() % 12;
-      var hourCung = getHourCungByInput(ymd.m, ymd.d, hourIdxForCalc);
+      var lunar = getLunarYMDFromSolarDate(dayDate);
+      var monthCung = getMonthCung(lunar.m);
+      var dayCung = getDayCung(lunar.m, lunar.d);
+      var hourIdxForCalc = focusHour !== "" ? parseInt(focusHour, 10) : -1;
+      if (focusHour === "") {
+        var preferredOrder = ["Tiểu Cát", "Tốc Hỷ", "Đại An"];
+        var nowIdx = new Date().getHours() % 12;
+        for (var rank = 0; rank < preferredOrder.length && hourIdxForCalc < 0; rank++) {
+          for (var step = 0; step < 12; step++) {
+            var idxCandidate = (nowIdx + step) % 12;
+            var hc = getHourCungByInput(lunar.m, lunar.d, idxCandidate);
+            if (hc === preferredOrder[rank]) {
+              hourIdxForCalc = idxCandidate;
+              break;
+            }
+          }
+        }
+        if (hourIdxForCalc < 0) hourIdxForCalc = nowIdx;
+      }
+      var hourCung = getHourCungByInput(lunar.m, lunar.d, hourIdxForCalc);
       var hourCanChi = getHourCanChi(dayCanChi, hourIdxForCalc);
       var hourNapAm = getNapAm(hourCanChi);
       var relationHour = compareElements(ownerEl, getElement(hourNapAm), "giờ");
@@ -1828,6 +2218,7 @@
         " (~" +
         engine.confidence +
         "%).";
+      var importanceHint = inferEventImportance(topic);
       var analysisPayload = {
         date_view: dayDate.toLocaleDateString("vi-VN"),
         month_cung: monthCung,
@@ -1870,8 +2261,14 @@
         avoid_hours: cautions.slice(0, 1),
         status: engine.status,
         status_label_vi: statusLabelVi,
-        confidence: engine.confidence
+        confidence: engine.confidence,
+        target_language: window.DFI18n ? DFI18n.getLanguage() : "vi",
+        event_importance_hint: importanceHint,
+        nearby_windows: buildNearbyWindows(dayDate, importanceHint)
       };
+      // #region agent log
+      fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'analysis-headers',hypothesisId:'H21',location:'public/dashboard-purple.html:renderSummary',message:'analysis_payload_focus_hour_context',data:{lang:analysisPayload.target_language,focusHourRaw:focusHour,hourIdxForCalc:hourIdxForCalc,hourCung:hourCung,hourCanChi:hourCanChi,suggestedHours:analysisPayload.suggested_hours,avoidHours:analysisPayload.avoid_hours},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       try {
         var fr = await fetchFortuneAnalyzeWithRetry(analysisPayload);
         var resp = fr.resp;
@@ -1911,7 +2308,10 @@
           document.getElementById("ownerSeal").textContent = (cp.name || "Gia chủ").split(" ").slice(-1)[0];
           var ccy = cp.birthYear ? getCanChiByYear(parseInt(cp.birthYear, 10)) : "";
           var nam = ccy ? getNapAm(ccy) : "";
-          document.getElementById("ownerProfileLabel").textContent = (cp.name || "Gia chủ") + (nam ? (" - " + nam) : "") + " (mã " + customerInviteCode + ")";
+          document.getElementById("ownerProfileLabel").textContent =
+            (cp.name || tr("dashboard.owner.default", null, "Gia chủ")) +
+            (nam ? (" - " + localizeNapAmText(nam)) : "") +
+            " (" + tr("dashboard.owner.codeLabel", null, "mã") + " " + customerInviteCode + ")";
           return;
         }
         var listRaw = localStorage.getItem("daily_fortune_profiles");
@@ -1929,7 +2329,10 @@
         document.getElementById("ownerSeal").textContent = (p.name || "Gia chủ").split(" ").slice(-1)[0];
         var cy = p.birthYear ? getCanChiByYear(parseInt(p.birthYear, 10)) : "";
         var na = cy ? getNapAm(cy) : "";
-        document.getElementById("ownerProfileLabel").textContent = (p.name || "Gia chủ") + (na ? (" - " + na) : "") + " (tham chiếu hồ sơ)";
+        document.getElementById("ownerProfileLabel").textContent =
+          (p.name || tr("dashboard.owner.default", null, "Gia chủ")) +
+          (na ? (" - " + localizeNapAmText(na)) : "") +
+          " (" + tr("dashboard.owner.profileRef", null, "tham chiếu hồ sơ") + ")";
       } catch (_) {
       } finally {
         updateEnergySuccessPanel();
@@ -1941,8 +2344,8 @@
       document.getElementById("ownerDay").value = "";
       document.getElementById("ownerMonth").value = "";
       document.getElementById("ownerYear").value = "";
-      document.getElementById("ownerSeal").textContent = "Khách";
-      document.getElementById("ownerProfileLabel").textContent = "Người khác (nhập tạm, không lưu hồ sơ)";
+      document.getElementById("ownerSeal").textContent = tr("dashboard.target.other", null, "Khách");
+      document.getElementById("ownerProfileLabel").textContent = tr("dashboard.owner.tempOther", null, "Người khác (nhập tạm, không lưu hồ sơ)");
       updateEnergySuccessPanel();
     }
 
@@ -1975,7 +2378,7 @@
       var ownerMonth = (document.getElementById("ownerMonth").value || "").trim();
       var ownerYear = (document.getElementById("ownerYear").value || "").trim();
       if (!ownerYear) {
-        if (!opts.silent) document.getElementById("dailyResult").textContent = "Vui lòng nhập năm sinh Gia chủ (bắt buộc).";
+        if (!opts.silent) document.getElementById("dailyResult").textContent = tr("dashboard.owner.birthYear.required", null, "Vui lòng nhập năm sinh Gia chủ (bắt buộc).");
         return false;
       }
       if (roleParam === "customer" && customerInviteCode) {
@@ -1999,11 +2402,13 @@
           } catch (_) {}
         }
         syncCustomerProfileToAdminStore(customerInviteCode, payload);
-        document.getElementById("ownerSeal").textContent = (payload.name || "Gia chủ").split(" ").slice(-1)[0];
+        document.getElementById("ownerSeal").textContent = (payload.name || tr("dashboard.owner.default", null, "Gia chủ")).split(" ").slice(-1)[0];
         var ccyCust = payload.birthYear ? getCanChiByYear(parseInt(payload.birthYear, 10)) : "";
         var namCust = ccyCust ? getNapAm(ccyCust) : "";
         document.getElementById("ownerProfileLabel").textContent =
-          (payload.name || "Gia chủ") + (namCust ? (" - " + namCust) : "") + " (mã " + customerInviteCode + ")";
+          (payload.name || tr("dashboard.owner.default", null, "Gia chủ")) +
+          (namCust ? (" - " + localizeNapAmText(namCust)) : "") +
+          " (" + tr("dashboard.owner.codeLabel", null, "mã") + " " + customerInviteCode + ")";
         updateEnergySuccessPanel();
         scheduleCustomerProfileCloudSave(payload);
         return true;
@@ -2018,10 +2423,13 @@
       if (!found) profiles.push(next);
       setProfiles(profiles);
       setActiveProfileId(id);
-      document.getElementById("ownerSeal").textContent = (next.name || "Gia chủ").split(" ").slice(-1)[0];
+      document.getElementById("ownerSeal").textContent = (next.name || tr("dashboard.owner.default", null, "Gia chủ")).split(" ").slice(-1)[0];
       var canchi = next.birthYear ? getCanChiByYear(parseInt(next.birthYear, 10)) : "";
       var napam = canchi ? getNapAm(canchi) : "";
-      document.getElementById("ownerProfileLabel").textContent = (next.name || "Gia chủ") + (napam ? (" - " + napam) : "") + " (tham chiếu hồ sơ)";
+      document.getElementById("ownerProfileLabel").textContent =
+        (next.name || tr("dashboard.owner.default", null, "Gia chủ")) +
+        (napam ? (" - " + localizeNapAmText(napam)) : "") +
+        " (" + tr("dashboard.owner.profileRef", null, "tham chiếu hồ sơ") + ")";
       updateEnergySuccessPanel();
       return true;
     }
@@ -2105,6 +2513,16 @@
     updateProfileNavLink();
 
     (async function bootDashboard() {
+      await ensureRuntimeGlossary(window.DFI18n && DFI18n.getLanguage ? DFI18n.getLanguage() : "vi");
+      var today = new Date();
+      var initYmd = dateToYMD(today);
+      initYmd = normalizeYMD(initYmd.y, initYmd.m, initYmd.d);
+      setAllDateInputs(initYmd);
+      localStorage.setItem("daily_fortune_selected_ymd", JSON.stringify(initYmd));
+      loadActiveProfileToForm();
+      syncParticipantUI();
+      localizeFocusHourOptions();
+      renderBySelectedDate(ymdToDate(initYmd.y, initYmd.m, initYmd.d));
       await loadPublicConfig();
       var ok = await ensureCustomerAccessAsync();
       if (!ok) return;
@@ -2114,19 +2532,42 @@
           localStorage.setItem(AUTODASH_ONCE_PREFIX + customerInviteCode, "1");
         } catch (e) {}
       }
-      var today = new Date();
-      var initYmd = dateToYMD(today);
-      initYmd = normalizeYMD(initYmd.y, initYmd.m, initYmd.d);
-      setAllDateInputs(initYmd);
-      localStorage.setItem("daily_fortune_selected_ymd", JSON.stringify(initYmd));
-      loadActiveProfileToForm();
-      syncParticipantUI();
-      renderBySelectedDate(ymdToDate(initYmd.y, initYmd.m, initYmd.d));
-      await syncCustomerServerState();
+      void syncCustomerServerState();
       syncOwnerYearGate();
-      document.getElementById("dailyResult").innerText =
-        "Nhập năm sinh gia chủ (bắt buộc, 4 số), chủ đề, rồi bấm Khám phá để xem phân tích.";
+      document.getElementById("dailyResult").innerText = tr("dashboard.result.default", null, "Nhập năm sinh gia chủ (bắt buộc, 4 số), chủ đề, rồi bấm Khám phá để xem phân tích.");
     })();
+    window.addEventListener("df:lang-changed", async function () {
+      var langNow = window.DFI18n && DFI18n.getLanguage ? DFI18n.getLanguage() : "vi";
+      var startedAt = Date.now();
+      // Render immediately so language switch feels responsive.
+      loadActiveProfileToForm();
+      updateUsageReadonly();
+      updateEnergySuccessPanel();
+      localizeFocusHourOptions();
+      var y = parseInt(document.getElementById("globalYear").value || "0", 10);
+      var m = parseInt(document.getElementById("globalMonth").value || "0", 10);
+      var d = parseInt(document.getElementById("globalDay").value || "0", 10);
+      if (y && m && d) renderBySelectedDate(ymdToDate(y, m, d));
+      var brandEl = document.querySelector(".brand");
+      var brandText = brandEl ? String(brandEl.textContent || "").trim() : "";
+      if (langNow !== "en" && /daily fortune/i.test(brandText)) {
+        // #region agent log
+        fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'post-fix',hypothesisId:'H13',location:'public/dashboard-purple.html:df:lang-changed',message:'brand_still_untranslated',data:{lang:langNow,brand:brandText},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+      }
+      var glossary = await ensureRuntimeGlossary(langNow);
+      if (glossary && Object.keys(glossary).length) {
+        loadActiveProfileToForm();
+        updateEnergySuccessPanel();
+        if (y && m && d) renderBySelectedDate(ymdToDate(y, m, d));
+      }
+      // #region agent log
+      fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'post-fix',hypothesisId:'H14',location:'public/dashboard-purple.html:df:lang-changed',message:'lang_switch_timing_ms',data:{lang:langNow,elapsedMs:Date.now()-startedAt,glossaryCount:Object.keys(glossary||{}).length},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      // #region agent log
+      fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'post-fix',hypothesisId:'H8',location:'public/dashboard-purple.html:df:lang-changed',message:'profile_and_date_rerendered_after_lang_change',data:{lang:window.DFI18n&&DFI18n.getLanguage?DFI18n.getLanguage():'vi'},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+    });
   </script>
 </body>
 </html>

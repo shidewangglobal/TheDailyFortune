@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin — Daily fortune</title>
+  <title data-i18n="admin.login.title">Admin — Daily fortune</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700&display=swap" rel="stylesheet">
@@ -70,16 +70,18 @@
 </head>
 <body>
   <div class="card">
-    <h1>Khu vực quản trị</h1>
-    <p>Đây là <strong>luồng 2</strong> (admin): nhập <strong>mã quản trị</strong> của site để vào bảng mã / hồ sơ. Mã này <strong>khác</strong> mã mời cho khách ở trang chủ. Không chia sẻ công khai.</p>
+    <div data-lang-dropdown-host style="display:flex;justify-content:flex-end;margin-bottom:8px;"></div>
+    <h1 data-i18n="admin.area">Khu vực quản trị</h1>
+    <p data-i18n-html="admin.login.desc">Đây là <strong>luồng 2</strong> (admin): nhập <strong>mã quản trị</strong> của site để vào bảng mã / hồ sơ. Mã này <strong>khác</strong> mã mời cho khách ở trang chủ. Không chia sẻ công khai.</p>
     <form id="form">
-      <label for="pin">Mã quản trị</label>
+      <label for="pin" data-i18n="admin.pin.label">Mã quản trị</label>
       <input id="pin" name="pin" type="password" autocomplete="current-password" required placeholder="••••••••" />
       <p class="err" id="err"></p>
-      <button type="submit" id="go">Đăng nhập</button>
+      <button type="submit" id="go" data-i18n="admin.login.button">Đăng nhập</button>
     </form>
-    <a class="back" href="/">← Về trang khách</a>
+    <a class="back" href="/" data-i18n="admin.back.customer">← Về trang khách</a>
   </div>
+  <script src="/i18n.js"></script>
   <script>
     (function () {
       var params = new URLSearchParams(window.location.search);
@@ -104,11 +106,11 @@
               window.location.href = next;
               return;
             }
-            err.textContent = (x.j && x.j.error) ? x.j.error : "Đăng nhập thất bại.";
+            err.textContent = (x.j && x.j.error) ? x.j.error : (window.DFI18n ? DFI18n.t("admin.login.failed") : "Đăng nhập thất bại.");
             err.classList.add("show");
           })
           .catch(function () {
-            err.textContent = "Lỗi kết nối.";
+            err.textContent = window.DFI18n ? DFI18n.t("admin.network.error") : "Lỗi kết nối.";
             err.classList.add("show");
           })
           .finally(function () { btn.disabled = false; });
