@@ -893,8 +893,68 @@
       };
       return map[code] || "vi-VN";
     }
+    function getClientTimeZone() {
+      try {
+        var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (tz && typeof tz === "string") return tz;
+      } catch (_) {}
+      return "Asia/Ho_Chi_Minh";
+    }
+    function getTimeZoneDateParts(date, timeZone) {
+      var tz = timeZone || getClientTimeZone();
+      try {
+        var dtf = new Intl.DateTimeFormat("en-CA", {
+          timeZone: tz,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false
+        });
+        var parts = dtf.formatToParts(date);
+        var map = {};
+        for (var i = 0; i < parts.length; i++) {
+          if (parts[i] && parts[i].type && parts[i].value) map[parts[i].type] = parts[i].value;
+        }
+        return {
+          y: parseInt(map.year || "0", 10),
+          m: parseInt(map.month || "0", 10),
+          d: parseInt(map.day || "0", 10),
+          hour: parseInt(map.hour || "0", 10),
+          minute: parseInt(map.minute || "0", 10),
+          second: parseInt(map.second || "0", 10)
+        };
+      } catch (_) {
+        return {
+          y: date.getFullYear(),
+          m: date.getMonth() + 1,
+          d: date.getDate(),
+          hour: date.getHours(),
+          minute: date.getMinutes(),
+          second: date.getSeconds()
+        };
+      }
+    }
+    function getTimeZoneOffsetHours(date, timeZone) {
+      var parts = getTimeZoneDateParts(date, timeZone);
+      var utcMsAsIfZoned = Date.UTC(parts.y, (parts.m || 1) - 1, parts.d || 1, parts.hour || 0, parts.minute || 0, parts.second || 0);
+      return (utcMsAsIfZoned - date.getTime()) / 3600000;
+    }
+    function getNowYMD(timeZone) {
+      var p = getTimeZoneDateParts(new Date(), timeZone);
+      return { y: p.y, m: p.m, d: p.d };
+    }
+    function formatUiDateByYMD(ymd, locale, timeZone) {
+      var tz = timeZone || getClientTimeZone();
+      var loc = locale || getUiLocale();
+      var utcNoon = new Date(Date.UTC(ymd.y, ymd.m - 1, ymd.d, 12, 0, 0));
+      return utcNoon.toLocaleDateString(loc, { timeZone: tz });
+    }
     function formatUiDate(date) {
-      return date.toLocaleDateString(getUiLocale());
+      var tz = getClientTimeZone();
+      return formatUiDateByYMD(dateToYMD(date, tz), getUiLocale(), tz);
     }
     var runtimeGlossaryCache = {};
     function getGlossaryCacheKey(lang) {
@@ -1506,7 +1566,10 @@
     }
 
     function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
-    function dateToYMD(date) { return { y: date.getFullYear(), m: date.getMonth() + 1, d: date.getDate() }; }
+    function dateToYMD(date, timeZone) {
+      var p = getTimeZoneDateParts(date, timeZone || getClientTimeZone());
+      return { y: p.y, m: p.m, d: p.d };
+    }
     function ymdToDate(y, m, d) { return new Date(y, m - 1, d); }
     function INT(d) { return Math.floor(d); }
     function jdFromDate(dd, mm, yy) {
@@ -1603,22 +1666,25 @@
       if (lunarMonth >= 11 && diff < 4) lunarYear -= 1;
       return { d: lunarDay, m: lunarMonth, y: lunarYear, leap: lunarLeap };
     }
-    function getLunarYMDFromSolarDate(date) {
-      var ymd = dateToYMD(date);
-      return convertSolar2Lunar(ymd.d, ymd.m, ymd.y, 7);
+    function getLunarYMDFromSolarDate(date, timeZone) {
+      var tz = timeZone || getClientTimeZone();
+      var ymd = dateToYMD(date, tz);
+      var tzOffset = getTimeZoneOffsetHours(date, tz);
+      return convertSolar2Lunar(ymd.d, ymd.m, ymd.y, tzOffset);
     }
     function normalizeYMD(y, m, d) {
-      var ny = y || new Date().getFullYear();
+      var ny = y || getNowYMD(getClientTimeZone()).y;
       var nm = clamp(m || 1, 1, 12);
       var maxDay = new Date(ny, nm, 0).getDate();
       var nd = clamp(d || 1, 1, maxDay);
       return { y: ny, m: nm, d: nd };
     }
-    function getCanChiByDate(date) {
-      var base = new Date(1984, 1, 2);
-      var diff = Math.floor((date - base) / 86400000);
-      var stem = stems[(diff % 10 + 10) % 10];
-      var branch = branches[(diff % 12 + 12) % 12];
+    function getCanChiByDate(date, timeZone) {
+      var tz = timeZone || getClientTimeZone();
+      var ymd = dateToYMD(date, tz);
+      var jdn = jdFromDate(ymd.d, ymd.m, ymd.y);
+      var stem = stems[(jdn + 9) % 10];
+      var branch = branches[(jdn + 1) % 12];
       return stem + " " + branch;
     }
     function getCanChiByYear(year) {
@@ -1711,6 +1777,7 @@
       }
     }
     function updateForecastFocusLine(ymd) {
+      var clientTimeZone = getClientTimeZone();
       var el = document.getElementById("forecastFocusReadonly");
       if (!el) return;
       var birth = isValidOwnerBirthYear();
@@ -1729,8 +1796,8 @@
         return;
       }
       var dayDate = ymdToDate(ymd.y, ymd.m, ymd.d);
-      var lunar = getLunarYMDFromSolarDate(dayDate);
-      var dayCanChi = getCanChiByDate(dayDate);
+      var lunar = getLunarYMDFromSolarDate(dayDate, clientTimeZone);
+      var dayCanChi = getCanChiByDate(dayDate, clientTimeZone);
       var hourCung = getHourCungByInput(lunar.m, lunar.d, idx);
       var hourCanChi = getHourCanChi(dayCanChi, idx);
       var hourNapAm = getNapAm(hourCanChi);
@@ -1751,42 +1818,121 @@
       };
       return map[cung] || "trung tính";
     }
+    function buildEnergyQuoteHistoryKey() {
+      var code = window.DFI18n && DFI18n.getLanguage ? DFI18n.getLanguage() : "vi";
+      return "daily_fortune_energy_quote_history_" + String(code || "vi").toLowerCase();
+    }
+    function loadEnergyQuoteHistory() {
+      try {
+        var arr = JSON.parse(localStorage.getItem(buildEnergyQuoteHistoryKey()) || "[]");
+        return Array.isArray(arr) ? arr : [];
+      } catch (_) {
+        return [];
+      }
+    }
+    function saveEnergyQuoteHistory(list) {
+      try {
+        localStorage.setItem(buildEnergyQuoteHistoryKey(), JSON.stringify(list || []));
+      } catch (_) {}
+    }
+    function chooseEnergyQuoteByHistory(candidates, seedKey) {
+      if (!candidates.length) return "";
+      var history = loadEnergyQuoteHistory().slice(-20);
+      var recentTexts = history.map(function (x) { return String((x && x.text) || ""); });
+      var scored = candidates.map(function (txt, idx) {
+        var reusePenalty = recentTexts.indexOf(txt) >= 0 ? 100 : 0;
+        var frequencyPenalty = recentTexts.filter(function (s) { return s === txt; }).length * 20;
+        return { text: txt, idx: idx, score: reusePenalty + frequencyPenalty };
+      });
+      scored.sort(function (a, b) {
+        if (a.score !== b.score) return a.score - b.score;
+        var ah = (seedKey + "::" + a.idx).split("").reduce(function (s, ch) { return s + ch.charCodeAt(0); }, 0);
+        var bh = (seedKey + "::" + b.idx).split("").reduce(function (s, ch) { return s + ch.charCodeAt(0); }, 0);
+        return ah - bh;
+      });
+      var picked = scored[0] ? scored[0].text : candidates[0];
+      history.push({ ts: Date.now(), text: picked });
+      saveEnergyQuoteHistory(history.slice(-20));
+      return picked;
+    }
     /**
      * Một câu gợi ý hành động — không nhắc lại Can Chi, nạp âm, tên quẻ, giờ (đã có trên giao diện).
-     * engine.status/% tính từ buildEngineV2 (ngũ hành + lục cung); % chỉ ở badge «Điểm thành công» (tooltip giải thích).
+     * Chống lặp: tạo nhiều biến thể từ tín hiệu ngày/giờ/mệnh và lịch sử câu gần nhất.
      */
-    function buildEnergySuccessQuote(engine) {
-      function quote(key, fallbackText) {
-        var out = tr(key, null, fallbackText);
-        var lang = window.DFI18n && DFI18n.getLanguage ? DFI18n.getLanguage() : "vi";
-        if (lang !== "vi" && out === fallbackText) {
-          // #region agent log
-          fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'verify-energy-quote',hypothesisId:'H14',location:'public/dashboard-purple.html:buildEnergySuccessQuote',message:'energy_quote_fallback_vi_for_non_vi_lang',data:{lang,key},timestamp:Date.now()})}).catch(()=>{});
-          // #endregion
-        }
-        return out;
-      }
+    function buildEnergySuccessQuote(engine, context) {
+      context = context || {};
+      var relation = String(context.relationHour || context.relationDay || "");
+      var hourCung = String(context.hourCung || "");
+      var dayCung = String(context.dayCung || "");
       var c = engine.confidence;
       var s = engine.status;
-      if (s === "thanh_cong_mot_phan") {
-        if (c >= 82) {
-          return quote("dashboard.energy.quote.partial.high", "Hôm nay ưu tiên việc cần đàm phán, gọi điện, gặp trực tiếp hoặc chốt điều khoản khi hai bên đã thống nhất rõ.");
-        }
-        if (c >= 72) {
-          return quote("dashboard.energy.quote.partial.mid", "Hôm nay hợp mở đầu việc mới, họp ngắn và chốt từng bước nhỏ—tránh nhồi quá nhiều quyết định lớn trong một buổi.");
-        }
-        return quote("dashboard.energy.quote.partial.low", "Nên dùng ngày để dọn việc phụ, soạn hồ sơ và hẹn lại thời điểm chốt chính—đừng ép ký hay cam kết dứt điểm ngay.");
-      }
+      var suggestions = Array.isArray(engine.tactics) ? engine.tactics.filter(Boolean) : [];
+      var actionHint = suggestions[0] || "";
+      var cautionHint = suggestions[1] || suggestions[0] || "";
+      var dayTone = getCungTone(dayCung);
+      var hourTone = getCungTone(hourCung);
+      var base = [];
       if (s === "can_tranh_chot") {
-        return quote("dashboard.energy.quote.avoidClose", "Nên hoãn chốt hợp đồng hay cam kết lớn; ưu tiên kiểm tra lại số liệu, xác minh thông tin và chia nhỏ việc để tránh hiểu nhầm.");
+        base.push(
+          "Nên giữ nhịp chậm và tránh chốt quyết định lớn ngay hôm nay; ưu tiên rà lại dữ liệu và điều kiện trước khi cam kết.",
+          "Hôm nay thiên về phòng rủi ro hơn là bứt tốc: nên kiểm chứng thông tin, chia nhỏ việc và dời các cam kết lớn sang khung thuận hơn."
+        );
+      } else if (s === "thanh_cong_mot_phan" && c >= 82) {
+        base.push(
+          "Độ thuận lợi đang cao, hợp cho trao đổi trực tiếp, đàm phán và chốt từng điều khoản khi hai bên đã cùng hiểu rõ.",
+          "Năng lượng hôm nay nghiêng về tiến triển thực chất; có thể chủ động gọi điện hoặc gặp trực tiếp để khóa các điểm đã thống nhất."
+        );
+      } else if (s === "thanh_cong_mot_phan") {
+        base.push(
+          "Ngày này hợp mở đầu hoặc đẩy tiến độ theo từng bước nhỏ; nên chốt phạm vi hẹp trước khi bàn quyết định lớn.",
+          "Có thể tiến hành nhưng nên theo nhịp vừa phải: thống nhất từng hạng mục rồi mới gom thành quyết định cuối."
+        );
+      } else if (c >= 72) {
+        base.push(
+          "Phù hợp để nối tiếp việc đang làm, làm rõ điều kiện và thống nhất bước kế tiếp thay vì ép chốt ngay.",
+          "Nhịp năng lượng tương đối ổn định cho việc phối hợp, rà điều khoản và chuẩn bị cho lần chốt sau."
+        );
+      } else {
+        base.push(
+          "Ngày này hợp việc thường nhật và hoàn thiện phần chuẩn bị; các quyết định quan trọng nên để sau khi đủ dữ kiện.",
+          "Ưu tiên việc nền tảng và xác nhận lại kỳ vọng giữa các bên; chưa phải thời điểm tốt để ép tiến độ chốt cuối."
+        );
       }
-      if (c >= 72) {
-        return quote("dashboard.energy.quote.steadyProgress", "Hợp bàn tiếp, thống nhất bước kế tiếp và làm rõ điều kiện—chưa cần ép quyết định cuối nếu chưa đủ dữ kiện.");
+      if (relation && /khắc gia chủ|hao sức/i.test(relation)) {
+        base.push("Quan hệ mệnh theo giờ đang tạo áp lực nhẹ, nên trao đổi ngắn gọn và để thêm khoảng đệm trước khi cam kết.");
+      } else if (relation && /thuận lực|trợ lực|Đồng hành/i.test(relation)) {
+        base.push("Thế mệnh theo giờ khá thuận, hợp cho các việc cần phối hợp hoặc thống nhất đầu mối hành động.");
       }
-      return quote("dashboard.energy.quote.routine", "Phù hợp việc thường nhật và công việc đều đặn; giữ việc quan trọng ở mức chuẩn bị hoặc xin ý kiến, chốt dứt điểm khi đã chắc chắn.");
+      if (hourCung) {
+        base.push("Cung giờ hiện tại (" + hourCung + ") cho thấy nhịp " + hourTone + ".");
+      }
+      if (dayCung) {
+        base.push("Cung ngày (" + dayCung + ") đang thiên về trạng thái " + dayTone + ".");
+      }
+      if (actionHint) {
+        base.push("Gợi ý nhanh: " + actionHint);
+      } else if (cautionHint) {
+        base.push("Lưu ý: " + cautionHint);
+      }
+      var candidates = [];
+      for (var i = 0; i < base.length; i++) {
+        for (var j = i + 1; j < base.length; j++) {
+          if (base[i] && base[j] && base[i] !== base[j]) candidates.push(base[i] + " " + base[j]);
+        }
+      }
+      if (!candidates.length) candidates = base;
+      var seedKey = [
+        context.ymd || "",
+        dayCung,
+        hourCung,
+        relation,
+        s,
+        String(c || "")
+      ].join("|");
+      return chooseEnergyQuoteByHistory(candidates, seedKey);
     }
-    function buildEnergyPanelMessage(engine) {
-      return buildEnergySuccessQuote(engine);
+    function buildEnergyPanelMessage(engine, context) {
+      return buildEnergySuccessQuote(engine, context);
     }
     function getPairMeaning(dayCung, hourCung) {
       var key = dayCung + "|" + hourCung;
@@ -1845,7 +1991,8 @@
       if (/(phong van|thuong luong|ky hop dong|di xem|hop|hen|mua sam)/i.test(t)) return "medium";
       return "normal";
     }
-    function buildNearbyWindows(baseDate, importance) {
+    function buildNearbyWindows(baseDate, importance, timeZone) {
+      var tz = timeZone || getClientTimeZone();
       var offsets = importance === "high" ? [1, 3, 7, 14, 30] : importance === "medium" ? [1, 2, 4, 7] : [1, 2];
       return offsets.map(function (d) {
         var from = new Date(baseDate);
@@ -1854,8 +2001,8 @@
         to.setDate(to.getDate() + d);
         return {
           offset_days: d,
-          from: from.toLocaleDateString("vi-VN"),
-          to: to.toLocaleDateString("vi-VN")
+          from: formatUiDateByYMD(dateToYMD(from, tz), "vi-VN", tz),
+          to: formatUiDateByYMD(dateToYMD(to, tz), "vi-VN", tz)
         };
       });
     }
@@ -1927,6 +2074,7 @@
       };
     }
     function updateEnergySuccessPanel() {
+      var clientTimeZone = getClientTimeZone();
       var scoreEl = document.getElementById("energyScore");
       var msgEl = document.getElementById("energyMessage");
       var raw = getYMDFrom("global");
@@ -1946,7 +2094,7 @@
       }
       var ymd = normalizeYMD(raw.y, raw.m, raw.d);
       var dayDate = ymdToDate(ymd.y, ymd.m, ymd.d);
-      var dayCanChi = getCanChiByDate(dayDate);
+      var dayCanChi = getCanChiByDate(dayDate, clientTimeZone);
       var dayNapAm = getNapAm(dayCanChi);
       var ownerYearNum = birth.num;
       var ownerCanChi = getCanChiByYear(ownerYearNum);
@@ -1954,13 +2102,14 @@
       var ownerEl = getElement(ownerNapAm);
       var dayEl = getElement(dayNapAm);
       var relationDay = compareElements(ownerEl, dayEl, "ngày");
-      var lunar = getLunarYMDFromSolarDate(dayDate);
+      var lunar = getLunarYMDFromSolarDate(dayDate, clientTimeZone);
       var monthCung = getMonthCung(lunar.m);
       var dayCung = getDayCung(lunar.m, lunar.d);
       var focusHour = (document.getElementById("focusHour").value || "").trim();
-      var hourIdxForCalc = focusHour !== "" ? parseInt(focusHour, 10) : new Date().getHours() % 12;
+      var tzNowParts = getTimeZoneDateParts(new Date(), clientTimeZone);
+      var hourIdxForCalc = focusHour !== "" ? parseInt(focusHour, 10) : tzNowParts.hour % 12;
       if (!Number.isFinite(hourIdxForCalc) || hourIdxForCalc < 0 || hourIdxForCalc > 11) {
-        hourIdxForCalc = new Date().getHours() % 12;
+        hourIdxForCalc = tzNowParts.hour % 12;
       }
       var hourCung = getHourCungByInput(lunar.m, lunar.d, hourIdxForCalc);
       var hourCanChi = getHourCanChi(dayCanChi, hourIdxForCalc);
@@ -1993,7 +2142,13 @@
       );
       if (scoreEl) scoreEl.textContent = engine.confidence + "%";
       if (msgEl) {
-        msgEl.textContent = buildEnergyPanelMessage(engine);
+        msgEl.textContent = buildEnergyPanelMessage(engine, {
+          ymd: [ymd.y, ymd.m, ymd.d].join("-"),
+          dayCung: dayCung,
+          hourCung: hourCung,
+          relationDay: relationDay,
+          relationHour: relationHour
+        });
       }
       syncOwnerYearGate();
     }
@@ -2056,11 +2211,13 @@
       return cungs[(currentDayIndex + hourIndex) % 6];
     }
     function renderBySelectedDate(date) {
-      var ymd = dateToYMD(date);
-      document.getElementById("todayDate").textContent = formatUiDate(date);
-      document.getElementById("todayCanChi").textContent = localizeCanChiText(getCanChiByDate(date));
-      document.getElementById("dailyDateReadonly").textContent = tr("dashboard.daily.viewingDate", null, "Đang xem cho ngày:") + " " + formatUiDate(date);
-      document.getElementById("forecastDateReadonly").textContent = tr("dashboard.daily.viewingDate", null, "Đang xem cho ngày:") + " " + formatUiDate(date);
+      var clientTimeZone = getClientTimeZone();
+      var ymd = dateToYMD(date, clientTimeZone);
+      var formattedDate = formatUiDateByYMD(ymd, getUiLocale(), clientTimeZone);
+      document.getElementById("todayDate").textContent = formattedDate;
+      document.getElementById("todayCanChi").textContent = localizeCanChiText(getCanChiByDate(date, clientTimeZone));
+      document.getElementById("dailyDateReadonly").textContent = tr("dashboard.daily.viewingDate", null, "Đang xem cho ngày:") + " " + formattedDate;
+      document.getElementById("forecastDateReadonly").textContent = tr("dashboard.daily.viewingDate", null, "Đang xem cho ngày:") + " " + formattedDate;
       renderHours(date);
       localizeFocusHourOptions();
       updateForecastFocusLine(ymd);
@@ -2125,22 +2282,23 @@
       }
       var who = selectedTarget === "owner" ? "gia chủ" : "người khác";
       var p = hasParticipant ? "Có người tham gia (" + (role || "chưa ghi vai trò") + "), năm sinh " + pYear : "Không có người tham gia";
+      var clientTimeZone = getClientTimeZone();
       var ymd = getYMDFrom("global");
       var dayDate = ymdToDate(ymd.y, ymd.m, ymd.d);
-      var dayCanChi = getCanChiByDate(dayDate);
+      var dayCanChi = getCanChiByDate(dayDate, clientTimeZone);
       var dayNapAm = getNapAm(dayCanChi);
       var ownerCanChi = ownerYearNum ? getCanChiByYear(ownerYearNum) : "";
       var ownerNapAm = ownerCanChi ? getNapAm(ownerCanChi) : "";
       var ownerEl = getElement(ownerNapAm);
       var dayEl = getElement(dayNapAm);
       var relation = compareElements(ownerEl, dayEl, "ngày");
-      var lunar = getLunarYMDFromSolarDate(dayDate);
+      var lunar = getLunarYMDFromSolarDate(dayDate, clientTimeZone);
       var monthCung = getMonthCung(lunar.m);
       var dayCung = getDayCung(lunar.m, lunar.d);
       var hourIdxForCalc = focusHour !== "" ? parseInt(focusHour, 10) : -1;
       if (focusHour === "") {
         var preferredOrder = ["Tiểu Cát", "Tốc Hỷ", "Đại An"];
-        var nowIdx = new Date().getHours() % 12;
+        var nowIdx = getTimeZoneDateParts(new Date(), clientTimeZone).hour % 12;
         for (var rank = 0; rank < preferredOrder.length && hourIdxForCalc < 0; rank++) {
           for (var step = 0; step < 12; step++) {
             var idxCandidate = (nowIdx + step) % 12;
@@ -2204,8 +2362,9 @@
           : engine.status === "can_tranh_chot"
             ? "nên tránh quyết định gấp"
             : "cần đi chậm và quan sát thêm";
+      var dayViewDate = formatUiDateByYMD(dateToYMD(dayDate, clientTimeZone), "vi-VN", clientTimeZone);
       var shortLocalLine =
-        dayDate.toLocaleDateString("vi-VN") +
+        dayViewDate +
         " (" +
         dayCanChi +
         ") · " +
@@ -2220,7 +2379,7 @@
         "%).";
       var importanceHint = inferEventImportance(topic);
       var analysisPayload = {
-        date_view: dayDate.toLocaleDateString("vi-VN"),
+        date_view: dayViewDate,
         month_cung: monthCung,
         day_cung: dayCung,
         hour_cung: hourCung,
@@ -2262,12 +2421,13 @@
         status: engine.status,
         status_label_vi: statusLabelVi,
         confidence: engine.confidence,
+        client_timezone: clientTimeZone,
         target_language: window.DFI18n ? DFI18n.getLanguage() : "vi",
         event_importance_hint: importanceHint,
-        nearby_windows: buildNearbyWindows(dayDate, importanceHint)
+        nearby_windows: buildNearbyWindows(dayDate, importanceHint, clientTimeZone)
       };
       // #region agent log
-      fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'analysis-headers',hypothesisId:'H21',location:'public/dashboard-purple.html:renderSummary',message:'analysis_payload_focus_hour_context',data:{lang:analysisPayload.target_language,focusHourRaw:focusHour,hourIdxForCalc:hourIdxForCalc,hourCung:hourCung,hourCanChi:hourCanChi,suggestedHours:analysisPayload.suggested_hours,avoidHours:analysisPayload.avoid_hours},timestamp:Date.now()})}).catch(()=>{});
+      fetch('http://127.0.0.1:7721/ingest/40683a09-4bbd-4ee6-8c85-c52ade641def',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b669db'},body:JSON.stringify({sessionId:'b669db',runId:'analysis-headers',hypothesisId:'H21',location:'public/dashboard-purple.html:renderSummary',message:'analysis_payload_focus_hour_context',data:{lang:analysisPayload.target_language,clientTimeZone:analysisPayload.client_timezone,focusHourRaw:focusHour,hourIdxForCalc:hourIdxForCalc,hourCung:hourCung,hourCanChi:hourCanChi,suggestedHours:analysisPayload.suggested_hours,avoidHours:analysisPayload.avoid_hours},timestamp:Date.now()})}).catch(()=>{});
       // #endregion
       try {
         var fr = await fetchFortuneAnalyzeWithRetry(analysisPayload);
