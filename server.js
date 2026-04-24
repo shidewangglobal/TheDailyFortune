@@ -184,6 +184,7 @@ function customerRowToProfile(row) {
     birthMonth: row.birth_month || "",
     birthYear: row.birth_year || "",
     birthHour: row.birth_hour || "",
+    birthMinute: row.birth_minute || "",
     updatedAt: row.updated_at || null,
   };
 }
@@ -241,9 +242,17 @@ function customerProfileSaveHandler(req, res) {
         birth_month: String((body && body.birthMonth) || "").slice(0, 50),
         birth_year: String((body && body.birthYear) || "").slice(0, 50),
         birth_hour: String((body && body.birthHour) || "").slice(0, 100),
+        birth_minute: String((body && body.birthMinute) || "").slice(0, 100),
         updated_at: new Date().toISOString(),
       };
-      const { error } = await supa.from("customer_profiles").upsert(row, { onConflict: "invite_code" });
+      let { error } = await supa.from("customer_profiles").upsert(row, { onConflict: "invite_code" });
+      // Backward compatible for older schemas without birth_minute column.
+      if (error && /birth_minute/i.test(String(error && error.message ? error.message : error))) {
+        const fallbackRow = { ...row };
+        delete fallbackRow.birth_minute;
+        const retry = await supa.from("customer_profiles").upsert(fallbackRow, { onConflict: "invite_code" });
+        error = retry.error;
+      }
       if (error) {
         console.error("[customer-profile/save]", error);
         return send(res, 500, JSON.stringify({ ok: false, error: "db_error" }), "application/json; charset=utf-8");

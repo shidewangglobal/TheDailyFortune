@@ -367,6 +367,8 @@
         <input id="ownerYear" type="number" placeholder="Bắt buộc" />
         <label for="ownerHour">Giờ sinh</label>
         <input id="ownerHour" type="number" min="0" max="23" placeholder="0-23 (tuỳ chọn)" />
+        <label for="ownerMinute">Phút sinh</label>
+        <input id="ownerMinute" type="number" min="0" max="59" placeholder="0-59 (tuỳ chọn)" />
       </div>
       <div class="actions">
         <button class="btn primary" id="saveBtn" type="button">Lưu profile</button>
@@ -528,6 +530,8 @@
           <input id="customerYear" type="number" />
           <label for="customerHour">Giờ sinh</label>
           <input id="customerHour" type="number" min="0" max="23" placeholder="0-23 (tuỳ chọn)" />
+          <label for="customerMinute">Phút sinh</label>
+          <input id="customerMinute" type="number" min="0" max="59" placeholder="0-59 (tuỳ chọn)" />
         </div>
         <div class="actions">
           <button class="btn primary" id="customerSaveBtn" type="button">Lưu hồ sơ</button>
@@ -1026,6 +1030,7 @@
       document.getElementById("ownerMonth").value = "";
       document.getElementById("ownerYear").value = "";
       document.getElementById("ownerHour").value = "";
+      document.getElementById("ownerMinute").value = "";
     }
 
     function setStatus(text) {
@@ -1041,6 +1046,7 @@
       document.getElementById("ownerMonth").value = profile.birthMonth || "";
       document.getElementById("ownerYear").value = profile.birthYear || "";
       document.getElementById("ownerHour").value = profile.birthHour || "";
+      document.getElementById("ownerMinute").value = profile.birthMinute || "";
       resetAdminSaveUi();
     }
 
@@ -1110,9 +1116,13 @@
       var birthMonth = (document.getElementById("ownerMonth").value || "").trim();
       var birthYear = (document.getElementById("ownerYear").value || "").trim();
       var birthHour = (document.getElementById("ownerHour").value || "").trim();
+      var birthMinute = (document.getElementById("ownerMinute").value || "").trim();
 
       if (!name) return setStatus("Vui lòng nhập họ và tên.");
       if (!birthYear) return setStatus("Năm sinh là bắt buộc.");
+      if (birthMinute && (!/^\d+$/.test(birthMinute) || parseInt(birthMinute, 10) < 0 || parseInt(birthMinute, 10) > 59)) {
+        return setStatus("Phút sinh phải trong khoảng 0-59.");
+      }
 
       var profiles = getProfiles();
       if (editingId) {
@@ -1126,6 +1136,7 @@
             birthMonth: birthMonth,
             birthYear: birthYear,
             birthHour: birthHour,
+            birthMinute: birthMinute,
             inviteCode: p.inviteCode,
             source: p.source,
             updatedAt: new Date().toISOString(),
@@ -1141,6 +1152,7 @@
           birthMonth: birthMonth,
           birthYear: birthYear,
           birthHour: birthHour,
+          birthMinute: birthMinute,
           updatedAt: new Date().toISOString(),
         };
         profiles.push(profile);
@@ -1154,7 +1166,7 @@
     }
 
     document.getElementById("saveBtn").addEventListener("click", upsertProfile);
-    ["ownerName", "ownerContact", "ownerDay", "ownerMonth", "ownerYear", "ownerHour"].forEach(function (id) {
+    ["ownerName", "ownerContact", "ownerDay", "ownerMonth", "ownerYear", "ownerHour", "ownerMinute"].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.addEventListener("input", markAdminDirty);
     });
@@ -1337,6 +1349,7 @@
         birthMonth: profile.birthMonth || "",
         birthYear: profile.birthYear || "",
         birthHour: profile.birthHour || "",
+        birthMinute: profile.birthMinute || "",
         inviteCode: invite,
         source: "customer_invite",
         updatedAt: new Date().toISOString()
@@ -1365,6 +1378,7 @@
         birthMonth: p.birthMonth || "",
         birthYear: p.birthYear || "",
         birthHour: p.birthHour || "",
+        birthMinute: p.birthMinute || "",
         updatedAt: p.updatedAt || new Date().toISOString()
       };
     }
@@ -1398,7 +1412,8 @@
           birthDay: profile.birthDay,
           birthMonth: profile.birthMonth,
           birthYear: profile.birthYear,
-          birthHour: profile.birthHour
+          birthHour: profile.birthHour,
+          birthMinute: profile.birthMinute
         })
       })
         .then(function (r) { return r.json().catch(function () { return {}; }); })
@@ -1437,6 +1452,7 @@
       document.getElementById("customerMonth").value = (profile && profile.birthMonth) || "";
       document.getElementById("customerYear").value = (profile && profile.birthYear) || "";
       document.getElementById("customerHour").value = (profile && profile.birthHour) || "";
+      document.getElementById("customerMinute").value = (profile && profile.birthMinute) || "";
       resetCustomerSaveUi();
     }
     function resetCustomerSaveUi() {
@@ -1578,8 +1594,12 @@
         var birthMonth = (document.getElementById("customerMonth").value || "").trim();
         var birthYear = (document.getElementById("customerYear").value || "").trim();
         var birthHour = (document.getElementById("customerHour").value || "").trim();
+        var birthMinute = (document.getElementById("customerMinute").value || "").trim();
         if (!name) return setCustomerStatus("Vui lòng nhập họ và tên.");
         if (!birthYear) return setCustomerStatus("Năm sinh là bắt buộc.");
+        if (birthMinute && (!/^\d+$/.test(birthMinute) || parseInt(birthMinute, 10) < 0 || parseInt(birthMinute, 10) > 59)) {
+          return setCustomerStatus("Phút sinh phải trong khoảng 0-59.");
+        }
         var payload = {
           name: name,
           contact: contact,
@@ -1587,6 +1607,7 @@
           birthMonth: birthMonth,
           birthYear: birthYear,
           birthHour: birthHour,
+          birthMinute: birthMinute,
           updatedAt: new Date().toISOString()
         };
         saveCustomerProfile(inviteKey, payload);
@@ -1596,7 +1617,8 @@
           birthDay: birthDay,
           birthMonth: birthMonth,
           birthYear: birthYear,
-          birthHour: birthHour
+          birthHour: birthHour,
+          birthMinute: birthMinute
         });
         markProfileDone(inviteKey);
         refreshContinue(inviteKey);
@@ -1622,7 +1644,7 @@
         );
         refreshTopbarNav("customer");
       });
-      ["customerName", "customerContact", "customerDay", "customerMonth", "customerYear", "customerHour"].forEach(function (id) {
+      ["customerName", "customerContact", "customerDay", "customerMonth", "customerYear", "customerHour", "customerMinute"].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener("input", markCustomerDirty);
       });

@@ -35,6 +35,7 @@
   "dashboard.owner.birthYear": "Birth year (*)",
   "dashboard.owner.birthDay": "Birth day",
   "dashboard.owner.birthMonth": "Birth month",
+  "dashboard.owner.birthMinute": "Birth minute",
   "dashboard.participant.has": "Has participant",
   "dashboard.participant.role": "Role",
   "dashboard.participant.role.placeholder": "Example: customer",

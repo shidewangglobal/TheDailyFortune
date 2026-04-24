@@ -35,6 +35,7 @@
   "dashboard.owner.birthYear": "Năm sinh (*)",
   "dashboard.owner.birthDay": "Ngày sinh",
   "dashboard.owner.birthMonth": "Tháng sinh",
+  "dashboard.owner.birthMinute": "Phút sinh",
   "dashboard.participant.has": "Có người tham gia",
   "dashboard.participant.role": "Vai trò",
   "dashboard.participant.role.placeholder": "Ví dụ: khách hàng",

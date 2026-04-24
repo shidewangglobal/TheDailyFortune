@@ -1327,6 +1327,7 @@
             birthMonth: p.birthMonth || "",
             birthYear: p.birthYear || "",
             birthHour: p.birthHour || "",
+            birthMinute: p.birthMinute || "",
             updatedAt: p.updatedAt || new Date().toISOString()
           })
         );
@@ -1338,7 +1339,8 @@
             birthDay: p.birthDay || "",
             birthMonth: p.birthMonth || "",
             birthYear: p.birthYear || "",
-            birthHour: p.birthHour || ""
+            birthHour: p.birthHour || "",
+            birthMinute: p.birthMinute || ""
           });
         } catch (_) {}
       } catch (_) {}
@@ -1455,6 +1457,7 @@
         birthMonth: (profile && profile.birthMonth) || "",
         birthYear: (profile && profile.birthYear) || "",
         birthHour: (profile && profile.birthHour) || "",
+        birthMinute: (profile && profile.birthMinute) || "",
         inviteCode: invite,
         source: "customer_invite",
         updatedAt: new Date().toISOString()
@@ -1480,7 +1483,8 @@
           birthDay: profile.birthDay,
           birthMonth: profile.birthMonth,
           birthYear: profile.birthYear,
-          birthHour: profile.birthHour
+          birthHour: profile.birthHour,
+          birthMinute: profile.birthMinute
         })
       })
         .then(function (r) { return r.json().catch(function () { return {}; }); })
@@ -1498,7 +1502,8 @@
         birthDay: profile.birthDay,
         birthMonth: profile.birthMonth,
         birthYear: profile.birthYear,
-        birthHour: profile.birthHour || ""
+        birthHour: profile.birthHour || "",
+        birthMinute: profile.birthMinute || ""
       };
       customerCloudSaveTimer = setTimeout(function () {
         customerCloudSaveTimer = null;
@@ -1523,6 +1528,23 @@
         "Mã " + customerInviteCode + " - Đã dùng: " + getInviteUsageDisplay(customerInviteCode) + "/" + limit + " lượt miễn phí."
       );
     }
+    function getCurrentOwnerBirthMinute() {
+      try {
+        if (roleParam === "customer" && customerInviteCode) {
+          var cp = getCustomerProfile(customerInviteCode) || {};
+          return String(cp.birthMinute || "").trim();
+        }
+        var listRaw = localStorage.getItem("daily_fortune_profiles");
+        var activeId = localStorage.getItem("daily_fortune_active_profile_id");
+        if (!listRaw || !activeId) return "";
+        var list = JSON.parse(listRaw);
+        if (!Array.isArray(list)) return "";
+        var p = list.find(function (x) { return x.id === activeId; }) || {};
+        return String(p.birthMinute || "").trim();
+      } catch (_) {
+        return "";
+      }
+    }
     async function ensureCustomerAccessAsync() {
       if (roleParam !== "customer") return true;
       var invite = localStorage.getItem("daily_fortune_customer_invite") || "";
@@ -1543,12 +1565,6 @@
         invite = serverKey;
       }
       await mergeRemoteCustomerProfileToLocal(invite);
-      var profile = getCustomerProfile(invite);
-      if (!profile || !profile.birthYear || !profile.name) {
-        location.href =
-          "/profile.html?role=customer&profile=1&next=" + encodeURIComponent(location.pathname + location.search);
-        return false;
-      }
       customerInviteCode = invite;
       await syncCustomerServerState();
       return true;
@@ -2378,6 +2394,7 @@
         engine.confidence +
         "%).";
       var importanceHint = inferEventImportance(topic);
+      var ownerBirthMinute = getCurrentOwnerBirthMinute();
       var analysisPayload = {
         date_view: dayViewDate,
         month_cung: monthCung,
@@ -2390,6 +2407,7 @@
         day_can_chi: dayCanChi,
         hour_can_chi: hourCanChi,
         owner_can_chi: ownerCanChi,
+        owner_birth_minute: ownerBirthMinute,
         day_menh: dayCanChi + " - " + dayNapAm,
         hour_menh: (hourCanChi || "") + (hourCanChi ? (" - " + hourNapAm) : ""),
         owner_menh: ownerCanChi + " - " + ownerNapAm,
@@ -2550,6 +2568,7 @@
           birthMonth: ownerMonth || (cpPrev.birthMonth || ""),
           birthYear: ownerYear,
           birthHour: (cpPrev.birthHour || ""),
+          birthMinute: (cpPrev.birthMinute || ""),
           updatedAt: new Date().toISOString()
         };
         try {
@@ -2577,7 +2596,7 @@
       var activeId = getActiveProfileId();
       var active = profiles.find(function (p) { return p.id === activeId; });
       var id = active ? active.id : createProfileId();
-      var next = { id:id, name:ownerName || "Gia chủ", contact:ownerPhone, birthDay:ownerDay, birthMonth:ownerMonth, birthYear:ownerYear, updatedAt:new Date().toISOString() };
+      var next = { id:id, name:ownerName || "Gia chủ", contact:ownerPhone, birthDay:ownerDay, birthMonth:ownerMonth, birthYear:ownerYear, birthHour:(active && active.birthHour) || "", birthMinute:(active && active.birthMinute) || "", updatedAt:new Date().toISOString() };
       var found = false;
       profiles = profiles.map(function (p) { if (p.id !== id) return p; found = true; return next; });
       if (!found) profiles.push(next);
@@ -2686,6 +2705,12 @@
       await loadPublicConfig();
       var ok = await ensureCustomerAccessAsync();
       if (!ok) return;
+      if (roleParam === "customer" && customerInviteCode) {
+        var profLite = getCustomerProfile(customerInviteCode) || {};
+        if (!profLite.name || !profLite.birthYear) {
+          document.getElementById("dailyResult").innerText = "Bạn đã vào Dashboard bằng mã hợp lệ. Để dự báo chính xác hơn, vui lòng hoàn thiện hồ sơ (ít nhất họ tên + năm sinh) tại mục Hồ sơ.";
+        }
+      }
       if (roleParam === "customer" && customerInviteCode) {
         try {
           localStorage.setItem("daily_fortune_customer_first_dash_" + customerInviteCode, "1");
